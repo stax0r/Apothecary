@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Potion Shop Catalog</title>
+    <style>
+        :root {
+            --bg-color: #1a1625;
+            --card-bg: #262035;
+            --accent: #9d4edd;
+            --accent-hover: #7b2cbf;
+            --text: #e0d6f6;
+            --text-dim: #a093c4;
+            --border: #3c3254;
+            --gold: #ffb703;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        h1, h2 { margin: 0; color: #fff; }
+
+        button {
+            background-color: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        button:hover { background-color: var(--accent-hover); }
+
+        .admin-toggle {
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+        }
+
+        .admin-toggle:hover {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .admin-panel {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .hidden { display: none !important; }
+
+        .form-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        input, select {
+            background: var(--bg-color);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        .catalog-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 20px;
+        }
+
+        .potion-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .potion-price {
+            font-size: 1.25rem;
+            color: var(--gold);
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .ingredient-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 10px 0;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+        }
+
+        .ingredient-list li {
+            padding: 3px 0;
+        }
+
+        .cost-badge {
+            font-size: 0.8rem;
+            color: #888;
+            border-top: 1px dashed var(--border);
+            padding-top: 8px;
+            margin-top: 8px;
+        }
+
+        .item-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .delete-btn {
+            background: #d90429;
+            padding: 2px 8px;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🧪 Potion Shop Catalog</h1>
+        <button id="toggle-admin-btn" class="admin-toggle" onclick="toggleAdmin()">Brew Master Mode</button>
+    </header>
+
+    <!-- ADMIN MANAGEMENT PANEL -->
+    <div id="admin-panel" class="admin-panel hidden">
+        <h2>Ingredients</h2>
+        <div class="form-group">
+            <input type="text" id="ing-name" placeholder="Ingredient Name">
+            <input type="number" id="ing-price" placeholder="Price / 1 un" step="0.01">
+            <button onclick="addIngredient()">+ Add Ingredient</button>
+        </div>
+        <div id="ingredients-list"></div>
+
+        <hr style="border-color: var(--border); margin: 20px 0;">
+
+        <h2>Brew Potion</h2>
+        <div class="form-group">
+            <input type="text" id="potion-name" placeholder="Potion Name">
+            <input type="number" id="potion-sale-price" placeholder="Catalog Sale Price" step="0.01">
+        </div>
+
+        <h4>Recipe Ingredients</h4>
+        <div class="form-group">
+            <select id="recipe-ing-select"></select>
+            <input type="number" id="recipe-ing-qty" placeholder="Qty" value="1" min="1">
+            <button onclick="addIngredientToRecipe()">+ Add to Recipe</button>
+        </div>
+
+        <ul id="recipe-preview-list"></ul>
+        <p>Calculated Base Cost: <strong id="calculated-cost">0</strong> gold</p>
+
+        <button onclick="savePotion()" style="width: 100%; margin-top: 10px;">Create Potion</button>
+    </div>
+
+    <!-- PUBLIC CATALOG -->
+    <h2>Available Potions</h2>
+    <div id="catalog" class="catalog-grid"></div>
+</div>
+
+<script>
+    let ingredients = JSON.parse(localStorage.getItem('ingredients')) || [];
+    let potions = JSON.parse(localStorage.getItem('potions')) || [];
+    let currentRecipe = [];
+    let isAdmin = false;
+
+    function saveState() {
+        localStorage.setItem('ingredients', JSON.stringify(ingredients));
+        localStorage.setItem('potions', JSON.stringify(potions));
+        render();
+    }
+
+    function toggleAdmin() {
+        isAdmin = !isAdmin;
+        document.getElementById('admin-panel').classList.toggle('hidden', !isAdmin);
+        document.getElementById('toggle-admin-btn').innerText = isAdmin ? "View Public Shop" : "Brew Master Mode";
+        render();
+    }
+
+    function addIngredient() {
+        const name = document.getElementById('ing-name').value.trim();
+        const price = parseFloat(document.getElementById('ing-price').value);
+
+        if (name && !isNaN(price)) {
+            ingredients.push({ id: Date.now(), name, price });
+            document.getElementById('ing-name').value = '';
+            document.getElementById('ing-price').value = '';
+            saveState();
+        }
+    }
+
+    function updateIngredientPrice(id, newPrice) {
+        const ing = ingredients.find(i => i.id === id);
+        if (ing) {
+            ing.price = parseFloat(newPrice) || 0;
+            saveState();
+        }
+    }
+
+    function deleteIngredient(id) {
+        ingredients = ingredients.filter(i => i.id !== id);
+        saveState();
+    }
+
+    function addIngredientToRecipe() {
+        const select = document.getElementById('recipe-ing-select');
+        const qty = parseInt(document.getElementById('recipe-ing-qty').value);
+        const ingId = parseInt(select.value);
+
+        const ing = ingredients.find(i => i.id === ingId);
+        if (ing && qty > 0) {
+            currentRecipe.push({ ingredientId: ing.id, name: ing.name, qty });
+            renderRecipePreview();
+        }
+    }
+
+    function renderRecipePreview() {
+        const list = document.getElementById('recipe-preview-list');
+        list.innerHTML = '';
+        let totalCost = 0;
+
+        currentRecipe.forEach(item => {
+            const ing = ingredients.find(i => i.id === item.ingredientId);
+            const unitPrice = ing ? ing.price : 0;
+            const cost = unitPrice * item.qty;
+            totalCost += cost;
+
+            const li = document.createElement('li');
+            li.textContent = `${item.qty}x ${item.name} (${cost} gold)`;
+            list.appendChild(li);
+        });
+
+        document.getElementById('calculated-cost').textContent = totalCost.toFixed(2);
+    }
+
+    function savePotion() {
+        const name = document.getElementById('potion-name').value.trim();
+        const price = parseFloat(document.getElementById('potion-sale-price').value);
+
+        if (name && !isNaN(price) && currentRecipe.length > 0) {
+            potions.push({
+                id: Date.now(),
+                name,
+                salePrice: price,
+                recipe: [...currentRecipe]
+            });
+            document.getElementById('potion-name').value = '';
+            document.getElementById('potion-sale-price').value = '';
+            currentRecipe = [];
+            renderRecipePreview();
+            saveState();
+        }
+    }
+
+    function deletePotion(id) {
+        potions = potions.filter(p => p.id !== id);
+        saveState();
+    }
+
+    function calculatePotionCost(recipe) {
+        return recipe.reduce((total, item) => {
+            const ing = ingredients.find(i => i.id === item.ingredientId);
+            return total + (ing ? ing.price * item.qty : 0);
+        }, 0);
+    }
+
+    function render() {
+        // Render ingredients dropdown
+        const select = document.getElementById('recipe-ing-select');
+        select.innerHTML = ingredients.map(i => `<option value="${i.id}">${i.name} (${i.price}g)</option>`).join('');
+
+        // Render ingredients management list
+        const ingList = document.getElementById('ingredients-list');
+        ingList.innerHTML = ingredients.map(i => `
+            <div class="item-row">
+                <span><strong>${i.name}</strong></span>
+                <div>
+                    <input type="number" value="${i.price}" step="0.01" style="width: 70px;" onchange="updateIngredientPrice(${i.id}, this.value)"> gold / unit
+                    <button class="delete-btn" onclick="deleteIngredient(${i.id})">X</button>
+                </div>
+            </div>
+        `).join('');
+
+        // Render catalog
+        const catalog = document.getElementById('catalog');
+        catalog.innerHTML = potions.map(p => {
+            const cost = calculatePotionCost(p.recipe);
+            return `
+                <div class="potion-card">
+                    <div>
+                        <h3>${p.name}</h3>
+                        <div class="potion-price">${p.salePrice} Gold</div>
+                        <ul class="ingredient-list">
+                            ${p.recipe.map(r => `<li>• ${r.qty}x ${r.name}</li>`).join('')}
+                        </ul>
+                    </div>
+                    ${isAdmin ? `
+                        <div class="cost-badge">
+                            Cost to make: ${cost.toFixed(2)} gold
+                            <br><button class="delete-btn" style="margin-top: 5px;" onclick="deletePotion(${p.id})">Delete</button>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }).join('');
+    }
+
+    render();
+</script>
+</body>
+</html>
