@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loic Sauvage's Alchemy Shop</title>
+    <title>Potion Shop Catalog</title>
     <style>
         :root {
             --bg-color: #1a1625;
@@ -24,10 +24,7 @@
             padding: 20px;
         }
 
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-        }
+        .container { max-width: 900px; margin: 0 auto; }
 
         header {
             display: flex;
@@ -38,7 +35,7 @@
             margin-bottom: 25px;
         }
 
-        h1, h2 { margin: 0; color: #fff; }
+        h1, h2, h4 { margin: 0; color: #fff; }
 
         button {
             background-color: var(--accent);
@@ -59,12 +56,9 @@
             color: var(--accent);
         }
 
-        .admin-toggle:hover {
-            background: var(--accent);
-            color: #fff;
-        }
+        .admin-toggle:hover { background: var(--accent); color: #fff; }
 
-        .admin-panel {
+        .admin-panel, .login-modal {
             background-color: var(--card-bg);
             border: 1px solid var(--border);
             padding: 20px;
@@ -90,11 +84,7 @@
             font-family: inherit;
         }
 
-        textarea {
-            width: 100%;
-            resize: vertical;
-            min-height: 60px;
-        }
+        textarea { width: 100%; resize: vertical; min-height: 60px; }
 
         .catalog-grid {
             display: grid;
@@ -112,19 +102,8 @@
             justify-content: space-between;
         }
 
-        .potion-desc {
-            font-size: 0.85rem;
-            color: var(--text-dim);
-            font-style: italic;
-            margin: 6px 0 10px 0;
-        }
-
-        .potion-price {
-            font-size: 1.25rem;
-            color: var(--gold);
-            font-weight: bold;
-            margin: 10px 0;
-        }
+        .potion-desc { font-size: 0.85rem; color: var(--text-dim); font-style: italic; margin: 6px 0 10px 0; }
+        .potion-price { font-size: 1.25rem; color: var(--gold); font-weight: bold; margin: 10px 0; }
 
         .ingredient-list {
             list-style: none;
@@ -134,9 +113,7 @@
             color: var(--text-dim);
         }
 
-        .ingredient-list li {
-            padding: 3px 0;
-        }
+        .ingredient-list li { padding: 3px 0; }
 
         .cost-badge {
             font-size: 0.8rem;
@@ -154,24 +131,31 @@
             border-bottom: 1px solid var(--border);
         }
 
-        .delete-btn {
-            background: #d90429;
-            padding: 2px 8px;
-            font-size: 0.8rem;
-        }
+        .delete-btn { background: #d90429; padding: 2px 8px; font-size: 0.8rem; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <header>
-        <h1>Catalog</h1>
-        <button id="toggle-admin-btn" class="admin-toggle" onclick="toggleAdmin()">Brewing Mode</button>
+        <h1>🧪 Potion Shop Catalog</h1>
+        <button id="auth-btn" class="admin-toggle" onclick="toggleAuthModal()">Alchemist Login</button>
     </header>
 
-    <!-- MANAGEMENT -->
+    <!-- LOGIN MODAL -->
+    <div id="login-modal" class="login-modal hidden">
+        <h2>Brew Master Login</h2>
+        <div class="form-group" style="margin-top: 10px;">
+            <input type="email" id="login-email" placeholder="Email">
+            <input type="password" id="login-password" placeholder="Password">
+            <button onclick="login()">Login</button>
+        </div>
+        <p id="login-error" style="color: #d90429; margin: 0; font-size: 0.85rem;"></p>
+    </div>
+
+    <!-- ADMIN MANAGEMENT PANEL -->
     <div id="admin-panel" class="admin-panel hidden">
-        <h2>Ingredients</h2>
+        <h2>Manage Ingredients</h2>
         <div class="form-group">
             <input type="text" id="ing-name" placeholder="Ingredient Name">
             <input type="number" id="ing-price" placeholder="Price / 1 un" step="0.01">
@@ -208,61 +192,113 @@
     <div id="catalog" class="catalog-grid"></div>
 </div>
 
-<script>
-    let ingredients = JSON.parse(localStorage.getItem('ingredients')) || [];
-    let potions = JSON.parse(localStorage.getItem('potions')) || [];
+<!-- Firebase SDKs -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    
+const firebaseConfig = {
+  apiKey: "AIzaSyC8QXlIWT76AZqttFWzLn4IKRRs3wYAaX8",
+  authDomain: "alchemy-shop-dcceb.firebaseapp.com",
+  databaseURL: "https://alchemy-shop-dcceb-default-rtdb.firebaseio.com",
+  projectId: "alchemy-shop-dcceb",
+  storageBucket: "alchemy-shop-dcceb.firebasestorage.app",
+  messagingSenderId: "268082568197",
+  appId: "1:268082568197:web:31de53d83bece61f0d506c",
+  measurementId: "G-H2DY8TMDMN"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    let ingredients = {};
+    let potions = {};
     let currentRecipe = [];
-    let isAdmin = false;
+    let currentUser = null;
 
-    function saveState() {
-        localStorage.setItem('ingredients', JSON.stringify(ingredients));
-        localStorage.setItem('potions', JSON.stringify(potions));
+    // REALTIME DATABASE LISTENERS
+    onValue(ref(db, 'ingredients'), (snapshot) => {
+        ingredients = snapshot.val() || {};
         render();
-    }
+    });
 
-    function toggleAdmin() {
-        isAdmin = !isAdmin;
-        document.getElementById('admin-panel').classList.toggle('hidden', !isAdmin);
-        document.getElementById('toggle-admin-btn').innerText = isAdmin ? "View Public Shop" : "Brewing Mode";
+    onValue(ref(db, 'potions'), (snapshot) => {
+        potions = snapshot.val() || {};
         render();
-    }
+    });
 
-    function addIngredient() {
+    // AUTH LISTENER
+    onAuthStateChanged(auth, (user) => {
+        currentUser = user;
+        const authBtn = document.getElementById('auth-btn');
+        const adminPanel = document.getElementById('admin-panel');
+        const loginModal = document.getElementById('login-modal');
+
+        if (user) {
+            authBtn.innerText = "Logout";
+            adminPanel.classList.remove('hidden');
+            loginModal.classList.add('hidden');
+        } else {
+            authBtn.innerText = "Alchemist Login";
+            adminPanel.classList.add('hidden');
+        }
+        render();
+    });
+
+    // EXPOSE FUNCTIONS TO WINDOW FOR HTML BUTTON HANDLERS
+    window.toggleAuthModal = () => {
+        if (currentUser) {
+            signOut(auth);
+        } else {
+            document.getElementById('login-modal').classList.toggle('hidden');
+        }
+    };
+
+    window.login = () => {
+        const email = document.getElementById('login-email').value;
+        const pass = document.getElementById('login-password').value;
+        const errDiv = document.getElementById('login-error');
+
+        signInWithEmailAndPassword(auth, email, pass)
+            .then(() => { errDiv.innerText = ""; })
+            .catch(err => { errDiv.innerText = err.message; });
+    };
+
+    window.addIngredient = () => {
         const name = document.getElementById('ing-name').value.trim();
         const price = parseFloat(document.getElementById('ing-price').value);
 
         if (name && !isNaN(price)) {
-            ingredients.push({ id: Date.now(), name, price });
+            const id = Date.now();
+            set(ref(db, `ingredients/${id}`), { id, name, price });
             document.getElementById('ing-name').value = '';
             document.getElementById('ing-price').value = '';
-            saveState();
         }
-    }
+    };
 
-    function updateIngredientPrice(id, newPrice) {
-        const ing = ingredients.find(i => i.id === id);
-        if (ing) {
-            ing.price = parseFloat(newPrice) || 0;
-            saveState();
-        }
-    }
+    window.updateIngredientPrice = (id, newPrice) => {
+        const price = parseFloat(newPrice) || 0;
+        set(ref(db, `ingredients/${id}/price`), price);
+    };
 
-    function deleteIngredient(id) {
-        ingredients = ingredients.filter(i => i.id !== id);
-        saveState();
-    }
+    window.deleteIngredient = (id) => {
+        remove(ref(db, `ingredients/${id}`));
+    };
 
-    function addIngredientToRecipe() {
+    window.addIngredientToRecipe = () => {
         const select = document.getElementById('recipe-ing-select');
         const qty = parseInt(document.getElementById('recipe-ing-qty').value);
-        const ingId = parseInt(select.value);
+        const ingId = select.value;
 
-        const ing = ingredients.find(i => i.id === ingId);
+        const ing = ingredients[ingId];
         if (ing && qty > 0) {
             currentRecipe.push({ ingredientId: ing.id, name: ing.name, qty });
             renderRecipePreview();
         }
-    }
+    };
 
     function renderRecipePreview() {
         const list = document.getElementById('recipe-preview-list');
@@ -270,7 +306,7 @@
         let totalCost = 0;
 
         currentRecipe.forEach(item => {
-            const ing = ingredients.find(i => i.id === item.ingredientId);
+            const ing = ingredients[item.ingredientId];
             const unitPrice = ing ? ing.price : 0;
             const cost = unitPrice * item.qty;
             totalCost += cost;
@@ -283,61 +319,67 @@
         document.getElementById('calculated-cost').textContent = totalCost.toFixed(2);
     }
 
-    function savePotion() {
+    window.savePotion = () => {
         const name = document.getElementById('potion-name').value.trim();
         const desc = document.getElementById('potion-desc').value.trim();
         const price = parseFloat(document.getElementById('potion-sale-price').value);
 
         if (name && !isNaN(price) && currentRecipe.length > 0) {
-            potions.push({
-                id: Date.now(),
+            const id = Date.now();
+            set(ref(db, `potions/${id}`), {
+                id,
                 name,
                 description: desc,
                 salePrice: price,
-                recipe: [...currentRecipe]
+                recipe: currentRecipe
             });
+
             document.getElementById('potion-name').value = '';
             document.getElementById('potion-desc').value = '';
             document.getElementById('potion-sale-price').value = '';
             currentRecipe = [];
             renderRecipePreview();
-            saveState();
         }
-    }
+    };
 
-    function deletePotion(id) {
-        potions = potions.filter(p => p.id !== id);
-        saveState();
-    }
+    window.deletePotion = (id) => {
+        remove(ref(db, `potions/${id}`));
+    };
 
     function calculatePotionCost(recipe) {
+        if (!recipe) return 0;
         return recipe.reduce((total, item) => {
-            const ing = ingredients.find(i => i.id === item.ingredientId);
+            const ing = ingredients[item.ingredientId];
             return total + (ing ? ing.price * item.qty : 0);
         }, 0);
     }
 
     function render() {
+        const ingArray = Object.values(ingredients);
+        const potionArray = Object.values(potions);
+
         // Render ingredients dropdown
         const select = document.getElementById('recipe-ing-select');
-        select.innerHTML = ingredients.map(i => `<option value="${i.id}">${i.name} (${i.price}g)</option>`).join('');
+        select.innerHTML = ingArray.map(i => `<option value="${i.id}">${i.name} (${i.price}g)</option>`).join('');
 
-        // Render ingredients management list
+        // Render ingredients list in Admin panel
         const ingList = document.getElementById('ingredients-list');
-        ingList.innerHTML = ingredients.map(i => `
+        ingList.innerHTML = ingArray.map(i => `
             <div class="item-row">
                 <span><strong>${i.name}</strong></span>
                 <div>
-                    <input type="number" value="${i.price}" step="0.01" style="width: 70px;" onchange="updateIngredientPrice(${i.id}, this.value)"> gold / unit
-                    <button class="delete-btn" onclick="deleteIngredient(${i.id})">X</button>
+                    <input type="number" value="${i.price}" step="0.01" style="width: 70px;" onchange="window.updateIngredientPrice(${i.id}, this.value)"> gold / unit
+                    <button class="delete-btn" onclick="window.deleteIngredient(${i.id})">X</button>
                 </div>
             </div>
         `).join('');
 
-        // Render catalog
+        // Render catalog grid
         const catalog = document.getElementById('catalog');
-        catalog.innerHTML = potions.map(p => {
+        catalog.innerHTML = potionArray.map(p => {
             const cost = calculatePotionCost(p.recipe);
+            const recipeList = p.recipe ? p.recipe.map(r => `<li>• ${r.qty}x ${r.name}</li>`).join('') : '';
+
             return `
                 <div class="potion-card">
                     <div>
@@ -345,21 +387,19 @@
                         ${p.description ? `<div class="potion-desc">${p.description}</div>` : ''}
                         <div class="potion-price">${p.salePrice} Gold</div>
                         <ul class="ingredient-list">
-                            ${p.recipe.map(r => `<li>• ${r.qty}x ${r.name}</li>`).join('')}
+                            ${recipeList}
                         </ul>
                     </div>
-                    ${isAdmin ? `
+                    ${currentUser ? `
                         <div class="cost-badge">
                             Cost to make: ${cost.toFixed(2)} gold
-                            <br><button class="delete-btn" style="margin-top: 5px;" onclick="deletePotion(${p.id})">Delete</button>
+                            <br><button class="delete-btn" style="margin-top: 5px;" onclick="window.deletePotion(${p.id})">Delete</button>
                         </div>
                     ` : ''}
                 </div>
             `;
         }).join('');
     }
-
-    render();
 </script>
 </body>
 </html>
