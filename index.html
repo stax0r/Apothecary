@@ -81,12 +81,19 @@
             flex-wrap: wrap;
         }
 
-        input, select {
+        input, select, textarea {
             background: var(--bg-color);
             border: 1px solid var(--border);
             color: var(--text);
             padding: 8px;
             border-radius: 4px;
+            font-family: inherit;
+        }
+
+        textarea {
+            width: 100%;
+            resize: vertical;
+            min-height: 60px;
         }
 
         .catalog-grid {
@@ -103,6 +110,13 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+        }
+
+        .potion-desc {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            font-style: italic;
+            margin: 6px 0 10px 0;
         }
 
         .potion-price {
@@ -169,8 +183,11 @@
 
         <h2>Brew Potion</h2>
         <div class="form-group">
-            <input type="text" id="potion-name" placeholder="Potion Name">
-            <input type="number" id="potion-sale-price" placeholder="Catalog Sale Price" step="0.01">
+            <input type="text" id="potion-name" placeholder="Potion Name" style="flex: 2;">
+            <input type="number" id="potion-sale-price" placeholder="Catalog Sale Price" step="0.01" style="flex: 1;">
+        </div>
+        <div class="form-group">
+            <textarea id="potion-desc" placeholder="Potion Description or Magical Effects..."></textarea>
         </div>
 
         <h4>Recipe Ingredients</h4>
@@ -268,16 +285,19 @@
 
     function savePotion() {
         const name = document.getElementById('potion-name').value.trim();
+        const desc = document.getElementById('potion-desc').value.trim();
         const price = parseFloat(document.getElementById('potion-sale-price').value);
 
         if (name && !isNaN(price) && currentRecipe.length > 0) {
             potions.push({
                 id: Date.now(),
                 name,
+                description: desc,
                 salePrice: price,
                 recipe: [...currentRecipe]
             });
             document.getElementById('potion-name').value = '';
+            document.getElementById('potion-desc').value = '';
             document.getElementById('potion-sale-price').value = '';
             currentRecipe = [];
             renderRecipePreview();
@@ -322,6 +342,7 @@
                 <div class="potion-card">
                     <div>
                         <h3>${p.name}</h3>
+                        ${p.description ? `<div class="potion-desc">${p.description}</div>` : ''}
                         <div class="potion-price">${p.salePrice} Gold</div>
                         <ul class="ingredient-list">
                             ${p.recipe.map(r => `<li>• ${r.qty}x ${r.name}</li>`).join('')}
