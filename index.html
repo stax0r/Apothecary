@@ -280,7 +280,7 @@
 </div>
 
 <footer>
-    <span>Inquiries & Custom Orders: Courier ID <code>stax0r</code> on Discord</span>
+    <span>Inquiries, Custom Orders & Guild Rates: Courier ID <code>stax0r</code> on Discord</span>
 </footer>
 
 <!-- Firebase SDKs -->
@@ -291,15 +291,15 @@
 
     // REPLACE THIS WITH YOUR FIREBASE CONFIG
     const firebaseConfig = {
-      apiKey: "AIzaSyC8QXlIWT76AZqttFWzLn4IKRRs3wYAaX8",
-      authDomain: "alchemy-shop-dcceb.firebaseapp.com",
-      databaseURL: "https://alchemy-shop-dcceb-default-rtdb.firebaseio.com",
-      projectId: "alchemy-shop-dcceb",
-      storageBucket: "alchemy-shop-dcceb.firebasestorage.app",
-      messagingSenderId: "268082568197",
-      appId: "1:268082568197:web:31de53d83bece61f0d506c",
-      measurementId: "G-H2DY8TMDMN"
-    };
+        apiKey: "AIzaSyC8QXlIWT76AZqttFWzLn4IKRRs3wYAaX8",
+        authDomain: "alchemy-shop-dcceb.firebaseapp.com",
+        databaseURL: "https://alchemy-shop-dcceb-default-rtdb.firebaseio.com",
+        projectId: "alchemy-shop-dcceb",
+        storageBucket: "alchemy-shop-dcceb.firebasestorage.app",
+        messagingSenderId: "268082568197",
+        appId: "1:268082568197:web:31de53d83bece61f0d506c",
+        measurementId: "G-H2DY8TMDMN"
+};
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -548,8 +548,9 @@
                     ${currentUser ? `
                         <div class="cost-badge">
                             <div>Craft Cost: ${cost.toFixed(2)}g</div>
-                            <div>Profit: <span class="${profit >= 0 ? 'profit-text' : 'loss-text'}">${profit.toFixed(2)}g (${margin}%)</span></div>
-                            <div style="display: flex; gap: 5px; margin-top: 4px;">
+                            <div>Standard Profit: <span class="${profit >= 0 ? 'profit-text' : 'loss-text'}">${profit.toFixed(2)}g (${margin}%)</span></div>
+                            <div style="margin-top: 2px; font-style: italic; color: var(--text-dim);">Guild Rate: Discretionary Discount</div>
+                            <div style="display: flex; gap: 5px; margin-top: 6px;">
                                 <button class="stock-btn ${!isStocked ? 'off' : ''}" onclick="window.toggleStock(${p.id}, ${isStocked})">
                                     ${isStocked ? 'In Stock' : 'Out of Stock'}
                                 </button>
