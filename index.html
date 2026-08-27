@@ -61,7 +61,7 @@
         .admin-toggle { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
         .admin-toggle:hover { background: var(--accent); color: #fff; }
 
-        .admin-panel, .login-modal {
+        .admin-panel, .login-modal, .cart-panel {
             background-color: var(--card-bg);
             border: 1px solid var(--border);
             padding: 20px;
@@ -123,7 +123,7 @@
             position: relative;
         }
 
-        .potion-card.out-of-stock { opacity: 0.65; border-style: dashed; }
+        .potion-card.out-of-stock { opacity: 0.7; border-style: dashed; }
 
         .category-tag {
             font-size: 0.75rem;
@@ -172,6 +172,8 @@
         .edit-btn { background: #3a86ff; padding: 4px 8px; font-size: 0.8rem; }
         .stock-btn { background: var(--success); padding: 4px 8px; font-size: 0.8rem; }
         .stock-btn.off { background: #555; }
+        .add-cart-btn { background: var(--gold); color: #000; width: 100%; margin-top: 8px; }
+        .add-cart-btn:hover { background: #e0a100; }
 
         .badge-out {
             background: var(--danger);
@@ -184,6 +186,15 @@
             display: inline-block;
             margin-bottom: 5px;
         }
+
+        .btn-disabled {
+            background: var(--border);
+            color: var(--text-dim);
+            width: 100%;
+            margin-top: 8px;
+            cursor: not-allowed;
+        }
+        .btn-disabled:hover { background: var(--border); }
 
         .batch-summary {
             background: var(--bg-color);
@@ -210,6 +221,15 @@
 
         .metric-box span { color: var(--text-dim); font-size: 0.75rem; }
         .metric-box strong { font-size: 1rem; }
+
+        .cart-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+        }
 
         footer {
             margin-top: 40px;
@@ -302,6 +322,16 @@
         <div id="batch-results"></div>
     </div>
 
+    <!-- CLIENT SHOPPING CART -->
+    <div id="cart-panel" class="cart-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h2>Your Satchel (Cart)</h2>
+            <button onclick="clearCart()" style="background: var(--border); font-size: 0.8rem; padding: 4px 10px;">Empty Satchel</button>
+        </div>
+        <div id="cart-items-list"></div>
+        <div id="cart-summary-area"></div>
+    </div>
+
     <!-- PUBLIC CATALOG -->
     <h2>Apothecary Stock</h2>
     
@@ -320,7 +350,7 @@
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // FIREBASE 
+    // REPLACE THIS WITH YOUR FIREBASE CONFIG
     const firebaseConfig = {
         apiKey: "AIzaSyC8QXlIWT76AZqttFWzLn4IKRRs3wYAaX8",
         authDomain: "alchemy-shop-dcceb.firebaseapp.com",
@@ -330,7 +360,7 @@
         messagingSenderId: "268082568197",
         appId: "1:268082568197:web:31de53d83bece61f0d506c",
         measurementId: "G-H2DY8TMDMN"
-    };
+};
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -342,6 +372,8 @@
     let currentUser = null;
     let selectedCategory = 'All';
     let batchManifest = [];
+    
+    let clientCart = [];
 
     onValue(ref(db, 'ingredients'), (snapshot) => {
         ingredients = snapshot.val() || {};
@@ -517,6 +549,79 @@
         render();
     };
 
+    // Client Cart Logic
+    window.addToCart = (potionId) => {
+        const existing = clientCart.find(item => item.potionId === potionId);
+        if (existing) {
+            existing.qty += 1;
+        } else {
+            clientCart.push({ potionId, qty: 1 });
+        }
+        renderCart();
+    };
+
+    window.updateCartQty = (index, newQty) => {
+        const qty = parseInt(newQty) || 0;
+        if (qty <= 0) {
+            clientCart.splice(index, 1);
+        } else {
+            clientCart[index].qty = qty;
+        }
+        renderCart();
+    };
+
+    window.removeFromCart = (index) => {
+        clientCart.splice(index, 1);
+        renderCart();
+    };
+
+    window.clearCart = () => {
+        clientCart = [];
+        renderCart();
+    };
+
+    function renderCart() {
+        const listDiv = document.getElementById('cart-items-list');
+        const summaryDiv = document.getElementById('cart-summary-area');
+
+        if (clientCart.length === 0) {
+            listDiv.innerHTML = `<p style="color: var(--text-dim); font-size: 0.85rem; margin: 0;">Your satchel is empty. Select potions from the catalog below to calculate your total cost.</p>`;
+            summaryDiv.innerHTML = '';
+            return;
+        }
+
+        let totalCost = 0;
+        let totalItems = 0;
+
+        listDiv.innerHTML = clientCart.map((item, index) => {
+            const p = potions[item.potionId];
+            if (!p) return '';
+            
+            const lineTotal = (p.salePrice || 0) * item.qty;
+            totalCost += lineTotal;
+            totalItems += item.qty;
+
+            return `
+                <div class="item-row">
+                    <span><strong>${p.name}</strong> (${p.salePrice}g each)</span>
+                    <div>
+                        <input type="number" value="${item.qty}" min="1" style="width: 60px;" onchange="window.updateCartQty(${index}, this.value)">
+                        <span style="color: var(--gold); font-weight: bold; margin: 0 8px;">${lineTotal.toFixed(2)}g</span>
+                        <button class="delete-btn" onclick="window.removeFromCart(${index})">X</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        summaryDiv.innerHTML = `
+            <div class="cart-summary">
+                <span>Total Items: <strong>${totalItems}</strong></span>
+                <span style="font-size: 1.1rem;">Total Price: <strong style="color: var(--gold);">${totalCost.toFixed(2)} Gold</strong></span>
+            </div>
+        `;
+    }
+
+    // Admin Batch Calculator Logic
     window.addBatchRow = () => {
         const select = document.getElementById('batch-potion-select');
         const qty = parseInt(document.getElementById('batch-qty').value) || 1;
@@ -685,7 +790,7 @@
 
         const catalog = document.getElementById('catalog');
         
-        let visiblePotions = potionArray.filter(p => currentUser ? true : (p.inStock !== false));
+        let visiblePotions = potionArray;
 
         if (selectedCategory !== 'All') {
             visiblePotions = visiblePotions.filter(p => (p.category || 'General') === selectedCategory);
@@ -705,7 +810,7 @@
             return `
                 <div class="potion-card ${!isStocked ? 'out-of-stock' : ''}">
                     <div>
-                        ${currentUser && !isStocked ? `<span class="badge-out">Out of Stock (Hidden)</span>` : ''}
+                        ${!isStocked ? `<span class="badge-out">Out of Stock</span>` : ''}
                         <div class="category-tag">${p.category || 'General'}</div>
                         <h3 style="margin-top: 4px;">${p.name}</h3>
                         ${p.description ? `<div class="potion-desc">${p.description}</div>` : ''}
@@ -718,6 +823,12 @@
                         ` : ''}
                     </div>
                     <div>
+                        ${isStocked ? `
+                            <button class="add-cart-btn" onclick="window.addToCart(${p.id})">+ Add to Satchel</button>
+                        ` : `
+                            <button class="btn-disabled" disabled>Out of Stock</button>
+                        `}
+                        
                         ${currentUser ? `
                             <div class="cost-badge">
                                 <div>Craft Cost: ${cost.toFixed(2)}g</div>
@@ -737,6 +848,7 @@
         }).join('');
 
         renderBatchCalculator();
+        renderCart();
     }
 </script>
 </body>
