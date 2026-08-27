@@ -43,7 +43,7 @@
         header .titles { display: flex; flex-direction: column; }
         header .subtitle { font-size: 0.85rem; color: var(--text-dim); font-style: italic; margin-top: 4px; }
 
-        h1, h2, h4 { margin: 0; color: #fff; }
+        h1, h2, h3, h4 { margin: 0; color: #fff; }
 
         button {
             background-color: var(--accent);
@@ -84,7 +84,6 @@
 
         textarea { width: 100%; resize: vertical; min-height: 60px; }
 
-        /* Filter Pills */
         .filter-bar {
             display: flex;
             gap: 8px;
@@ -170,6 +169,7 @@
         }
 
         .delete-btn { background: var(--danger); padding: 4px 8px; font-size: 0.8rem; }
+        .edit-btn { background: #3a86ff; padding: 4px 8px; font-size: 0.8rem; }
         .stock-btn { background: var(--success); padding: 4px 8px; font-size: 0.8rem; }
         .stock-btn.off { background: #555; }
 
@@ -184,6 +184,32 @@
             display: inline-block;
             margin-bottom: 5px;
         }
+
+        .batch-summary {
+            background: var(--bg-color);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 15px;
+        }
+
+        .batch-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px dashed var(--border);
+        }
+
+        .metric-box {
+            display: flex;
+            flex-direction: column;
+            font-size: 0.85rem;
+        }
+
+        .metric-box span { color: var(--text-dim); font-size: 0.75rem; }
+        .metric-box strong { font-size: 1rem; }
 
         footer {
             margin-top: 40px;
@@ -237,7 +263,8 @@
 
         <hr style="border-color: var(--border); margin: 20px 0;">
 
-        <h2>Brew Potion</h2>
+        <h2 id="potion-form-title">Brew Potion</h2>
+        <input type="hidden" id="editing-potion-id" value="">
         <div class="form-group">
             <input type="text" id="potion-name" placeholder="Potion Name" style="flex: 2;">
             <input type="text" id="potion-category" placeholder="Category (e.g. Restoration)" style="flex: 1;">
@@ -257,30 +284,34 @@
         <ul id="recipe-preview-list"></ul>
         <p>Calculated Base Cost: <strong id="calculated-cost">0</strong> gold</p>
 
-        <button onclick="savePotion()" style="width: 100%; margin-top: 10px;">Create Potion</button>
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button id="save-potion-btn" onclick="savePotion()" style="flex: 1;">Create Potion</button>
+            <button id="cancel-edit-btn" onclick="cancelEditPotion()" class="hidden" style="background: #555;">Cancel Edit</button>
+        </div>
 
         <hr style="border-color: var(--border); margin: 20px 0;">
 
-        <h2>Batch Crafting Calculator</h2>
+        <h2>Batch Order Manifest</h2>
         <div class="form-group" style="margin-top: 10px;">
             <select id="batch-potion-select" style="flex: 2;"></select>
-            <input type="number" id="batch-qty" placeholder="Units to brew" value="5" min="1" style="flex: 1;">
-            <button onclick="calculateBatch()">Calculate Requirements</button>
+            <input type="number" id="batch-qty" placeholder="Qty" value="1" min="1" style="flex: 1;">
+            <button onclick="addBatchRow()">+ Add Potion to Order</button>
         </div>
+
+        <div id="batch-manifest-list"></div>
         <div id="batch-results"></div>
     </div>
 
     <!-- PUBLIC CATALOG -->
     <h2>Apothecary Stock</h2>
     
-    <!-- Category Filter Bar -->
     <div id="filter-bar" class="filter-bar" style="margin-top: 15px;"></div>
 
     <div id="catalog" class="catalog-grid"></div>
 </div>
 
 <footer>
-    <span>Inquiries, Custom Orders & Guild Rates: Courier ID <code>stax0r</code> on Discord</span>
+    <span>Inquiries & Custom Orders: Courier ID <code>stax0r</code> on Discord</span>
 </footer>
 
 <!-- Firebase SDKs -->
@@ -289,7 +320,7 @@
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // REPLACE THIS WITH YOUR FIREBASE CONFIG
+    // FIREBASE 
     const firebaseConfig = {
         apiKey: "AIzaSyC8QXlIWT76AZqttFWzLn4IKRRs3wYAaX8",
         authDomain: "alchemy-shop-dcceb.firebaseapp.com",
@@ -299,7 +330,7 @@
         messagingSenderId: "268082568197",
         appId: "1:268082568197:web:31de53d83bece61f0d506c",
         measurementId: "G-H2DY8TMDMN"
-};
+    };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -310,6 +341,7 @@
     let currentRecipe = [];
     let currentUser = null;
     let selectedCategory = 'All';
+    let batchManifest = [];
 
     onValue(ref(db, 'ingredients'), (snapshot) => {
         ingredients = snapshot.val() || {};
@@ -394,45 +426,82 @@
         list.innerHTML = '';
         let totalCost = 0;
 
-        currentRecipe.forEach(item => {
+        currentRecipe.forEach((item, index) => {
             const ing = ingredients[item.ingredientId];
             const unitPrice = ing ? ing.price : 0;
             const cost = unitPrice * item.qty;
             totalCost += cost;
 
             const li = document.createElement('li');
-            li.textContent = `${item.qty}x ${item.name} (${cost} gold)`;
+            li.innerHTML = `${item.qty}x ${item.name} (${cost.toFixed(2)} gold) <button type="button" style="padding:2px 6px; font-size:0.7rem; background:var(--danger); margin-left:8px;" onclick="window.removeRecipeItem(${index})">X</button>`;
             list.appendChild(li);
         });
 
         document.getElementById('calculated-cost').textContent = totalCost.toFixed(2);
     }
 
+    window.removeRecipeItem = (index) => {
+        currentRecipe.splice(index, 1);
+        renderRecipePreview();
+    };
+
     window.savePotion = () => {
         const name = document.getElementById('potion-name').value.trim();
         const category = document.getElementById('potion-category').value.trim() || 'General';
         const desc = document.getElementById('potion-desc').value.trim();
         const price = parseFloat(document.getElementById('potion-sale-price').value);
+        const editingId = document.getElementById('editing-potion-id').value;
 
         if (name && !isNaN(price) && currentRecipe.length > 0) {
-            const id = Date.now();
+            const id = editingId ? parseInt(editingId) : Date.now();
+            const existingStockStatus = (editingId && potions[editingId]) ? potions[editingId].inStock : true;
+
             set(ref(db, `potions/${id}`), {
                 id,
                 name,
                 category,
                 description: desc,
                 salePrice: price,
-                inStock: true,
+                inStock: existingStockStatus,
                 recipe: currentRecipe
             });
 
-            document.getElementById('potion-name').value = '';
-            document.getElementById('potion-category').value = '';
-            document.getElementById('potion-desc').value = '';
-            document.getElementById('potion-sale-price').value = '';
-            currentRecipe = [];
-            renderRecipePreview();
+            cancelEditPotion();
         }
+    };
+
+    window.editPotion = (id) => {
+        const p = potions[id];
+        if (!p) return;
+
+        document.getElementById('editing-potion-id').value = p.id;
+        document.getElementById('potion-name').value = p.name;
+        document.getElementById('potion-category').value = p.category || '';
+        document.getElementById('potion-desc').value = p.description || '';
+        document.getElementById('potion-sale-price').value = p.salePrice;
+        
+        currentRecipe = p.recipe ? [...p.recipe] : [];
+        renderRecipePreview();
+
+        document.getElementById('potion-form-title').innerText = "Edit Potion";
+        document.getElementById('save-potion-btn').innerText = "Update Potion";
+        document.getElementById('cancel-edit-btn').classList.remove('hidden');
+
+        document.getElementById('admin-panel').scrollIntoView({ behavior: 'smooth' });
+    };
+
+    window.cancelEditPotion = () => {
+        document.getElementById('editing-potion-id').value = '';
+        document.getElementById('potion-name').value = '';
+        document.getElementById('potion-category').value = '';
+        document.getElementById('potion-desc').value = '';
+        document.getElementById('potion-sale-price').value = '';
+        currentRecipe = [];
+        renderRecipePreview();
+
+        document.getElementById('potion-form-title').innerText = "Brew Potion";
+        document.getElementById('save-potion-btn').innerText = "Create Potion";
+        document.getElementById('cancel-edit-btn').classList.add('hidden');
     };
 
     window.toggleStock = (id, currentStatus) => {
@@ -448,30 +517,134 @@
         render();
     };
 
-    window.calculateBatch = () => {
+    window.addBatchRow = () => {
         const select = document.getElementById('batch-potion-select');
         const qty = parseInt(document.getElementById('batch-qty').value) || 1;
         const potionId = select.value;
-        const potion = potions[potionId];
+
+        if (!potionId || qty <= 0) return;
+
+        const existing = batchManifest.find(item => item.potionId === potionId);
+        if (existing) {
+            existing.qty += qty;
+        } else {
+            batchManifest.push({ potionId, qty });
+        }
+
+        renderBatchCalculator();
+    };
+
+    window.updateBatchQty = (index, newQty) => {
+        const qty = parseInt(newQty) || 0;
+        if (qty <= 0) {
+            batchManifest.splice(index, 1);
+        } else {
+            batchManifest[index].qty = qty;
+        }
+        renderBatchCalculator();
+    };
+
+    window.removeBatchRow = (index) => {
+        batchManifest.splice(index, 1);
+        renderBatchCalculator();
+    };
+
+    function renderBatchCalculator() {
+        const listDiv = document.getElementById('batch-manifest-list');
         const resultsDiv = document.getElementById('batch-results');
 
-        if (!potion || !potion.recipe) return;
+        if (batchManifest.length === 0) {
+            listDiv.innerHTML = '';
+            resultsDiv.innerHTML = `<p style="color: var(--text-dim); font-size: 0.85rem;">Add potions above to calculate total requirements, costs, and profit.</p>`;
+            return;
+        }
 
-        let totalCost = 0;
-        let html = `<ul class="ingredient-list" style="margin-top:10px;">`;
+        listDiv.innerHTML = batchManifest.map((item, index) => {
+            const p = potions[item.potionId];
+            if (!p) return '';
+            return `
+                <div class="item-row">
+                    <span>${p.name} (${p.salePrice}g)</span>
+                    <div>
+                        <input type="number" value="${item.qty}" min="1" style="width: 60px;" onchange="window.updateBatchQty(${index}, this.value)"> units
+                        <button class="delete-btn" onclick="window.removeBatchRow(${index})">X</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
 
-        potion.recipe.forEach(r => {
-            const ing = ingredients[r.ingredientId];
-            const unitPrice = ing ? ing.price : 0;
-            const totalQty = r.qty * qty;
-            const itemCost = unitPrice * totalQty;
-            totalCost += itemCost;
-            html += `<li>- ${totalQty}x ${r.name} (${itemCost.toFixed(2)} gold total)</li>`;
+        const aggregatedIngredients = {};
+        let totalCraftCost = 0;
+        let totalSalePrice = 0;
+        let totalUnits = 0;
+
+        batchManifest.forEach(item => {
+            const p = potions[item.potionId];
+            if (!p) return;
+
+            totalUnits += item.qty;
+            totalSalePrice += (p.salePrice || 0) * item.qty;
+
+            if (p.recipe) {
+                p.recipe.forEach(r => {
+                    const ing = ingredients[r.ingredientId];
+                    const unitPrice = ing ? ing.price : 0;
+                    const totalNeeded = r.qty * item.qty;
+                    const cost = unitPrice * totalNeeded;
+
+                    totalCraftCost += cost;
+
+                    if (!aggregatedIngredients[r.ingredientId]) {
+                        aggregatedIngredients[r.ingredientId] = {
+                            name: r.name,
+                            qty: 0,
+                            cost: 0
+                        };
+                    }
+                    aggregatedIngredients[r.ingredientId].qty += totalNeeded;
+                    aggregatedIngredients[r.ingredientId].cost += cost;
+                });
+            }
         });
 
-        html += `</ul><p style="margin-top:5px;">Total Batch Cost: <strong>${totalCost.toFixed(2)} Gold</strong></p>`;
+        const netProfit = totalSalePrice - totalCraftCost;
+        const profitMargin = totalSalePrice > 0 ? ((netProfit / totalSalePrice) * 100).toFixed(0) : 0;
+
+        let html = `
+            <div class="batch-summary">
+                <h4>Consolidated Ingredients Required</h4>
+                <ul class="ingredient-list" style="margin-top: 8px;">
+        `;
+
+        Object.values(aggregatedIngredients).forEach(ing => {
+            html += `<li>- ${ing.qty}x ${ing.name} (${ing.cost.toFixed(2)} gold)</li>`;
+        });
+
+        html += `
+                </ul>
+                <div class="batch-metrics">
+                    <div class="metric-box">
+                        <span>Total Brewed</span>
+                        <strong>${totalUnits} Potions</strong>
+                    </div>
+                    <div class="metric-box">
+                        <span>Crafting Cost</span>
+                        <strong>${totalCraftCost.toFixed(2)}g</strong>
+                    </div>
+                    <div class="metric-box">
+                        <span>Shop Revenue</span>
+                        <strong style="color: var(--gold);">${totalSalePrice.toFixed(2)}g</strong>
+                    </div>
+                    <div class="metric-box">
+                        <span>Est. Net Profit</span>
+                        <strong class="${netProfit >= 0 ? 'profit-text' : 'loss-text'}">${netProfit.toFixed(2)}g (${profitMargin}%)</strong>
+                    </div>
+                </div>
+            </div>
+        `;
+
         resultsDiv.innerHTML = html;
-    };
+    }
 
     function calculatePotionCost(recipe) {
         if (!recipe) return 0;
@@ -483,16 +656,16 @@
 
     function render() {
         const ingArray = Object.values(ingredients);
-        const potionArray = Object.values(potions);
+        let potionArray = Object.values(potions);
 
-        // Render ingredients dropdowns
+        potionArray.sort((a, b) => a.salePrice - b.salePrice);
+
         const select = document.getElementById('recipe-ing-select');
         select.innerHTML = ingArray.map(i => `<option value="${i.id}">${i.name} (${i.price}g)</option>`).join('');
 
         const batchSelect = document.getElementById('batch-potion-select');
-        batchSelect.innerHTML = potionArray.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+        batchSelect.innerHTML = potionArray.map(p => `<option value="${p.id}">${p.name} (${p.salePrice}g)</option>`).join('');
 
-        // Render ingredients list in Admin panel
         const ingList = document.getElementById('ingredients-list');
         ingList.innerHTML = ingArray.map(i => `
             <div class="item-row">
@@ -504,17 +677,14 @@
             </div>
         `).join('');
 
-        // Category Filter Pills
         const categories = ['All', ...new Set(potionArray.map(p => p.category || 'General'))];
         const filterBar = document.getElementById('filter-bar');
         filterBar.innerHTML = categories.map(cat => `
             <button class="filter-btn ${selectedCategory === cat ? 'active' : ''}" onclick="window.setCategoryFilter('${cat}')">${cat}</button>
         `).join('');
 
-        // Render catalog grid
         const catalog = document.getElementById('catalog');
         
-        // Filter potions: logged in sees all; guests see ONLY in-stock items
         let visiblePotions = potionArray.filter(p => currentUser ? true : (p.inStock !== false));
 
         if (selectedCategory !== 'All') {
@@ -530,7 +700,6 @@
             const cost = calculatePotionCost(p.recipe);
             const profit = p.salePrice - cost;
             const margin = p.salePrice > 0 ? ((profit / p.salePrice) * 100).toFixed(0) : 0;
-            const recipeList = p.recipe ? p.recipe.map(r => `<li>- ${r.qty}x ${r.name}</li>`).join('') : '';
             const isStocked = p.inStock !== false;
 
             return `
@@ -541,26 +710,33 @@
                         <h3 style="margin-top: 4px;">${p.name}</h3>
                         ${p.description ? `<div class="potion-desc">${p.description}</div>` : ''}
                         <div class="potion-price">${p.salePrice} Gold</div>
-                        <ul class="ingredient-list">
-                            ${recipeList}
-                        </ul>
+                        
+                        ${currentUser && p.recipe ? `
+                            <ul class="ingredient-list">
+                                ${p.recipe.map(r => `<li>- ${r.qty}x ${r.name}</li>`).join('')}
+                            </ul>
+                        ` : ''}
                     </div>
-                    ${currentUser ? `
-                        <div class="cost-badge">
-                            <div>Craft Cost: ${cost.toFixed(2)}g</div>
-                            <div>Standard Profit: <span class="${profit >= 0 ? 'profit-text' : 'loss-text'}">${profit.toFixed(2)}g (${margin}%)</span></div>
-                            <div style="margin-top: 2px; font-style: italic; color: var(--text-dim);">Guild Rate: Discretionary Discount</div>
-                            <div style="display: flex; gap: 5px; margin-top: 6px;">
-                                <button class="stock-btn ${!isStocked ? 'off' : ''}" onclick="window.toggleStock(${p.id}, ${isStocked})">
-                                    ${isStocked ? 'In Stock' : 'Out of Stock'}
-                                </button>
-                                <button class="delete-btn" onclick="window.deletePotion(${p.id})">Delete</button>
+                    <div>
+                        ${currentUser ? `
+                            <div class="cost-badge">
+                                <div>Craft Cost: ${cost.toFixed(2)}g</div>
+                                <div>Profit Margin: <span class="${profit >= 0 ? 'profit-text' : 'loss-text'}">${profit.toFixed(2)}g (${margin}%)</span></div>
+                                <div style="display: flex; gap: 5px; margin-top: 6px;">
+                                    <button class="stock-btn ${!isStocked ? 'off' : ''}" onclick="window.toggleStock(${p.id}, ${isStocked})">
+                                        ${isStocked ? 'In Stock' : 'Out of Stock'}
+                                    </button>
+                                    <button class="edit-btn" onclick="window.editPotion(${p.id})">Edit</button>
+                                    <button class="delete-btn" onclick="window.deletePotion(${p.id})">Delete</button>
+                                </div>
                             </div>
-                        </div>
-                    ` : ''}
+                        ` : ''}
+                    </div>
                 </div>
             `;
         }).join('');
+
+        renderBatchCalculator();
     }
 </script>
 </body>
