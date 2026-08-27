@@ -377,12 +377,8 @@
         <div id="batch-manifest-list"></div>
         
         <div id="batch-adjustments" class="hidden" style="margin-top: 15px; background: var(--bg-color); padding: 12px; border-radius: 6px; border: 1px solid var(--border);">
-            <h4 style="margin-bottom: 10px;">Deal Adjustments & Discounts</h4>
+            <h4 style="margin-bottom: 10px;">Deal Adjustments & Override</h4>
             <div class="form-group" style="margin-bottom: 0;">
-                <div style="flex: 1;">
-                    <label style="font-size: 0.75rem; color: var(--text-dim); display: block; margin-bottom: 4px;">Client Provided Ingredients Value (Gold Knock-off)</label>
-                    <input type="number" id="batch-ing-discount" placeholder="0.00" step="0.01" value="0" style="width: 100%; box-sizing: border-box;" oninput="renderBatchCalculator()">
-                </div>
                 <div style="flex: 1;">
                     <label style="font-size: 0.75rem; color: var(--text-dim); display: block; margin-bottom: 4px;">Final Sale Price Override (Leave blank for default total)</label>
                     <input type="number" id="batch-price-override" placeholder="Default Total" step="0.01" style="width: 100%; box-sizing: border-box;" oninput="renderBatchCalculator()">
@@ -441,7 +437,7 @@
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // FIREBASE CONFIG
+    //FIREBASE CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyC8QXlIWT76AZqttFWzLn4IKRRs3wYAaX8",
   authDomain: "alchemy-shop-dcceb.firebaseapp.com",
@@ -836,6 +832,12 @@ const firebaseConfig = {
         window.renderBatchCalculator();
     };
 
+    window.updateClientSupply = (ingId, val) => {
+        if (!window.clientSuppliedQty) window.clientSuppliedQty = {};
+        window.clientSuppliedQty[ingId] = Math.max(0, parseFloat(val) || 0);
+        window.renderBatchCalculator();
+    };
+
     window.renderBatchCalculator = () => {
         const listDiv = document.getElementById('batch-manifest-list');
         const resultsDiv = document.getElementById('batch-results');
@@ -867,7 +869,7 @@ const firebaseConfig = {
         }).join('');
 
         const aggregatedIngredients = {};
-        let totalCraftCost = 0;
+        let fullGrossCraftCost = 0;
         let defaultSalePrice = 0;
         let totalUnits = 0;
 
@@ -885,24 +887,73 @@ const firebaseConfig = {
                     const totalNeeded = r.qty * item.qty;
                     const cost = unitPrice * totalNeeded;
 
-                    totalCraftCost += cost;
+                    fullGrossCraftCost += cost;
 
                     if (!aggregatedIngredients[r.ingredientId]) {
                         aggregatedIngredients[r.ingredientId] = {
+                            id: r.ingredientId,
                             name: r.name,
-                            qty: 0,
-                            cost: 0
+                            qtyRequired: 0,
+                            unitPrice: unitPrice,
+                            grossCost: 0
                         };
                     }
-                    aggregatedIngredients[r.ingredientId].qty += totalNeeded;
-                    aggregatedIngredients[r.ingredientId].cost += cost;
+                    aggregatedIngredients[r.ingredientId].qtyRequired += totalNeeded;
+                    aggregatedIngredients[r.ingredientId].grossCost += cost;
                 });
             }
         });
 
-        const ingDiscountInput = document.getElementById('batch-ing-discount');
-        const ingredientDiscount = ingDiscountInput ? (parseFloat(ingDiscountInput.value) || 0) : 0;
-        
+        if (!window.clientSuppliedQty) window.clientSuppliedQty = {};
+
+        let totalClientCredit = 0;
+        let netCraftCost = 0;
+
+        const sortedAggregated = Object.values(aggregatedIngredients).sort((a, b) => 
+            (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
+        );
+
+        let html = `
+            <div class="batch-summary">
+                <h4>Ingredient Breakdown & Client Contributions</h4>
+                <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
+        `;
+
+        sortedAggregated.forEach(ing => {
+            const clientQty = Math.min(
+                ing.qtyRequired, 
+                parseFloat(window.clientSuppliedQty[ing.id]) || 0
+            );
+            const neededQty = Math.max(0, ing.qtyRequired - clientQty);
+
+            const ingredientClientCredit = clientQty * ing.unitPrice;
+            const ingredientNetCost = neededQty * ing.unitPrice;
+
+            totalClientCredit += ingredientClientCredit;
+            netCraftCost += ingredientNetCost;
+
+            html += `
+                <div class="item-row" style="background: rgba(0,0,0,0.15); padding: 8px; border-radius: 4px;">
+                    <div style="flex: 2;">
+                        <strong>${ing.name}</strong> 
+                        <div style="font-size: 0.75rem; color: var(--text-dim);">
+                            Req: ${ing.qtyRequired}x | Cost: ${ing.unitPrice}g/ea
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <label style="font-size: 0.75rem; color: var(--text-dim);">Client Provides:</label>
+                        <input type="number" value="${window.clientSuppliedQty[ing.id] || 0}" min="0" max="${ing.qtyRequired}" style="width: 60px;" 
+                            oninput="window.updateClientSupply('${ing.id}', this.value)">
+                        <span style="font-size: 0.8rem; color: ${neededQty > 0 ? 'var(--text-dim)' : 'var(--success)'}; min-width: 90px; text-align: right;">
+                            ${neededQty > 0 ? `Buy ${neededQty}x (${ingredientNetCost.toFixed(2)}g)` : 'Fully Covered'}
+                        </span>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `</div>`;
+
         const overrideInput = document.getElementById('batch-price-override');
         const overridePriceInput = overrideInput ? overrideInput.value : "";
         
@@ -910,46 +961,33 @@ const firebaseConfig = {
             ? parseFloat(overridePriceInput)
             : defaultSalePrice;
 
-        const effectiveCraftCost = Math.max(0, totalCraftCost - ingredientDiscount);
-
-        const sortedAggregated = Object.values(aggregatedIngredients).sort((a, b) => 
-            (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
-        );
-
-        const netProfit = finalRevenue - effectiveCraftCost;
+        const netProfit = finalRevenue - netCraftCost;
         const profitMargin = finalRevenue > 0 ? ((netProfit / finalRevenue) * 100).toFixed(0) : 0;
 
-        let html = `
-            <div class="batch-summary">
-                <h4>Consolidated Ingredients Required</h4>
-                <ul class="ingredient-list" style="margin-top: 8px;">
-        `;
-
-        sortedAggregated.forEach(ing => {
-            html += `<li>- ${ing.qty}x ${ing.name} (${ing.cost.toFixed(2)} gold)</li>`;
-        });
-
         html += `
-                </ul>
                 <div class="batch-metrics">
                     <div class="metric-box">
-                        <span>Total Brewed</span>
-                        <strong>${totalUnits} Potions</strong>
+                        <span>Total Potions</span>
+                        <strong>${totalUnits} Units</strong>
                     </div>
                     <div class="metric-box">
-                        <span>Base Craft Cost</span>
-                        <strong>${totalCraftCost.toFixed(2)}g</strong>
+                        <span>Gross Craft Cost</span>
+                        <span>${fullGrossCraftCost.toFixed(2)}g</span>
                     </div>
                     <div class="metric-box">
-                        <span>Effective Craft Cost</span>
-                        <strong style="color: var(--accent);">${effectiveCraftCost.toFixed(2)}g</strong>
+                        <span>Client Mat Savings</span>
+                        <strong style="color: var(--custom-order);">${totalClientCredit.toFixed(2)}g</strong>
                     </div>
                     <div class="metric-box">
-                        <span>Final Deal Revenue</span>
+                        <span>Net Out-of-Pocket Cost</span>
+                        <strong style="color: var(--accent);">${netCraftCost.toFixed(2)}g</strong>
+                    </div>
+                    <div class="metric-box">
+                        <span>Final Revenue</span>
                         <strong style="color: var(--gold);">${finalRevenue.toFixed(2)}g</strong>
                     </div>
                     <div class="metric-box">
-                        <span>Est. Net Profit</span>
+                        <span>Net Profit</span>
                         <strong class="${netProfit >= 0 ? 'profit-text' : 'loss-text'}">${netProfit.toFixed(2)}g (${profitMargin}%)</strong>
                     </div>
                 </div>
