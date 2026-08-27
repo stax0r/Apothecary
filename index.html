@@ -90,6 +90,26 @@
 
         textarea { width: 100%; resize: vertical; min-height: 60px; }
 
+        .collapse-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .collapse-header:hover {
+            opacity: 0.85;
+        }
+
+        .collapse-btn {
+            background: transparent;
+            color: var(--text-dim);
+            border: 1px solid var(--border);
+            padding: 4px 10px;
+            font-size: 0.8rem;
+        }
+
         .filter-bar {
             display: flex;
             gap: 8px;
@@ -295,40 +315,54 @@
 
     <!-- ADMIN MANAGEMENT PANEL -->
     <div id="admin-panel" class="admin-panel hidden">
-        <h2>Manage Ingredients</h2>
-        <div class="form-group">
-            <input type="text" id="ing-name" placeholder="Ingredient Name">
-            <input type="number" id="ing-price" placeholder="Price / 1 unit" step="0.01">
-            <button onclick="addIngredient()">+ Add Ingredient</button>
+        <!-- Manage Ingredients Collapsible -->
+        <div class="collapse-header" onclick="toggleSection('ing-collapsible-wrapper', 'ing-collapse-btn')">
+            <h2>Manage Ingredients</h2>
+            <button class="collapse-btn" id="ing-collapse-btn">Hide ▲</button>
         </div>
-        <div id="ingredients-list"></div>
+        
+        <div id="ing-collapsible-wrapper" style="margin-top: 15px;">
+            <div class="form-group">
+                <input type="text" id="ing-name" placeholder="Ingredient Name">
+                <input type="number" id="ing-price" placeholder="Price / 1 unit" step="0.01">
+                <button onclick="addIngredient()">+ Add Ingredient</button>
+            </div>
+            <div id="ingredients-list"></div>
+        </div>
 
         <hr style="border-color: var(--border); margin: 20px 0;">
 
-        <h2 id="potion-form-title">Brew Potion</h2>
-        <input type="hidden" id="editing-potion-id" value="">
-        <div class="form-group">
-            <input type="text" id="potion-name" placeholder="Potion Name" style="flex: 2;">
-            <input type="text" id="potion-category" placeholder="Category (e.g. Restoration)" style="flex: 1;">
-            <input type="number" id="potion-sale-price" placeholder="Sale Price" step="0.01" style="flex: 1;">
-        </div>
-        <div class="form-group">
-            <textarea id="potion-desc" placeholder="Potion Description or Magical Effects..."></textarea>
+        <!-- Brew Potion Collapsible -->
+        <div class="collapse-header" onclick="toggleSection('brew-collapsible-wrapper', 'brew-collapse-btn')">
+            <h2 id="potion-form-title">Brew Potion</h2>
+            <button class="collapse-btn" id="brew-collapse-btn">Hide ▲</button>
         </div>
 
-        <h4>Recipe Ingredients</h4>
-        <div class="form-group">
-            <select id="recipe-ing-select"></select>
-            <input type="number" id="recipe-ing-qty" placeholder="Qty" value="1" min="1">
-            <button onclick="addIngredientToRecipe()">+ Add to Recipe</button>
-        </div>
+        <div id="brew-collapsible-wrapper" style="margin-top: 15px;">
+            <input type="hidden" id="editing-potion-id" value="">
+            <div class="form-group">
+                <input type="text" id="potion-name" placeholder="Potion Name" style="flex: 2;">
+                <input type="text" id="potion-category" placeholder="Category (e.g. Restoration)" style="flex: 1;">
+                <input type="number" id="potion-sale-price" placeholder="Sale Price" step="0.01" style="flex: 1;">
+            </div>
+            <div class="form-group">
+                <textarea id="potion-desc" placeholder="Potion Description or Magical Effects..."></textarea>
+            </div>
 
-        <ul id="recipe-preview-list"></ul>
-        <p>Calculated Base Cost: <strong id="calculated-cost">0</strong> gold</p>
+            <h4>Recipe Ingredients</h4>
+            <div class="form-group">
+                <select id="recipe-ing-select"></select>
+                <input type="number" id="recipe-ing-qty" placeholder="Qty" value="1" min="1">
+                <button onclick="addIngredientToRecipe()">+ Add to Recipe</button>
+            </div>
 
-        <div style="display: flex; gap: 10px; margin-top: 10px;">
-            <button id="save-potion-btn" onclick="savePotion()" style="flex: 1;">Create Potion</button>
-            <button id="cancel-edit-btn" onclick="cancelEditPotion()" class="hidden" style="background: #555;">Cancel Edit</button>
+            <ul id="recipe-preview-list"></ul>
+            <p>Calculated Base Cost: <strong id="calculated-cost">0</strong> gold</p>
+
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button id="save-potion-btn" onclick="savePotion()" style="flex: 1;">Create Potion</button>
+                <button id="cancel-edit-btn" onclick="cancelEditPotion()" class="hidden" style="background: #555;">Cancel Edit</button>
+            </div>
         </div>
 
         <hr style="border-color: var(--border); margin: 20px 0;">
@@ -346,22 +380,32 @@
 
     <!-- CLIENT SATCHEL -->
     <div id="cart-panel" class="cart-panel">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <div class="collapse-header" onclick="toggleSection('satchel-collapsible-wrapper', 'satchel-collapse-btn')">
             <h2>Your Satchel</h2>
-            <button onclick="clearCart()" style="background: var(--border); font-size: 0.8rem; padding: 4px 10px;">Empty Satchel</button>
+            <div style="display: flex; gap: 8px; align-items: center;" onclick="event.stopPropagation();">
+                <button onclick="clearCart()" style="background: var(--border); font-size: 0.8rem; padding: 4px 10px;">Empty Satchel</button>
+                <button class="collapse-btn" id="satchel-collapse-btn" onclick="toggleSection('satchel-collapsible-wrapper', 'satchel-collapse-btn'); event.stopPropagation();">Hide ▲</button>
+            </div>
         </div>
-        <div id="cart-items-list"></div>
-        <div id="cart-summary-area"></div>
+        <div id="satchel-collapsible-wrapper" style="margin-top: 15px;">
+            <div id="cart-items-list"></div>
+            <div id="cart-summary-area"></div>
+        </div>
     </div>
 
     <!-- CUSTOM ORDERS PANEL -->
     <div id="custom-panel" class="custom-panel">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <div class="collapse-header" onclick="toggleSection('custom-collapsible-wrapper', 'custom-collapse-btn')">
             <h2 style="color: var(--custom-order);">Custom Orders</h2>
-            <button onclick="clearCustomOrders()" style="background: var(--border); font-size: 0.8rem; padding: 4px 10px;">Empty Custom Orders</button>
+            <div style="display: flex; gap: 8px; align-items: center;" onclick="event.stopPropagation();">
+                <button onclick="clearCustomOrders()" style="background: var(--border); font-size: 0.8rem; padding: 4px 10px;">Empty Custom Orders</button>
+                <button class="collapse-btn" id="custom-collapse-btn" onclick="toggleSection('custom-collapsible-wrapper', 'custom-collapse-btn'); event.stopPropagation();">Hide ▲</button>
+            </div>
         </div>
-        <div id="custom-items-list"></div>
-        <div id="custom-summary-area"></div>
+        <div id="custom-collapsible-wrapper" style="margin-top: 15px;">
+            <div id="custom-items-list"></div>
+            <div id="custom-summary-area"></div>
+        </div>
     </div>
 
     <!-- PUBLIC CATALOG -->
@@ -382,16 +426,16 @@
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    //FIREBASE CONFIG
-    const firebaseConfig = {  
-        apiKey: "AIzaSyC8QXlIWT76AZqttFWzLn4IKRRs3wYAaX8",
-        authDomain: "alchemy-shop-dcceb.firebaseapp.com",
-        databaseURL: "https://alchemy-shop-dcceb-default-rtdb.firebaseio.com",
-        projectId: "alchemy-shop-dcceb",
-        storageBucket: "alchemy-shop-dcceb.firebasestorage.app",
-        messagingSenderId: "268082568197",
-        appId: "1:268082568197:web:31de53d83bece61f0d506c",
-        measurementId: "G-H2DY8TMDMN"
+    // REPLACE THIS WITH YOUR FIREBASE CONFIG
+const firebaseConfig = {
+  apiKey: "AIzaSyC8QXlIWT76AZqttFWzLn4IKRRs3wYAaX8",
+  authDomain: "alchemy-shop-dcceb.firebaseapp.com",
+  databaseURL: "https://alchemy-shop-dcceb-default-rtdb.firebaseio.com",
+  projectId: "alchemy-shop-dcceb",
+  storageBucket: "alchemy-shop-dcceb.firebasestorage.app",
+  messagingSenderId: "268082568197",
+  appId: "1:268082568197:web:31de53d83bece61f0d506c",
+  measurementId: "G-H2DY8TMDMN"
 };
 
     const app = initializeApp(firebaseConfig);
@@ -443,6 +487,13 @@
         }
     };
 
+    window.toggleSection = (wrapperId, btnId) => {
+        const wrapper = document.getElementById(wrapperId);
+        const btn = document.getElementById(btnId);
+        const isHidden = wrapper.classList.toggle('hidden');
+        btn.innerText = isHidden ? 'Show ▼' : 'Hide ▲';
+    };
+
     window.login = () => {
         const email = document.getElementById('login-email').value;
         const pass = document.getElementById('login-password').value;
@@ -481,7 +532,12 @@
 
         const ing = ingredients[ingId];
         if (ing && qty > 0) {
-            currentRecipe.push({ ingredientId: ing.id, name: ing.name, qty });
+            const existingIndex = currentRecipe.findIndex(item => item.ingredientId === ing.id);
+            if (existingIndex > -1) {
+                currentRecipe[existingIndex].qty += qty;
+            } else {
+                currentRecipe.push({ ingredientId: ing.id, name: ing.name, qty });
+            }
             renderRecipePreview();
         }
     };
@@ -490,6 +546,8 @@
         const list = document.getElementById('recipe-preview-list');
         list.innerHTML = '';
         let totalCost = 0;
+
+        currentRecipe.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
 
         currentRecipe.forEach((item, index) => {
             const ing = ingredients[item.ingredientId];
@@ -520,6 +578,8 @@
         if (name && !isNaN(price) && currentRecipe.length > 0) {
             const id = editingId ? parseInt(editingId) : Date.now();
             const existingStockStatus = (editingId && potions[editingId]) ? potions[editingId].inStock : true;
+
+            currentRecipe.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
 
             set(ref(db, `potions/${id}`), {
                 id,
@@ -817,6 +877,10 @@
             }
         });
 
+        const sortedAggregated = Object.values(aggregatedIngredients).sort((a, b) => 
+            (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
+        );
+
         const netProfit = totalSalePrice - totalCraftCost;
         const profitMargin = totalSalePrice > 0 ? ((netProfit / totalSalePrice) * 100).toFixed(0) : 0;
 
@@ -826,7 +890,7 @@
                 <ul class="ingredient-list" style="margin-top: 8px;">
         `;
 
-        Object.values(aggregatedIngredients).forEach(ing => {
+        sortedAggregated.forEach(ing => {
             html += `<li>- ${ing.qty}x ${ing.name} (${ing.cost.toFixed(2)} gold)</li>`;
         });
 
@@ -866,8 +930,9 @@
 
     function render() {
         const ingArray = Object.values(ingredients);
-        let potionArray = Object.values(potions);
+        ingArray.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
 
+        let potionArray = Object.values(potions);
         potionArray.sort((a, b) => a.salePrice - b.salePrice);
 
         const select = document.getElementById('recipe-ing-select');
@@ -912,6 +977,10 @@
             const margin = p.salePrice > 0 ? ((profit / p.salePrice) * 100).toFixed(0) : 0;
             const isStocked = p.inStock !== false;
 
+            const sortedRecipe = p.recipe ? [...p.recipe].sort((a, b) => 
+                (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
+            ) : [];
+
             return `
                 <div class="potion-card ${!isStocked ? 'out-of-stock' : ''}">
                     <div>
@@ -921,9 +990,9 @@
                         ${p.description ? `<div class="potion-desc">${p.description}</div>` : ''}
                         <div class="potion-price">${p.salePrice} Gold</div>
                         
-                        ${currentUser && p.recipe ? `
+                        ${currentUser && sortedRecipe.length > 0 ? `
                             <ul class="ingredient-list">
-                                ${p.recipe.map(r => `<li>- ${r.qty}x ${r.name}</li>`).join('')}
+                                ${sortedRecipe.map(r => `<li>- ${r.qty}x ${r.name}</li>`).join('')}
                             </ul>
                         ` : ''}
                     </div>
