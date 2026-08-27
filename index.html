@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sauvage's Apothecary</title>
+    <title>The Wandering Apothecary</title>
     <style>
         :root {
             --bg-color: #1a1625;
@@ -208,7 +208,7 @@
 <div class="container">
     <header>
         <div class="titles">
-            <h1>🌿 Sauvage's Apothecary</h1>
+            <h1>The Wandering Apothecary</h1>
             <span class="subtitle">Proprietor: Loic Sauvage</span>
         </div>
         <button id="auth-btn" class="admin-toggle" onclick="toggleAuthModal()">Alchemist Login</button>
@@ -230,7 +230,7 @@
         <h2>Manage Ingredients</h2>
         <div class="form-group">
             <input type="text" id="ing-name" placeholder="Ingredient Name">
-            <input type="number" id="ing-price" placeholder="Price / 1 un" step="0.01">
+            <input type="number" id="ing-price" placeholder="Price / 1 unit" step="0.01">
             <button onclick="addIngredient()">+ Add Ingredient</button>
         </div>
         <div id="ingredients-list"></div>
@@ -271,7 +271,7 @@
     </div>
 
     <!-- PUBLIC CATALOG -->
-    <h2>Available Concoctions</h2>
+    <h2>Apothecary Stock</h2>
     
     <!-- Category Filter Bar -->
     <div id="filter-bar" class="filter-bar" style="margin-top: 15px;"></div>
@@ -280,7 +280,7 @@
 </div>
 
 <footer>
-    <span>Inquiries & Custom Brew Orders: Courier ID <code>stax0r</code> on Discord</span>
+    <span>Inquiries & Custom Orders: Courier ID <code>stax0r</code> on Discord</span>
 </footer>
 
 <!-- Firebase SDKs -->
@@ -289,6 +289,7 @@
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
+    // REPLACE THIS WITH YOUR FIREBASE CONFIG
     const firebaseConfig = {
       apiKey: "AIzaSyC8QXlIWT76AZqttFWzLn4IKRRs3wYAaX8",
       authDomain: "alchemy-shop-dcceb.firebaseapp.com",
@@ -465,7 +466,7 @@
             const totalQty = r.qty * qty;
             const itemCost = unitPrice * totalQty;
             totalCost += itemCost;
-            html += `<li>• ${totalQty}x ${r.name} (${itemCost.toFixed(2)} gold total)</li>`;
+            html += `<li>- ${totalQty}x ${r.name} (${itemCost.toFixed(2)} gold total)</li>`;
         });
 
         html += `</ul><p style="margin-top:5px;">Total Batch Cost: <strong>${totalCost.toFixed(2)} Gold</strong></p>`;
@@ -521,7 +522,7 @@
         }
 
         if (visiblePotions.length === 0) {
-            catalog.innerHTML = `<p style="color: var(--text-dim); grid-column: 1/-1;">No concoctions available in this category.</p>`;
+            catalog.innerHTML = `<p style="color: var(--text-dim); grid-column: 1/-1;">No items available in this category.</p>`;
             return;
         }
 
@@ -529,7 +530,7 @@
             const cost = calculatePotionCost(p.recipe);
             const profit = p.salePrice - cost;
             const margin = p.salePrice > 0 ? ((profit / p.salePrice) * 100).toFixed(0) : 0;
-            const recipeList = p.recipe ? p.recipe.map(r => `<li>• ${r.qty}x ${r.name}</li>`).join('') : '';
+            const recipeList = p.recipe ? p.recipe.map(r => `<li>- ${r.qty}x ${r.name}</li>`).join('') : '';
             const isStocked = p.inStock !== false;
 
             return `
