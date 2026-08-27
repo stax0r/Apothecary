@@ -17,6 +17,7 @@
             --success: #2a9d8f;
             --danger: #d90429;
             --custom-order: #3a86ff;
+            --custom-order-hover: #2563eb;
         }
 
         body {
@@ -177,10 +178,26 @@
         .edit-btn { background: #3a86ff; padding: 4px 8px; font-size: 0.8rem; }
         .stock-btn { background: var(--success); padding: 4px 8px; font-size: 0.8rem; }
         .stock-btn.off { background: #555; }
-        .add-cart-btn { background: var(--gold); color: #000; width: 100%; margin-top: 8px; }
+
+        .action-btn-group {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .action-btn-group button {
+            flex: 1;
+            padding: 6px 4px;
+            font-size: 0.75rem;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .add-cart-btn { background: var(--gold); color: #000; }
         .add-cart-btn:hover { background: #e0a100; }
-        .custom-order-btn { background: var(--custom-order); color: #fff; width: 100%; margin-top: 8px; }
-        .custom-order-btn:hover { background: #2563eb; }
+
+        .custom-order-btn { background: var(--custom-order); color: #fff; }
+        .custom-order-btn:hover { background: var(--custom-order-hover); }
 
         .badge-out {
             background: var(--danger);
@@ -193,6 +210,13 @@
             display: inline-block;
             margin-bottom: 5px;
         }
+
+        .btn-disabled {
+            background: var(--border);
+            color: var(--text-dim);
+            cursor: not-allowed;
+        }
+        .btn-disabled:hover { background: var(--border); }
 
         .batch-summary {
             background: var(--bg-color);
@@ -333,7 +357,7 @@
     <!-- CUSTOM ORDERS PANEL -->
     <div id="custom-panel" class="custom-panel">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <h2 style="color: var(--custom-order);">Custom Orders (Out of Stock Items)</h2>
+            <h2 style="color: var(--custom-order);">Custom Orders</h2>
             <button onclick="clearCustomOrders()" style="background: var(--border); font-size: 0.8rem; padding: 4px 10px;">Empty Custom Orders</button>
         </div>
         <div id="custom-items-list"></div>
@@ -359,17 +383,17 @@
     import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     //FIREBASE CONFIG
-    const firebaseConfig = {
-          apiKey: "AIzaSyC8QXlIWT76AZqttFWzLn4IKRRs3wYAaX8",
-          authDomain: "alchemy-shop-dcceb.firebaseapp.com",
-          databaseURL: "https://alchemy-shop-dcceb-default-rtdb.firebaseio.com",
-          projectId: "alchemy-shop-dcceb",
-          storageBucket: "alchemy-shop-dcceb.firebasestorage.app",
-          messagingSenderId: "268082568197",
-          appId: "1:268082568197:web:31de53d83bece61f0d506c",
-          measurementId: "G-H2DY8TMDMN"
-    };
-    
+    const firebaseConfig = {  
+        apiKey: "AIzaSyC8QXlIWT76AZqttFWzLn4IKRRs3wYAaX8",
+        authDomain: "alchemy-shop-dcceb.firebaseapp.com",
+        databaseURL: "https://alchemy-shop-dcceb-default-rtdb.firebaseio.com",
+        projectId: "alchemy-shop-dcceb",
+        storageBucket: "alchemy-shop-dcceb.firebasestorage.app",
+        messagingSenderId: "268082568197",
+        appId: "1:268082568197:web:31de53d83bece61f0d506c",
+        measurementId: "G-H2DY8TMDMN"
+};
+
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
@@ -666,7 +690,7 @@
         const summaryDiv = document.getElementById('custom-summary-area');
 
         if (customOrders.length === 0) {
-            listDiv.innerHTML = `<p style="color: var(--text-dim); font-size: 0.85rem; margin: 0;">No custom requests requested. You can add out-of-stock items here to request a fresh batch.</p>`;
+            listDiv.innerHTML = `<p style="color: var(--text-dim); font-size: 0.85rem; margin: 0;">No custom requests requested. Add items below to request a fresh batch.</p>`;
             summaryDiv.innerHTML = '';
             return;
         }
@@ -684,7 +708,7 @@
 
             return `
                 <div class="item-row">
-                    <span><strong>${p.name}</strong> <span style="color: var(--danger); font-size: 0.8rem;">(Out of Stock)</span></span>
+                    <span><strong>${p.name}</strong></span>
                     <div>
                         <input type="number" value="${item.qty}" min="1" style="width: 60px;" onchange="window.updateCustomQty(${index}, this.value)">
                         <span style="color: var(--gold); font-weight: bold; margin: 0 8px;">${lineTotal.toFixed(2)}g</span>
@@ -904,11 +928,14 @@
                         ` : ''}
                     </div>
                     <div>
-                        ${isStocked ? `
-                            <button class="add-cart-btn" onclick="window.addToCart(${p.id})">+ Add to Satchel</button>
-                        ` : `
-                            <button class="custom-order-btn" onclick="window.addCustomOrder(${p.id})">+ Custom Order</button>
-                        `}
+                        <div class="action-btn-group">
+                            ${isStocked ? `
+                                <button class="add-cart-btn" onclick="window.addToCart(${p.id})">+ Satchel</button>
+                            ` : `
+                                <button class="btn-disabled" disabled>Out of Stock</button>
+                            `}
+                            <button class="custom-order-btn" onclick="window.addCustomOrder(${p.id})">+ Custom</button>
+                        </div>
                         
                         ${currentUser ? `
                             <div class="cost-badge">
