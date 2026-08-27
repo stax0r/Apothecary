@@ -375,6 +375,21 @@
         </div>
 
         <div id="batch-manifest-list"></div>
+        
+        <div id="batch-adjustments" class="hidden" style="margin-top: 15px; background: var(--bg-color); padding: 12px; border-radius: 6px; border: 1px solid var(--border);">
+            <h4 style="margin-bottom: 10px;">Deal Adjustments & Discounts</h4>
+            <div class="form-group" style="margin-bottom: 0;">
+                <div style="flex: 1;">
+                    <label style="font-size: 0.75rem; color: var(--text-dim); display: block; margin-bottom: 4px;">Client Provided Ingredients Value (Gold Knock-off)</label>
+                    <input type="number" id="batch-ing-discount" placeholder="0.00" step="0.01" value="0" style="width: 100%; box-sizing: border-box;" oninput="renderBatchCalculator()">
+                </div>
+                <div style="flex: 1;">
+                    <label style="font-size: 0.75rem; color: var(--text-dim); display: block; margin-bottom: 4px;">Final Sale Price Override (Leave blank for default total)</label>
+                    <input type="number" id="batch-price-override" placeholder="Default Total" step="0.01" style="width: 100%; box-sizing: border-box;" oninput="renderBatchCalculator()">
+                </div>
+            </div>
+        </div>
+
         <div id="batch-results"></div>
     </div>
 
@@ -427,6 +442,7 @@
     import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     // REPLACE THIS WITH YOUR FIREBASE CONFIG
+    const firebaseConfig = {
 const firebaseConfig = {
   apiKey: "AIzaSyC8QXlIWT76AZqttFWzLn4IKRRs3wYAaX8",
   authDomain: "alchemy-shop-dcceb.firebaseapp.com",
@@ -822,12 +838,16 @@ const firebaseConfig = {
     function renderBatchCalculator() {
         const listDiv = document.getElementById('batch-manifest-list');
         const resultsDiv = document.getElementById('batch-results');
+        const adjustmentsDiv = document.getElementById('batch-adjustments');
 
         if (batchManifest.length === 0) {
             listDiv.innerHTML = '';
             resultsDiv.innerHTML = `<p style="color: var(--text-dim); font-size: 0.85rem;">Add potions above to calculate total requirements, costs, and profit.</p>`;
+            adjustmentsDiv.classList.add('hidden');
             return;
         }
+
+        adjustmentsDiv.classList.remove('hidden');
 
         listDiv.innerHTML = batchManifest.map((item, index) => {
             const p = potions[item.potionId];
@@ -845,7 +865,7 @@ const firebaseConfig = {
 
         const aggregatedIngredients = {};
         let totalCraftCost = 0;
-        let totalSalePrice = 0;
+        let defaultSalePrice = 0;
         let totalUnits = 0;
 
         batchManifest.forEach(item => {
@@ -853,7 +873,7 @@ const firebaseConfig = {
             if (!p) return;
 
             totalUnits += item.qty;
-            totalSalePrice += (p.salePrice || 0) * item.qty;
+            defaultSalePrice += (p.salePrice || 0) * item.qty;
 
             if (p.recipe) {
                 p.recipe.forEach(r => {
@@ -877,12 +897,21 @@ const firebaseConfig = {
             }
         });
 
+        const ingredientDiscount = parseFloat(document.getElementById('batch-ing-discount').value) || 0;
+        const overridePriceInput = document.getElementById('batch-price-override').value;
+        
+        const finalRevenue = overridePriceInput !== "" && !isNaN(parseFloat(overridePriceInput))
+            ? parseFloat(overridePriceInput)
+            : defaultSalePrice;
+
+        const effectiveCraftCost = Math.max(0, totalCraftCost - ingredientDiscount);
+
         const sortedAggregated = Object.values(aggregatedIngredients).sort((a, b) => 
             (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
         );
 
-        const netProfit = totalSalePrice - totalCraftCost;
-        const profitMargin = totalSalePrice > 0 ? ((netProfit / totalSalePrice) * 100).toFixed(0) : 0;
+        const netProfit = finalRevenue - effectiveCraftCost;
+        const profitMargin = finalRevenue > 0 ? ((netProfit / finalRevenue) * 100).toFixed(0) : 0;
 
         let html = `
             <div class="batch-summary">
@@ -902,12 +931,16 @@ const firebaseConfig = {
                         <strong>${totalUnits} Potions</strong>
                     </div>
                     <div class="metric-box">
-                        <span>Crafting Cost</span>
+                        <span>Base Craft Cost</span>
                         <strong>${totalCraftCost.toFixed(2)}g</strong>
                     </div>
                     <div class="metric-box">
-                        <span>Shop Revenue</span>
-                        <strong style="color: var(--gold);">${totalSalePrice.toFixed(2)}g</strong>
+                        <span>Effective Craft Cost</span>
+                        <strong style="color: var(--accent);">${effectiveCraftCost.toFixed(2)}g</strong>
+                    </div>
+                    <div class="metric-box">
+                        <span>Final Deal Revenue</span>
+                        <strong style="color: var(--gold);">${finalRevenue.toFixed(2)}g</strong>
                     </div>
                     <div class="metric-box">
                         <span>Est. Net Profit</span>
