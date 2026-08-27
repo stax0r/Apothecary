@@ -16,6 +16,7 @@
             --gold: #ffb703;
             --success: #2a9d8f;
             --danger: #d90429;
+            --custom-order: #3a86ff;
         }
 
         body {
@@ -61,12 +62,16 @@
         .admin-toggle { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
         .admin-toggle:hover { background: var(--accent); color: #fff; }
 
-        .admin-panel, .login-modal, .cart-panel {
+        .admin-panel, .login-modal, .cart-panel, .custom-panel {
             background-color: var(--card-bg);
             border: 1px solid var(--border);
             padding: 20px;
             border-radius: 8px;
             margin-bottom: 30px;
+        }
+
+        .custom-panel {
+            border-color: rgba(58, 134, 255, 0.4);
         }
 
         .hidden { display: none !important; }
@@ -123,7 +128,7 @@
             position: relative;
         }
 
-        .potion-card.out-of-stock { opacity: 0.7; border-style: dashed; }
+        .potion-card.out-of-stock { opacity: 0.85; border-style: dashed; }
 
         .category-tag {
             font-size: 0.75rem;
@@ -174,6 +179,8 @@
         .stock-btn.off { background: #555; }
         .add-cart-btn { background: var(--gold); color: #000; width: 100%; margin-top: 8px; }
         .add-cart-btn:hover { background: #e0a100; }
+        .custom-order-btn { background: var(--custom-order); color: #fff; width: 100%; margin-top: 8px; }
+        .custom-order-btn:hover { background: #2563eb; }
 
         .badge-out {
             background: var(--danger);
@@ -186,15 +193,6 @@
             display: inline-block;
             margin-bottom: 5px;
         }
-
-        .btn-disabled {
-            background: var(--border);
-            color: var(--text-dim);
-            width: 100%;
-            margin-top: 8px;
-            cursor: not-allowed;
-        }
-        .btn-disabled:hover { background: var(--border); }
 
         .batch-summary {
             background: var(--bg-color);
@@ -322,14 +320,24 @@
         <div id="batch-results"></div>
     </div>
 
-    <!-- CLIENT SHOPPING CART -->
+    <!-- CLIENT SATCHEL -->
     <div id="cart-panel" class="cart-panel">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <h2>Your Satchel (Cart)</h2>
+            <h2>Your Satchel</h2>
             <button onclick="clearCart()" style="background: var(--border); font-size: 0.8rem; padding: 4px 10px;">Empty Satchel</button>
         </div>
         <div id="cart-items-list"></div>
         <div id="cart-summary-area"></div>
+    </div>
+
+    <!-- CUSTOM ORDERS PANEL -->
+    <div id="custom-panel" class="custom-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h2 style="color: var(--custom-order);">Custom Orders (Out of Stock Items)</h2>
+            <button onclick="clearCustomOrders()" style="background: var(--border); font-size: 0.8rem; padding: 4px 10px;">Empty Custom Orders</button>
+        </div>
+        <div id="custom-items-list"></div>
+        <div id="custom-summary-area"></div>
     </div>
 
     <!-- PUBLIC CATALOG -->
@@ -350,18 +358,18 @@
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // REPLACE THIS WITH YOUR FIREBASE CONFIG
+    //FIREBASE CONFIG
     const firebaseConfig = {
-        apiKey: "AIzaSyC8QXlIWT76AZqttFWzLn4IKRRs3wYAaX8",
-        authDomain: "alchemy-shop-dcceb.firebaseapp.com",
-        databaseURL: "https://alchemy-shop-dcceb-default-rtdb.firebaseio.com",
-        projectId: "alchemy-shop-dcceb",
-        storageBucket: "alchemy-shop-dcceb.firebasestorage.app",
-        messagingSenderId: "268082568197",
-        appId: "1:268082568197:web:31de53d83bece61f0d506c",
-        measurementId: "G-H2DY8TMDMN"
-};
-
+          apiKey: "AIzaSyC8QXlIWT76AZqttFWzLn4IKRRs3wYAaX8",
+          authDomain: "alchemy-shop-dcceb.firebaseapp.com",
+          databaseURL: "https://alchemy-shop-dcceb-default-rtdb.firebaseio.com",
+          projectId: "alchemy-shop-dcceb",
+          storageBucket: "alchemy-shop-dcceb.firebasestorage.app",
+          messagingSenderId: "268082568197",
+          appId: "1:268082568197:web:31de53d83bece61f0d506c",
+          measurementId: "G-H2DY8TMDMN"
+    };
+    
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
@@ -374,6 +382,7 @@
     let batchManifest = [];
     
     let clientCart = [];
+    let customOrders = [];
 
     onValue(ref(db, 'ingredients'), (snapshot) => {
         ingredients = snapshot.val() || {};
@@ -549,7 +558,7 @@
         render();
     };
 
-    // Client Cart Logic
+    // Client Satchel Logic
     window.addToCart = (potionId) => {
         const existing = clientCart.find(item => item.potionId === potionId);
         if (existing) {
@@ -585,7 +594,7 @@
         const summaryDiv = document.getElementById('cart-summary-area');
 
         if (clientCart.length === 0) {
-            listDiv.innerHTML = `<p style="color: var(--text-dim); font-size: 0.85rem; margin: 0;">Your satchel is empty. Select potions from the catalog below to calculate your total cost.</p>`;
+            listDiv.innerHTML = `<p style="color: var(--text-dim); font-size: 0.85rem; margin: 0;">Your satchel is empty. Select available potions from the catalog below.</p>`;
             summaryDiv.innerHTML = '';
             return;
         }
@@ -617,6 +626,78 @@
             <div class="cart-summary">
                 <span>Total Items: <strong>${totalItems}</strong></span>
                 <span style="font-size: 1.1rem;">Total Price: <strong style="color: var(--gold);">${totalCost.toFixed(2)} Gold</strong></span>
+            </div>
+        `;
+    }
+
+    // Custom Orders Logic
+    window.addCustomOrder = (potionId) => {
+        const existing = customOrders.find(item => item.potionId === potionId);
+        if (existing) {
+            existing.qty += 1;
+        } else {
+            customOrders.push({ potionId, qty: 1 });
+        }
+        renderCustomOrders();
+    };
+
+    window.updateCustomQty = (index, newQty) => {
+        const qty = parseInt(newQty) || 0;
+        if (qty <= 0) {
+            customOrders.splice(index, 1);
+        } else {
+            customOrders[index].qty = qty;
+        }
+        renderCustomOrders();
+    };
+
+    window.removeCustomOrder = (index) => {
+        customOrders.splice(index, 1);
+        renderCustomOrders();
+    };
+
+    window.clearCustomOrders = () => {
+        customOrders = [];
+        renderCustomOrders();
+    };
+
+    function renderCustomOrders() {
+        const listDiv = document.getElementById('custom-items-list');
+        const summaryDiv = document.getElementById('custom-summary-area');
+
+        if (customOrders.length === 0) {
+            listDiv.innerHTML = `<p style="color: var(--text-dim); font-size: 0.85rem; margin: 0;">No custom requests requested. You can add out-of-stock items here to request a fresh batch.</p>`;
+            summaryDiv.innerHTML = '';
+            return;
+        }
+
+        let totalCost = 0;
+        let totalItems = 0;
+
+        listDiv.innerHTML = customOrders.map((item, index) => {
+            const p = potions[item.potionId];
+            if (!p) return '';
+            
+            const lineTotal = (p.salePrice || 0) * item.qty;
+            totalCost += lineTotal;
+            totalItems += item.qty;
+
+            return `
+                <div class="item-row">
+                    <span><strong>${p.name}</strong> <span style="color: var(--danger); font-size: 0.8rem;">(Out of Stock)</span></span>
+                    <div>
+                        <input type="number" value="${item.qty}" min="1" style="width: 60px;" onchange="window.updateCustomQty(${index}, this.value)">
+                        <span style="color: var(--gold); font-weight: bold; margin: 0 8px;">${lineTotal.toFixed(2)}g</span>
+                        <button class="delete-btn" onclick="window.removeCustomOrder(${index})">X</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        summaryDiv.innerHTML = `
+            <div class="cart-summary">
+                <span>Total Custom Requests: <strong>${totalItems}</strong></span>
+                <span style="font-size: 1.1rem;">Estimated Cost: <strong style="color: var(--gold);">${totalCost.toFixed(2)} Gold</strong></span>
             </div>
         `;
     }
@@ -826,7 +907,7 @@
                         ${isStocked ? `
                             <button class="add-cart-btn" onclick="window.addToCart(${p.id})">+ Add to Satchel</button>
                         ` : `
-                            <button class="btn-disabled" disabled>Out of Stock</button>
+                            <button class="custom-order-btn" onclick="window.addCustomOrder(${p.id})">+ Custom Order</button>
                         `}
                         
                         ${currentUser ? `
@@ -849,6 +930,7 @@
 
         renderBatchCalculator();
         renderCart();
+        renderCustomOrders();
     }
 </script>
 </body>
