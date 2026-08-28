@@ -305,22 +305,29 @@
             padding: 8px;
             border-radius: 4px;
         }
+        
+        .copyable-name {
+            background: var(--card-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--accent);
+            border: 1px solid var(--border);
+            user-select: all;
+            cursor: pointer;
+            font-family: monospace;
+        }
+        
+        .copyable-name:hover {
+            opacity: 0.8;
+        }
 
         footer {
             margin-top: 40px;
             padding-top: 15px;
             border-top: 1px solid var(--border);
             text-align: center;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             color: var(--text-dim);
-        }
-        
-        footer code {
-            background: var(--card-bg);
-            padding: 2px 6px;
-            border-radius: 4px;
-            color: var(--accent);
-            border: 1px solid var(--border);
         }
     </style>
 </head>
@@ -453,7 +460,7 @@
 </div>
 
 <footer>
-    <span>Inquiries & Custom Orders: Send a letter to <code>stax0r</code> in Atherius</span>
+    <span><strong>OOC:</strong> For any inquiries, custom orders, or anything else you need, feel free to contact me on Discord: <code class="copyable-name" title="Click to copy">stax0r</code></span>
 </footer>
 
 <script type="module">
@@ -863,7 +870,7 @@
                 <span style="font-size: 1.1rem;">Estimated Cost: <strong style="color: var(--gold);">${totalCost.toFixed(2)} Gold</strong></span>
             </div>
             <div class="dispatch-box">
-                <p>Send a letter with your order to <strong>"stax0r" Atherius</strong>. Copy the scroll contents below:</p>
+                <p>Send a letter with your order to <code class="copyable-name" title="Click to copy">stax0r</code> on the Atherius. Copy the scroll contents below:</p>
                 <textarea id="custom-order-copy-area" class="copy-text-area" readonly>${formattedOrderString}</textarea>
                 <button onclick="window.copyOrderFormat()" style="margin-top: 8px; font-size: 0.8rem; background: var(--custom-order);">Copy Order Scroll</button>
             </div>
