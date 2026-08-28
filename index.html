@@ -155,6 +155,15 @@
 
         .potion-card.out-of-stock { opacity: 0.85; border-style: dashed; }
 
+        .card-top-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed var(--border);
+        }
+
         .category-tag {
             font-size: 0.75rem;
             color: var(--accent);
@@ -207,11 +216,11 @@
             gap: 10px;
         }
 
-        .delete-btn { background: var(--danger); padding: 4px 8px; font-size: 0.8rem; }
-        .edit-btn { background: #3a86ff; padding: 4px 8px; font-size: 0.8rem; }
-        .stock-btn { background: var(--success); padding: 4px 8px; font-size: 0.8rem; }
-        .stock-btn.off { background: #d90429; }
-        .visible-btn { background: var(--success); padding: 4px 8px; font-size: 0.8rem; }
+        .delete-btn { background: var(--danger); padding: 3px 8px; font-size: 0.75rem; border-radius: 4px; }
+        .edit-btn { background: #3a86ff; padding: 3px 8px; font-size: 0.75rem; border-radius: 4px; }
+        .stock-btn { background: var(--success); padding: 4px 8px; font-size: 0.75rem; }
+        .stock-btn.off { background: var(--danger); }
+        .visible-btn { background: var(--success); padding: 4px 8px; font-size: 0.75rem; }
         .visible-btn.off { background: #555; }
 
         .action-btn-group {
@@ -482,16 +491,16 @@
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getDatabase, ref, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // REPLACE THIS WITH YOUR FIREBASE CONFIG
+    // IREBASE CONFIG
     const firebaseConfig = {
-  apiKey: "AIzaSyC8QXlIWT76AZqttFWzLn4IKRRs3wYAaX8",
-  authDomain: "alchemy-shop-dcceb.firebaseapp.com",
-  databaseURL: "https://alchemy-shop-dcceb-default-rtdb.firebaseio.com",
-  projectId: "alchemy-shop-dcceb",
-  storageBucket: "alchemy-shop-dcceb.firebasestorage.app",
-  messagingSenderId: "268082568197",
-  appId: "1:268082568197:web:31de53d83bece61f0d506c",
-  measurementId: "G-H2DY8TMDMN"
+        apiKey: "AIzaSyC8QXlIWT76AZqttFWzLn4IKRRs3wYAaX8",
+        authDomain: "alchemy-shop-dcceb.firebaseapp.com",
+        databaseURL: "https://alchemy-shop-dcceb-default-rtdb.firebaseio.com",
+        projectId: "alchemy-shop-dcceb",
+        storageBucket: "alchemy-shop-dcceb.firebasestorage.app",
+        messagingSenderId: "268082568197",
+        appId: "1:268082568197:web:31de53d83bece61f0d506c",
+        measurementId: "G-H2DY8TMDMN"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -1213,11 +1222,21 @@
                     return `
                         <div class="potion-card ${isOutOfStock ? 'out-of-stock' : ''} ${!isInShop && currentUser ? 'hidden-admin-card' : ''}" style="${!isInShop && currentUser ? 'border-style: dotted; opacity: 0.6;' : ''}">
                             <div>
-                                ${isOutOfStock ? `<span class="badge-out">${forceOut ? 'Reserved / Out' : 'Out of Stock'}</span>` : ''}
+                                ${currentUser ? `
+                                    <div class="card-top-actions">
+                                        <span style="font-size: 0.75rem; color: var(--text-dim);">ID: ${p.id.toString().slice(-4)}</span>
+                                        <div style="display: flex; gap: 5px;">
+                                            <button class="edit-btn" onclick="window.editPotion(${p.id})">Edit</button>
+                                            <button class="delete-btn" onclick="window.deletePotion(${p.id})">Delete</button>
+                                        </div>
+                                    </div>
+                                ` : ''}
+
+                                ${isOutOfStock ? `<span class="badge-out">Out of Stock</span>` : ''}
                                 ${!isInShop && currentUser ? `<span class="badge-out" style="background: var(--border); color: var(--text);">Hidden from Shop</span>` : ''}
                                 <div class="category-tag">${p.category || 'General'}</div>
                                 <h3 style="margin-top: 4px;">${p.name}</h3>
-                                ${!isOutOfStock ? `<div class="stock-tag">In Stock: ${stockQty}</div>` : `<div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 4px;">Stock: ${stockQty} ${forceOut ? '(Reserved)' : ''}</div>`}
+                                ${!isOutOfStock ? `<div class="stock-tag">In Stock: ${stockQty}</div>` : `<div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 4px;">Stock: ${stockQty}</div>`}
                                 ${p.description ? `<div class="potion-desc">${p.description}</div>` : ''}
                                 <div class="potion-price">${p.salePrice} Gold</div>
                                 
@@ -1246,15 +1265,12 @@
                                             <input type="number" value="${stockQty}" min="0" style="width: 45px; padding: 2px 4px;" onchange="window.updatePotionStockQty(${p.id}, this.value)">
                                             
                                             <button class="stock-btn ${forceOut ? 'off' : ''}" onclick="window.toggleForceOutStock(${p.id}, ${forceOut})" title="Toggle Force Out of Stock (Reserve for Custom Orders)">
-                                                ${forceOut ? 'Reserved' : 'Available'}
+                                                ${forceOut ? 'Force Out' : 'Available'}
                                             </button>
                                             
                                             <button class="visible-btn ${!isInShop ? 'off' : ''}" onclick="window.toggleShopVisibility(${p.id}, ${isInShop})" title="Toggle Visibility in Shop">
                                                 ${isInShop ? 'Visible' : 'Hidden'}
                                             </button>
-                                            
-                                            <button class="edit-btn" onclick="window.editPotion(${p.id})">Edit</button>
-                                            <button class="delete-btn" onclick="window.deletePotion(${p.id})">X</button>
                                         </div>
                                     </div>
                                 ` : ''}
