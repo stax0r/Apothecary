@@ -278,6 +278,34 @@
             border-top: 1px solid var(--border);
         }
 
+        .dispatch-box {
+            margin-top: 15px;
+            background: var(--bg-color);
+            border: 1px dashed var(--custom-order);
+            border-radius: 6px;
+            padding: 12px;
+        }
+
+        .dispatch-box p {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            font-style: italic;
+            margin: 0 0 10px 0;
+        }
+
+        .copy-text-area {
+            width: 100%;
+            height: 90px;
+            box-sizing: border-box;
+            font-family: monospace;
+            font-size: 0.85rem;
+            background: #120e1a;
+            color: var(--gold);
+            border: 1px solid var(--border);
+            padding: 8px;
+            border-radius: 4px;
+        }
+
         footer {
             margin-top: 40px;
             padding-top: 15px;
@@ -307,7 +335,6 @@
         <button id="auth-btn" class="admin-toggle" onclick="toggleAuthModal()">Alchemist Login</button>
     </header>
 
-    <!-- LOGIN MODAL -->
     <div id="login-modal" class="login-modal hidden">
         <h2>Brew Master Login</h2>
         <div class="form-group" style="margin-top: 10px;">
@@ -318,9 +345,7 @@
         <p id="login-error" style="color: var(--danger); margin: 0; font-size: 0.85rem;"></p>
     </div>
 
-    <!-- ADMIN MANAGEMENT PANEL -->
     <div id="admin-panel" class="admin-panel hidden">
-        <!-- Manage Ingredients Collapsible -->
         <div class="collapse-header" onclick="toggleSection('ing-collapsible-wrapper', 'ing-collapse-btn')">
             <h2>Manage Ingredients</h2>
             <button class="collapse-btn" id="ing-collapse-btn">Hide ▲</button>
@@ -337,7 +362,6 @@
 
         <hr style="border-color: var(--border); margin: 20px 0;">
 
-        <!-- Brew Potion Collapsible -->
         <div class="collapse-header" onclick="toggleSection('brew-collapsible-wrapper', 'brew-collapse-btn')">
             <h2 id="potion-form-title">Brew Potion</h2>
             <button class="collapse-btn" id="brew-collapse-btn">Hide ▲</button>
@@ -395,7 +419,6 @@
         <div id="batch-results"></div>
     </div>
 
-    <!-- CLIENT SATCHEL -->
     <div id="cart-panel" class="cart-panel">
         <div class="collapse-header" onclick="toggleSection('satchel-collapsible-wrapper', 'satchel-collapse-btn')">
             <h2>Your Satchel</h2>
@@ -410,7 +433,6 @@
         </div>
     </div>
 
-    <!-- CUSTOM ORDERS PANEL -->
     <div id="custom-panel" class="custom-panel">
         <div class="collapse-header" onclick="toggleSection('custom-collapsible-wrapper', 'custom-collapse-btn')">
             <h2 style="color: var(--custom-order);">Custom Orders</h2>
@@ -425,7 +447,6 @@
         </div>
     </div>
 
-    <!-- PUBLIC CATALOG -->
     <h2>Apothecary Stock</h2>
     
     <div id="filter-bar" class="filter-bar" style="margin-top: 15px;"></div>
@@ -437,7 +458,6 @@
     <span>Inquiries & Custom Orders: Courier ID <code>stax0r</code> on Discord</span>
 </footer>
 
-<!-- Firebase SDKs -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -788,6 +808,16 @@ const firebaseConfig = {
         window.renderCustomOrders();
     };
 
+    window.copyOrderFormat = () => {
+        const copyText = document.getElementById("custom-order-copy-area");
+        if (copyText) {
+            copyText.select();
+            copyText.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(copyText.value);
+            alert("Order letter copied to clipboard!");
+        }
+    };
+
     window.renderCustomOrders = () => {
         const listDiv = document.getElementById('custom-items-list');
         const summaryDiv = document.getElementById('custom-summary-area');
@@ -801,6 +831,7 @@ const firebaseConfig = {
 
         let totalCost = 0;
         let totalItems = 0;
+        let orderLines = [];
 
         listDiv.innerHTML = customOrders.map((item, index) => {
             const p = potions[item.potionId];
@@ -809,6 +840,7 @@ const firebaseConfig = {
             const lineTotal = (p.salePrice || 0) * item.qty;
             totalCost += lineTotal;
             totalItems += item.qty;
+            orderLines.push(`${p.name} x ${item.qty}`);
 
             return `
                 <div class="item-row">
@@ -822,10 +854,17 @@ const firebaseConfig = {
             `;
         }).join('');
 
+        const formattedOrderString = orderLines.join('\n') + `\nTotal Cost: ${totalCost.toFixed(2)}g`;
+
         summaryDiv.innerHTML = `
             <div class="cart-summary">
                 <span>Total Custom Requests: <strong>${totalItems}</strong></span>
                 <span style="font-size: 1.1rem;">Estimated Cost: <strong style="color: var(--gold);">${totalCost.toFixed(2)} Gold</strong></span>
+            </div>
+            <div class="dispatch-box">
+                <p>Send a letter with your order to <strong>stax0r</strong> in Atherius. Copy the formatted scroll below:</p>
+                <textarea id="custom-order-copy-area" class="copy-text-area" readonly>${formattedOrderString}</textarea>
+                <button onclick="window.copyOrderFormat()" style="margin-top: 8px; font-size: 0.8rem; background: var(--custom-order);">Copy Order Scroll</button>
             </div>
         `;
     };
@@ -1059,97 +1098,3 @@ const firebaseConfig = {
                     <span><strong>${i.name}</strong></span>
                     <div>
                         <input type="number" value="${i.price}" step="0.01" style="width: 70px;" onchange="window.updateIngredientPrice(${i.id}, this.value)"> gold / unit
-                        <button class="delete-btn" onclick="window.deleteIngredient(${i.id})">X</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        const categories = ['All', ...new Set(potionArray.map(p => p.category || 'General'))];
-        const filterBar = document.getElementById('filter-bar');
-        if (filterBar) {
-            filterBar.innerHTML = categories.map(cat => `
-                <button class="filter-btn ${selectedCategory === cat ? 'active' : ''}" onclick="window.setCategoryFilter('${cat}')">${cat}</button>
-            `).join('');
-        }
-
-        const catalog = document.getElementById('catalog');
-        if (catalog) {
-            let visiblePotions = potionArray;
-
-            if (selectedCategory !== 'All') {
-                visiblePotions = visiblePotions.filter(p => (p.category || 'General') === selectedCategory);
-            }
-
-            if (visiblePotions.length === 0) {
-                catalog.innerHTML = `<p style="color: var(--text-dim); grid-column: 1/-1;">No items available in this category.</p>`;
-            } else {
-                catalog.innerHTML = visiblePotions.map(p => {
-                    const cost = calculatePotionCost(p.recipe);
-                    const profit = p.salePrice - cost;
-                    const margin = p.salePrice > 0 ? ((profit / p.salePrice) * 100).toFixed(0) : 0;
-                    const stockQty = p.stockQty !== undefined ? p.stockQty : 0;
-                    const isStocked = (p.inStock !== false) && (stockQty > 0);
-
-                    const sortedRecipe = p.recipe ? [...p.recipe].sort((a, b) => 
-                        (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
-                    ) : [];
-
-                    return `
-                        <div class="potion-card ${!isStocked ? 'out-of-stock' : ''}">
-                            <div>
-                                ${!isStocked ? `<span class="badge-out">Out of Stock</span>` : ''}
-                                <div class="category-tag">${p.category || 'General'}</div>
-                                <h3 style="margin-top: 4px;">${p.name}</h3>
-                                ${isStocked ? `<div class="stock-tag">In Stock: ${stockQty}</div>` : ''}
-                                ${p.description ? `<div class="potion-desc">${p.description}</div>` : ''}
-                                <div class="potion-price">${p.salePrice} Gold</div>
-                                
-                                ${currentUser && sortedRecipe.length > 0 ? `
-                                    <ul class="ingredient-list">
-                                        ${sortedRecipe.map(r => `<li>- ${r.qty}x ${r.name}</li>`).join('')}
-                                    </ul>
-                                ` : ''}
-                            </div>
-                            <div>
-                                <div class="action-btn-group">
-                                    ${isStocked ? `
-                                        <button class="add-cart-btn" onclick="window.addToCart(${p.id})">+ Satchel</button>
-                                    ` : `
-                                        <button class="btn-disabled" disabled>Out of Stock</button>
-                                    `}
-                                    <button class="custom-order-btn" onclick="window.addCustomOrder(${p.id})">+ Custom</button>
-                                </div>
-                                
-                                ${currentUser ? `
-                                    <div class="cost-badge">
-                                        <div>Craft Cost: ${cost.toFixed(2)}g</div>
-                                        <div>Profit Margin: <span class="${profit >= 0 ? 'profit-text' : 'loss-text'}">${profit.toFixed(2)}g (${margin}%)</span></div>
-                                        <div style="display: flex; gap: 5px; align-items: center; margin-top: 6px;">
-                                            <label style="font-size: 0.75rem;">Qty:</label>
-                                            <input type="number" value="${stockQty}" min="0" style="width: 55px; padding: 2px 4px;" onchange="window.updatePotionStockQty(${p.id}, this.value)">
-                                            <button class="stock-btn ${p.inStock === false ? 'off' : ''}" onclick="window.toggleStock(${p.id}, ${p.inStock !== false})">
-                                                ${p.inStock !== false ? 'Visible' : 'Hidden'}
-                                            </button>
-                                            <button class="edit-btn" onclick="window.editPotion(${p.id})">Edit</button>
-                                            <button class="delete-btn" onclick="window.deletePotion(${p.id})">X</button>
-                                        </div>
-                                    </div>
-                                ` : ''}
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            }
-        }
-
-        window.renderBatchCalculator();
-        window.renderCart();
-        window.renderCustomOrders();
-    };
-
-    // Initial load setup
-    window.render();
-</script>
-</body>
-</html>
