@@ -210,7 +210,9 @@
         .delete-btn { background: var(--danger); padding: 4px 8px; font-size: 0.8rem; }
         .edit-btn { background: #3a86ff; padding: 4px 8px; font-size: 0.8rem; }
         .stock-btn { background: var(--success); padding: 4px 8px; font-size: 0.8rem; }
-        .stock-btn.off { background: #555; }
+        .stock-btn.off { background: #d90429; }
+        .visible-btn { background: var(--success); padding: 4px 8px; font-size: 0.8rem; }
+        .visible-btn.off { background: #555; }
 
         .action-btn-group {
             display: flex;
@@ -353,7 +355,6 @@
         <button id="auth-btn" class="admin-toggle" onclick="toggleAuthModal()">Alchemist Login</button>
     </header>
 
-    <!-- LOGIN MODAL -->
     <div id="login-modal" class="login-modal hidden">
         <h2>Brew Master Login</h2>
         <div class="form-group" style="margin-top: 10px;">
@@ -364,7 +365,6 @@
         <p id="login-error" style="color: var(--danger); margin: 0; font-size: 0.85rem;"></p>
     </div>
 
-    <!-- ADMIN MANAGEMENT PANEL -->
     <div id="admin-panel" class="admin-panel hidden">
         <div class="collapse-header" onclick="toggleSection('ing-collapsible-wrapper', 'ing-collapse-btn')">
             <h2>Manage Ingredients & Stock</h2>
@@ -405,7 +405,6 @@
         <div id="batch-results"></div>
     </div>
 
-    <!-- CLIENT SATCHEL -->
     <div id="cart-panel" class="cart-panel">
         <div class="collapse-header" onclick="toggleSection('satchel-collapsible-wrapper', 'satchel-collapse-btn')">
             <h2>Your Satchel</h2>
@@ -420,7 +419,6 @@
         </div>
     </div>
 
-    <!-- CUSTOM ORDERS PANEL -->
     <div id="custom-panel" class="custom-panel">
         <div class="collapse-header" onclick="toggleSection('custom-collapsible-wrapper', 'custom-collapse-btn')">
             <h2 style="color: var(--custom-order);">Custom Orders</h2>
@@ -435,7 +433,6 @@
         </div>
     </div>
 
-    <!-- ADD NEW POTION TO THE CATALOG PANEL (ADMIN ONLY) -->
     <div id="potion-creator-container" class="potion-creator-panel hidden">
         <div class="collapse-header" onclick="toggleSection('brew-collapsible-wrapper', 'brew-collapse-btn')">
             <h2 id="potion-form-title">Add New Potion to the Catalog</h2>
@@ -471,7 +468,6 @@
         </div>
     </div>
 
-    <!-- PUBLIC CATALOG -->
     <h2>Apothecary Stock</h2>
     <div id="filter-bar" class="filter-bar" style="margin-top: 15px;"></div>
     <div id="catalog" class="catalog-grid"></div>
@@ -481,13 +477,12 @@
     <span><strong>OOC:</strong> Whether you have questions, feedback, or just need to get in touch, please feel free to drop me a message on Discord at <code class="copyable-name" title="Click to copy">stax0r</code>. Always happy to help!</span>
 </footer>
 
-<!-- Firebase SDKs -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getDatabase, ref, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // FIREBASE CONFIG
+    // REPLACE THIS WITH YOUR FIREBASE CONFIG
     const firebaseConfig = {
   apiKey: "AIzaSyC8QXlIWT76AZqttFWzLn4IKRRs3wYAaX8",
   authDomain: "alchemy-shop-dcceb.firebaseapp.com",
@@ -657,7 +652,9 @@
 
         if (name && !isNaN(price) && currentRecipe.length > 0) {
             const id = editingId ? parseInt(editingId) : Date.now();
-            const existingStockStatus = (editingId && potions[editingId]) ? potions[editingId].inStock : true;
+            const existingPotion = (editingId && potions[editingId]) ? potions[editingId] : {};
+            const existingInShop = existingPotion.inShop !== undefined ? existingPotion.inShop : true;
+            const existingForceOut = existingPotion.forceOut !== undefined ? existingPotion.forceOut : false;
 
             currentRecipe.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
 
@@ -668,7 +665,8 @@
                 description: desc,
                 salePrice: price,
                 stockQty: stockQty,
-                inStock: existingStockStatus,
+                inShop: existingInShop,
+                forceOut: existingForceOut,
                 recipe: currentRecipe
             });
 
@@ -717,8 +715,14 @@
         set(ref(db, `potions/${id}/stockQty`), qty);
     };
 
-    window.toggleStock = (id, currentStatus) => {
-        set(ref(db, `potions/${id}/inStock`), !currentStatus);
+    window.toggleShopVisibility = (id, currentInShop) => {
+        const newVal = currentInShop !== false ? false : true;
+        set(ref(db, `potions/${id}/inShop`), newVal);
+    };
+
+    window.toggleForceOutStock = (id, currentForceOut) => {
+        const newVal = currentForceOut ? false : true;
+        set(ref(db, `potions/${id}/forceOut`), newVal);
     };
 
     window.deletePotion = (id) => {
@@ -736,7 +740,7 @@
         const p = potions[potionId];
         if (!p) return;
         const maxQty = p.stockQty !== undefined ? p.stockQty : 0;
-        if (maxQty <= 0) return;
+        if (maxQty <= 0 || p.forceOut) return;
 
         const existing = clientCart.find(item => item.potionId === potionId);
         if (existing) {
@@ -753,7 +757,7 @@
         const p = potions[item.potionId];
         const maxQty = p && p.stockQty !== undefined ? p.stockQty : 0;
         let qty = parseInt(newQty) || 0;
-        if (qty <= 0) clientCart.splice(index, 1);
+        if (qty <= 0 || (p && p.forceOut)) clientCart.splice(index, 1);
         else clientCart[index].qty = Math.min(qty, maxQty);
         window.renderCart();
     };
@@ -1183,6 +1187,9 @@
         const catalog = document.getElementById('catalog');
         if (catalog) {
             let visiblePotions = potionArray;
+            if (!currentUser) {
+                visiblePotions = visiblePotions.filter(p => p.inShop !== false);
+            }
             if (selectedCategory !== 'All') {
                 visiblePotions = visiblePotions.filter(p => (p.category || 'General') === selectedCategory);
             }
@@ -1195,19 +1202,22 @@
                     const profit = p.salePrice - cost;
                     const margin = p.salePrice > 0 ? ((profit / p.salePrice) * 100).toFixed(0) : 0;
                     const stockQty = p.stockQty !== undefined ? p.stockQty : 0;
-                    const isStocked = (p.inStock !== false) && (stockQty > 0);
+                    const forceOut = p.forceOut === true;
+                    const isOutOfStock = forceOut || (stockQty <= 0);
+                    const isInShop = p.inShop !== false;
 
                     const sortedRecipe = p.recipe ? [...p.recipe].sort((a, b) => 
                         (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
                     ) : [];
 
                     return `
-                        <div class="potion-card ${!isStocked ? 'out-of-stock' : ''}">
+                        <div class="potion-card ${isOutOfStock ? 'out-of-stock' : ''} ${!isInShop && currentUser ? 'hidden-admin-card' : ''}" style="${!isInShop && currentUser ? 'border-style: dotted; opacity: 0.6;' : ''}">
                             <div>
-                                ${!isStocked ? `<span class="badge-out">Out of Stock</span>` : ''}
+                                ${isOutOfStock ? `<span class="badge-out">${forceOut ? 'Reserved / Out' : 'Out of Stock'}</span>` : ''}
+                                ${!isInShop && currentUser ? `<span class="badge-out" style="background: var(--border); color: var(--text);">Hidden from Shop</span>` : ''}
                                 <div class="category-tag">${p.category || 'General'}</div>
                                 <h3 style="margin-top: 4px;">${p.name}</h3>
-                                ${isStocked ? `<div class="stock-tag">In Stock: ${stockQty}</div>` : ''}
+                                ${!isOutOfStock ? `<div class="stock-tag">In Stock: ${stockQty}</div>` : `<div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 4px;">Stock: ${stockQty} ${forceOut ? '(Reserved)' : ''}</div>`}
                                 ${p.description ? `<div class="potion-desc">${p.description}</div>` : ''}
                                 <div class="potion-price">${p.salePrice} Gold</div>
                                 
@@ -1219,7 +1229,7 @@
                             </div>
                             <div>
                                 <div class="action-btn-group">
-                                    ${isStocked ? `
+                                    ${!isOutOfStock ? `
                                         <button class="add-cart-btn" onclick="window.addToCart(${p.id})">+ Satchel</button>
                                     ` : `
                                         <button class="btn-disabled" disabled>Out of Stock</button>
@@ -1231,12 +1241,18 @@
                                     <div class="cost-badge">
                                         <div>Craft Cost: ${cost.toFixed(2)}g</div>
                                         <div>Profit Margin: <span class="${profit >= 0 ? 'profit-text' : 'loss-text'}">${profit.toFixed(2)}g (${margin}%)</span></div>
-                                        <div style="display: flex; gap: 5px; align-items: center; margin-top: 6px;">
+                                        <div style="display: flex; gap: 5px; align-items: center; margin-top: 6px; flex-wrap: wrap;">
                                             <label style="font-size: 0.75rem;">Qty:</label>
-                                            <input type="number" value="${stockQty}" min="0" style="width: 55px; padding: 2px 4px;" onchange="window.updatePotionStockQty(${p.id}, this.value)">
-                                            <button class="stock-btn ${p.inStock === false ? 'off' : ''}" onclick="window.toggleStock(${p.id}, ${p.inStock !== false})">
-                                                ${p.inStock !== false ? 'Visible' : 'Hidden'}
+                                            <input type="number" value="${stockQty}" min="0" style="width: 45px; padding: 2px 4px;" onchange="window.updatePotionStockQty(${p.id}, this.value)">
+                                            
+                                            <button class="stock-btn ${forceOut ? 'off' : ''}" onclick="window.toggleForceOutStock(${p.id}, ${forceOut})" title="Toggle Force Out of Stock (Reserve for Custom Orders)">
+                                                ${forceOut ? 'Reserved' : 'Available'}
                                             </button>
+                                            
+                                            <button class="visible-btn ${!isInShop ? 'off' : ''}" onclick="window.toggleShopVisibility(${p.id}, ${isInShop})" title="Toggle Visibility in Shop">
+                                                ${isInShop ? 'Visible' : 'Hidden'}
+                                            </button>
+                                            
                                             <button class="edit-btn" onclick="window.editPotion(${p.id})">Edit</button>
                                             <button class="delete-btn" onclick="window.deletePotion(${p.id})">X</button>
                                         </div>
