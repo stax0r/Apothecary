@@ -210,14 +210,18 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 6px 0;
-            border-bottom: 1px solid var(--border);
+            padding: 8px 10px;
+            background: var(--bg-color);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            margin-bottom: 8px;
             flex-wrap: wrap;
             gap: 10px;
         }
 
         .delete-btn { background: var(--danger); padding: 3px 8px; font-size: 0.75rem; border-radius: 4px; }
         .edit-btn { background: #3a86ff; padding: 3px 8px; font-size: 0.75rem; border-radius: 4px; }
+        .save-btn { background: var(--success); padding: 3px 8px; font-size: 0.75rem; border-radius: 4px; }
         .stock-btn { background: var(--success); padding: 4px 8px; font-size: 0.75rem; }
         .stock-btn.off { background: var(--danger); }
         .visible-btn { background: var(--success); padding: 4px 8px; font-size: 0.75rem; }
@@ -343,6 +347,37 @@
             opacity: 0.8;
         }
 
+        /* Dropdown autocomplete styling */
+        .autocomplete-wrapper {
+            position: relative;
+            flex: 2;
+        }
+
+        .autocomplete-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 0 0 6px 6px;
+            max-height: 150px;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .autocomplete-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .autocomplete-item:hover {
+            background: var(--accent);
+            color: #fff;
+        }
+
         footer {
             margin-top: 40px;
             padding-top: 15px;
@@ -381,13 +416,35 @@
         </div>
         
         <div id="ing-collapsible-wrapper" style="margin-top: 15px;">
-            <div class="form-group">
-                <input type="text" id="ing-name" placeholder="Ingredient Name" style="flex: 2;">
-                <input type="number" id="ing-price" placeholder="Price/Unit" step="0.01" style="flex: 1;">
-                <input type="number" id="ing-stock" placeholder="Initial Stock" min="0" value="0" style="flex: 1;">
-                <button onclick="addIngredient()">+ Add</button>
+            <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 15px;">
+                <h4 style="margin-bottom: 8px; font-size: 0.9rem; color: var(--stock-blue);">Quick Stock Deposit</h4>
+                <div class="form-group" style="margin-bottom: 0; position: relative;">
+                    <div class="autocomplete-wrapper">
+                        <input type="text" id="quick-deposit-input" placeholder="Type ingredient to deposit stock..." style="width: 100%; box-sizing: border-box;" oninput="handleQuickDepositInput(this.value)" autocomplete="off">
+                        <div id="quick-deposit-dropdown" class="autocomplete-dropdown hidden"></div>
+                    </div>
+                    <input type="number" id="quick-deposit-qty" placeholder="Qty to Add" value="1" min="1" style="width: 90px;">
+                    <button onclick="executeQuickDeposit()" style="background: var(--success);">Deposit</button>
+                </div>
             </div>
-            <div id="ingredients-list"></div>
+
+            <details style="margin-bottom: 15px; background: rgba(0,0,0,0.1); padding: 10px; border-radius: 6px; border: 1px dashed var(--border);">
+                <summary style="cursor: pointer; font-weight: bold; color: var(--accent); font-size: 0.9rem;">+ Register New Ingredient</summary>
+                <div class="form-group" style="margin-top: 10px; margin-bottom: 0;">
+                    <input type="text" id="ing-name" placeholder="Ingredient Name" style="flex: 2;">
+                    <input type="number" id="ing-price" placeholder="Price/Unit" step="0.01" style="flex: 1;">
+                    <input type="number" id="ing-stock" placeholder="Initial Stock" min="0" value="0" style="flex: 1;">
+                    <button onclick="addIngredient()">Add</button>
+                </div>
+            </details>
+
+            <div style="background: var(--bg-color); border: 1px solid var(--border); border-radius: 6px; padding: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px; flex-wrap: wrap;">
+                    <h4 style="font-size: 0.95rem;">Ingredient Directory</h4>
+                    <input type="text" id="ingredient-search-filter" placeholder="Search ingredients..." style="width: 220px;" oninput="renderIngredientsList()">
+                </div>
+                <div id="ingredients-list" style="max-height: 280px; overflow-y: auto; padding-right: 4px;"></div>
+            </div>
         </div>
 
         <hr style="border-color: var(--border); margin: 20px 0;">
@@ -491,16 +548,16 @@
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getDatabase, ref, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // IREBASE CONFIG
+    // REPLACE THIS WITH YOUR FIREBASE CONFIG
     const firebaseConfig = {
-        apiKey: "AIzaSyC8QXlIWT76AZqttFWzLn4IKRRs3wYAaX8",
-        authDomain: "alchemy-shop-dcceb.firebaseapp.com",
-        databaseURL: "https://alchemy-shop-dcceb-default-rtdb.firebaseio.com",
-        projectId: "alchemy-shop-dcceb",
-        storageBucket: "alchemy-shop-dcceb.firebasestorage.app",
-        messagingSenderId: "268082568197",
-        appId: "1:268082568197:web:31de53d83bece61f0d506c",
-        measurementId: "G-H2DY8TMDMN"
+  apiKey: "AIzaSyC8QXlIWT76AZqttFWzLn4IKRRs3wYAaX8",
+  authDomain: "alchemy-shop-dcceb.firebaseapp.com",
+  databaseURL: "https://alchemy-shop-dcceb-default-rtdb.firebaseio.com",
+  projectId: "alchemy-shop-dcceb",
+  storageBucket: "alchemy-shop-dcceb.firebasestorage.app",
+  messagingSenderId: "268082568197",
+  appId: "1:268082568197:web:31de53d83bece61f0d506c",
+  measurementId: "G-H2DY8TMDMN"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -516,6 +573,8 @@
     let clientCart = [];
     let customOrders = [];
     window.clientSuppliedQty = {};
+    window.editingIngredientId = null;
+    window.selectedQuickDepositIngredientId = null;
 
     onValue(ref(db, 'ingredients'), (snapshot) => {
         ingredients = snapshot.val() || {};
@@ -589,20 +648,108 @@
         }
     };
 
-    window.updateIngredientPrice = (id, newPrice) => {
-        const price = parseFloat(newPrice) || 0;
-        set(ref(db, `ingredients/${id}/price`), price);
+    window.startEditIngredient = (id) => {
+        window.editingIngredientId = id;
+        window.renderIngredientsList();
     };
 
-    window.updateIngredientStock = (id, newQty) => {
-        const qty = parseInt(newQty) || 0;
-        set(ref(db, `ingredients/${id}/stockQty`), Math.max(0, qty));
+    window.cancelEditIngredient = () => {
+        window.editingIngredientId = null;
+        window.renderIngredientsList();
+    };
+
+    window.saveIngredientEdit = (id) => {
+        const nameInput = document.getElementById(`edit-ing-name-${id}`);
+        const priceInput = document.getElementById(`edit-ing-price-${id}`);
+        const stockInput = document.getElementById(`edit-ing-stock-${id}`);
+
+        if (!nameInput || !priceInput || !stockInput) return;
+
+        const name = nameInput.value.trim();
+        const price = parseFloat(priceInput.value);
+        const stockQty = parseInt(stockInput.value) || 0;
+
+        if (name && !isNaN(price)) {
+            update(ref(db, `ingredients/${id}`), {
+                name,
+                price: Math.max(0, price),
+                stockQty: Math.max(0, stockQty)
+            }).then(() => {
+                window.editingIngredientId = null;
+                window.renderIngredientsList();
+            });
+        }
     };
 
     window.deleteIngredient = (id) => {
         if (window.confirm("Are you sure you want to delete this ingredient? This action cannot be undone.")) {
+            if (window.editingIngredientId === id) window.editingIngredientId = null;
             remove(ref(db, `ingredients/${id}`));
         }
+    };
+
+    // Quick Deposit Autocomplete Logic
+    window.handleQuickDepositInput = (query) => {
+        const dropdown = document.getElementById('quick-deposit-dropdown');
+        if (!dropdown) return;
+
+        const q = query.trim().toLowerCase();
+        if (!q) {
+            dropdown.classList.add('hidden');
+            window.selectedQuickDepositIngredientId = null;
+            return;
+        }
+
+        const ingArray = Object.values(ingredients);
+        const matches = ingArray.filter(i => (i.name || '').toLowerCase().includes(q));
+
+        if (matches.length === 0) {
+            dropdown.innerHTML = `<div class="autocomplete-item" style="color: var(--text-dim); cursor: default;">No matching ingredients</div>`;
+            dropdown.classList.remove('hidden');
+            window.selectedQuickDepositIngredientId = null;
+            return;
+        }
+
+        dropdown.innerHTML = matches.map(i => `
+            <div class="autocomplete-item" onclick="window.selectQuickDepositIngredient('${i.id}', '${i.name.replace(/'/g, "\\'")}')">
+                ${i.name} <span style="color: var(--stock-blue); font-size: 0.75rem;">(Stock: ${i.stockQty || 0})</span>
+            </div>
+        `).join('');
+        dropdown.classList.remove('hidden');
+    };
+
+    window.selectQuickDepositIngredient = (id, name) => {
+        window.selectedQuickDepositIngredientId = id;
+        const input = document.getElementById('quick-deposit-input');
+        if (input) input.value = name;
+        const dropdown = document.getElementById('quick-deposit-dropdown');
+        if (dropdown) dropdown.classList.add('hidden');
+    };
+
+    window.executeQuickDeposit = () => {
+        const id = window.selectedQuickDepositIngredientId;
+        const qtyInput = document.getElementById('quick-deposit-qty');
+        const addQty = parseInt(qtyInput ? qtyInput.value : 1) || 0;
+
+        if (!id || !ingredients[id] || addQty <= 0) {
+            alert("Please select a valid ingredient from the dropdown and enter a positive quantity to deposit.");
+            return;
+        }
+
+        const currentStock = ingredients[id].stockQty || 0;
+        const newStock = currentStock + addQty;
+
+        set(ref(db, `ingredients/${id}/stockQty`), newStock)
+            .then(() => {
+                alert(`Successfully added ${addQty} to ${ingredients[id].name}. New stock: ${newStock}`);
+                const input = document.getElementById('quick-deposit-input');
+                if (input) input.value = '';
+                if (qtyInput) qtyInput.value = '1';
+                window.selectedQuickDepositIngredientId = null;
+            })
+            .catch(err => {
+                alert("Error depositing stock: " + err.message);
+            });
     };
 
     window.addIngredientToRecipe = () => {
@@ -1150,6 +1297,68 @@
         }, 0);
     }
 
+    window.renderIngredientsList = () => {
+        const ingList = document.getElementById('ingredients-list');
+        const searchInput = document.getElementById('ingredient-search-filter');
+        if (!ingList) return;
+
+        let ingArray = Object.values(ingredients);
+        ingArray.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
+
+        const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+        if (query) {
+            ingArray = ingArray.filter(i => (i.name || '').toLowerCase().includes(query));
+        }
+
+        if (ingArray.length === 0) {
+            ingList.innerHTML = `<p style="color: var(--text-dim); font-size: 0.85rem; margin: 0; padding: 6px;">No ingredients found.</p>`;
+            return;
+        }
+
+        ingList.innerHTML = ingArray.map(i => {
+            const isEditing = window.editingIngredientId === i.id;
+
+            if (isEditing) {
+                return `
+                    <div class="item-row" style="border-color: var(--accent);">
+                        <div style="flex: 2; display: flex; flex-direction: column; gap: 4px;">
+                            <label style="font-size: 0.7rem; color: var(--text-dim);">Name:</label>
+                            <input type="text" id="edit-ing-name-${i.id}" value="${i.name}" style="width: 100%; box-sizing: border-box;">
+                        </div>
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                            <label style="font-size: 0.7rem; color: var(--text-dim);">Price (g):</label>
+                            <input type="number" id="edit-ing-price-${i.id}" value="${i.price}" step="0.01" style="width: 100%; box-sizing: border-box;">
+                        </div>
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                            <label style="font-size: 0.7rem; color: var(--text-dim);">Stock:</label>
+                            <input type="number" id="edit-ing-stock-${i.id}" value="${i.stockQty || 0}" min="0" style="width: 100%; box-sizing: border-box;">
+                        </div>
+                        <div style="display: flex; gap: 6px; align-items: flex-end; margin-top: 14px;">
+                            <button class="save-btn" onclick="window.saveIngredientEdit(${i.id})">Save</button>
+                            <button onclick="window.cancelEditIngredient()" style="background: var(--border); padding: 3px 8px; font-size: 0.75rem; border-radius: 4px;">Cancel</button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="item-row">
+                        <div style="flex: 2;">
+                            <strong>${i.name}</strong>
+                        </div>
+                        <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap; flex: 2; justify-content: flex-end;">
+                            <span style="font-size: 0.85rem; color: var(--gold);">Price: <strong>${i.price}g</strong></span>
+                            <span style="font-size: 0.85rem; color: var(--stock-blue);">Stock: <strong>${i.stockQty || 0}</strong></span>
+                            <div style="display: flex; gap: 5px;">
+                                <button class="edit-btn" onclick="window.startEditIngredient(${i.id})">Edit</button>
+                                <button class="delete-btn" onclick="window.deleteIngredient(${i.id})">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }).join('');
+    };
+
     window.render = () => {
         const ingArray = Object.values(ingredients);
         ingArray.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
@@ -1167,23 +1376,7 @@
             batchSelect.innerHTML = potionArray.map(p => `<option value="${p.id}">${p.name} (${p.salePrice}g)</option>`).join('');
         }
 
-        const ingList = document.getElementById('ingredients-list');
-        if (ingList) {
-            ingList.innerHTML = ingArray.map(i => `
-                <div class="item-row">
-                    <span style="flex: 2;"><strong>${i.name}</strong></span>
-                    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                        <label style="font-size: 0.75rem;">Price:</label>
-                        <input type="number" value="${i.price}" step="0.01" style="width: 60px;" onchange="window.updateIngredientPrice(${i.id}, this.value)">
-                        
-                        <label style="font-size: 0.75rem; margin-left: 8px;">Stock:</label>
-                        <input type="number" value="${i.stockQty || 0}" min="0" style="width: 60px;" onchange="window.updateIngredientStock(${i.id}, this.value)">
-                        
-                        <button class="delete-btn" onclick="window.deleteIngredient(${i.id})" style="margin-left: 8px;">X</button>
-                    </div>
-                </div>
-            `).join('');
-        }
+        window.renderIngredientsList();
 
         const categories = ['All', ...new Set(potionArray.map(p => p.category || 'General'))];
         const filterBar = document.getElementById('filter-bar');
