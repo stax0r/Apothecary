@@ -331,7 +331,7 @@
         footer {
             margin-top: 40px;
             padding-top: 15px;
-            border-bottom: 1px solid var(--border);
+            border-top: 1px solid var(--border);
             text-align: center;
             font-size: 0.85rem;
             color: var(--text-dim);
@@ -472,7 +472,7 @@
     <div id="catalog" class="catalog-grid"></div>
 </div>
 
-<footer style="margin-top: 40px; padding-bottom: 20px;">
+<footer>
     <span><strong>OOC:</strong> Whether you have questions, feedback, or just need to get in touch, please feel free to drop me a message on Discord at <code class="copyable-name" title="Click to copy">stax0r</code>. Always happy to help!</span>
 </footer>
 
@@ -587,7 +587,6 @@
         set(ref(db, `ingredients/${id}/stockQty`), Math.max(0, qty));
     };
 
-    // ADDED CONFIRMATION HERE
     window.deleteIngredient = (id) => {
         if (window.confirm("Are you sure you want to delete this ingredient? This action cannot be undone.")) {
             remove(ref(db, `ingredients/${id}`));
@@ -714,7 +713,6 @@
         set(ref(db, `potions/${id}/inStock`), !currentStatus);
     };
 
-    // ADDED CONFIRMATION HERE
     window.deletePotion = (id) => {
         if (window.confirm("Are you sure you want to delete this potion from the catalog? This action cannot be undone.")) {
             remove(ref(db, `potions/${id}`));
@@ -726,7 +724,6 @@
         window.render();
     };
 
-    // Cart logic
     window.addToCart = (potionId) => {
         const p = potions[potionId];
         if (!p) return;
@@ -796,7 +793,6 @@
         `;
     };
 
-    // Custom Orders logic
     window.addCustomOrder = (potionId) => {
         const existing = customOrders.find(item => item.potionId === potionId);
         if (existing) existing.qty += 1;
@@ -870,7 +866,6 @@
         `;
     };
 
-    // Batch Manifest logic
     window.addBatchRow = () => {
         const select = document.getElementById('batch-potion-select');
         const qtyInput = document.getElementById('batch-qty');
@@ -903,7 +898,6 @@
         window.renderBatchCalculator();
     };
 
-    // ADDED: Auto-Deduct Inventory Function
     window.executeBatchCraft = () => {
         if (batchManifest.length === 0) return;
 
@@ -913,7 +907,6 @@
         const updates = {};
         const aggregatedIngredients = {};
 
-        // Recalculate what needs to be pulled from stock
         batchManifest.forEach(item => {
             const p = potions[item.potionId];
             if (!p) return;
@@ -935,7 +928,6 @@
             }
         });
 
-        // Determine stock deductions
         Object.keys(aggregatedIngredients).forEach(ingId => {
             const ing = aggregatedIngredients[ingId];
             const clientQty = Math.min(ing.qtyRequired, parseFloat(window.clientSuppliedQty[ingId]) || 0);
@@ -951,8 +943,8 @@
             update(ref(db), updates)
                 .then(() => {
                     alert("Batch successfully crafted! Personal inventory stock has been deducted.");
-                    batchManifest = []; // Clear manifest
-                    window.clientSuppliedQty = {}; // Clear client supply
+                    batchManifest = [];
+                    window.clientSuppliedQty = {};
                     window.renderBatchCalculator();
                 })
                 .catch(err => {
@@ -1122,7 +1114,6 @@
                     </div>
                 </div>
                 
-                <!-- NEW EXECUTE BATCH BUTTON -->
                 <button class="execute-batch-btn" onclick="window.executeBatchCraft()">Execute Batch & Deduct Stock</button>
             </div>
         `;
