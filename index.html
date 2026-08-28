@@ -98,9 +98,7 @@
             user-select: none;
         }
 
-        .collapse-header:hover {
-            opacity: 0.85;
-        }
+        .collapse-header:hover { opacity: 0.85; }
 
         .collapse-btn {
             background: transparent;
@@ -159,8 +157,15 @@
             letter-spacing: 0.5px;
         }
 
+        .stock-tag {
+            font-size: 0.8rem;
+            color: var(--success);
+            font-weight: bold;
+            margin-top: 4px;
+        }
+
         .potion-desc { font-size: 0.85rem; color: var(--text-dim); font-style: italic; margin: 6px 0 10px 0; }
-        .potion-price { font-size: 1.25rem; color: var(--gold); font-weight: bold; margin: 10px 0; }
+        .potion-price { font-size: 1.25rem; color: var(--gold); font-weight: bold; margin: 6px 0; }
 
         .ingredient-list {
             list-style: none;
@@ -344,6 +349,7 @@
                 <input type="text" id="potion-name" placeholder="Potion Name" style="flex: 2;">
                 <input type="text" id="potion-category" placeholder="Category (e.g. Restoration)" style="flex: 1;">
                 <input type="number" id="potion-sale-price" placeholder="Sale Price" step="0.01" style="flex: 1;">
+                <input type="number" id="potion-stock-qty" placeholder="Stock Qty" min="0" value="1" style="flex: 1;">
             </div>
             <div class="form-group">
                 <textarea id="potion-desc" placeholder="Potion Description or Magical Effects..."></textarea>
@@ -587,6 +593,7 @@ const firebaseConfig = {
         const category = document.getElementById('potion-category').value.trim() || 'General';
         const desc = document.getElementById('potion-desc').value.trim();
         const price = parseFloat(document.getElementById('potion-sale-price').value);
+        const stockQty = parseInt(document.getElementById('potion-stock-qty').value) || 0;
         const editingId = document.getElementById('editing-potion-id').value;
 
         if (name && !isNaN(price) && currentRecipe.length > 0) {
@@ -601,6 +608,7 @@ const firebaseConfig = {
                 category,
                 description: desc,
                 salePrice: price,
+                stockQty: stockQty,
                 inStock: existingStockStatus,
                 recipe: currentRecipe
             });
@@ -618,6 +626,7 @@ const firebaseConfig = {
         document.getElementById('potion-category').value = p.category || '';
         document.getElementById('potion-desc').value = p.description || '';
         document.getElementById('potion-sale-price').value = p.salePrice;
+        document.getElementById('potion-stock-qty').value = p.stockQty !== undefined ? p.stockQty : 1;
         
         currentRecipe = p.recipe ? [...p.recipe] : [];
         window.renderRecipePreview();
@@ -635,12 +644,18 @@ const firebaseConfig = {
         document.getElementById('potion-category').value = '';
         document.getElementById('potion-desc').value = '';
         document.getElementById('potion-sale-price').value = '';
+        document.getElementById('potion-stock-qty').value = '1';
         currentRecipe = [];
         window.renderRecipePreview();
 
         document.getElementById('potion-form-title').innerText = "Brew Potion";
         document.getElementById('save-potion-btn').innerText = "Create Potion";
         document.getElementById('cancel-edit-btn').classList.add('hidden');
+    };
+
+    window.updatePotionStockQty = (id, newQty) => {
+        const qty = parseInt(newQty) || 0;
+        set(ref(db, `potions/${id}/stockQty`), qty);
     };
 
     window.toggleStock = (id, currentStatus) => {
@@ -657,9 +672,17 @@ const firebaseConfig = {
     };
 
     window.addToCart = (potionId) => {
+        const p = potions[potionId];
+        if (!p) return;
+
+        const maxQty = p.stockQty !== undefined ? p.stockQty : 0;
+        if (maxQty <= 0) return;
+
         const existing = clientCart.find(item => item.potionId === potionId);
         if (existing) {
-            existing.qty += 1;
+            if (existing.qty < maxQty) {
+                existing.qty += 1;
+            }
         } else {
             clientCart.push({ potionId, qty: 1 });
         }
@@ -667,11 +690,17 @@ const firebaseConfig = {
     };
 
     window.updateCartQty = (index, newQty) => {
-        const qty = parseInt(newQty) || 0;
+        const item = clientCart[index];
+        if (!item) return;
+
+        const p = potions[item.potionId];
+        const maxQty = p && p.stockQty !== undefined ? p.stockQty : 0;
+        let qty = parseInt(newQty) || 0;
+
         if (qty <= 0) {
             clientCart.splice(index, 1);
         } else {
-            clientCart[index].qty = qty;
+            clientCart[index].qty = Math.min(qty, maxQty);
         }
         window.renderCart();
     };
@@ -704,6 +733,7 @@ const firebaseConfig = {
             const p = potions[item.potionId];
             if (!p) return '';
             
+            const maxQty = p.stockQty !== undefined ? p.stockQty : 0;
             const lineTotal = (p.salePrice || 0) * item.qty;
             totalCost += lineTotal;
             totalItems += item.qty;
@@ -712,7 +742,7 @@ const firebaseConfig = {
                 <div class="item-row">
                     <span><strong>${p.name}</strong> (${p.salePrice}g each)</span>
                     <div>
-                        <input type="number" value="${item.qty}" min="1" style="width: 60px;" onchange="window.updateCartQty(${index}, this.value)">
+                        <input type="number" value="${item.qty}" min="1" max="${maxQty}" style="width: 60px;" onchange="window.updateCartQty(${index}, this.value)">
                         <span style="color: var(--gold); font-weight: bold; margin: 0 8px;">${lineTotal.toFixed(2)}g</span>
                         <button class="delete-btn" onclick="window.removeFromCart(${index})">X</button>
                     </div>
@@ -1058,7 +1088,8 @@ const firebaseConfig = {
                     const cost = calculatePotionCost(p.recipe);
                     const profit = p.salePrice - cost;
                     const margin = p.salePrice > 0 ? ((profit / p.salePrice) * 100).toFixed(0) : 0;
-                    const isStocked = p.inStock !== false;
+                    const stockQty = p.stockQty !== undefined ? p.stockQty : 0;
+                    const isStocked = (p.inStock !== false) && (stockQty > 0);
 
                     const sortedRecipe = p.recipe ? [...p.recipe].sort((a, b) => 
                         (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
@@ -1070,6 +1101,7 @@ const firebaseConfig = {
                                 ${!isStocked ? `<span class="badge-out">Out of Stock</span>` : ''}
                                 <div class="category-tag">${p.category || 'General'}</div>
                                 <h3 style="margin-top: 4px;">${p.name}</h3>
+                                ${isStocked ? `<div class="stock-tag">In Stock: ${stockQty}</div>` : ''}
                                 ${p.description ? `<div class="potion-desc">${p.description}</div>` : ''}
                                 <div class="potion-price">${p.salePrice} Gold</div>
                                 
@@ -1093,12 +1125,14 @@ const firebaseConfig = {
                                     <div class="cost-badge">
                                         <div>Craft Cost: ${cost.toFixed(2)}g</div>
                                         <div>Profit Margin: <span class="${profit >= 0 ? 'profit-text' : 'loss-text'}">${profit.toFixed(2)}g (${margin}%)</span></div>
-                                        <div style="display: flex; gap: 5px; margin-top: 6px;">
-                                            <button class="stock-btn ${!isStocked ? 'off' : ''}" onclick="window.toggleStock(${p.id}, ${isStocked})">
-                                                ${isStocked ? 'In Stock' : 'Out of Stock'}
+                                        <div style="display: flex; gap: 5px; align-items: center; margin-top: 6px;">
+                                            <label style="font-size: 0.75rem;">Qty:</label>
+                                            <input type="number" value="${stockQty}" min="0" style="width: 55px; padding: 2px 4px;" onchange="window.updatePotionStockQty(${p.id}, this.value)">
+                                            <button class="stock-btn ${p.inStock === false ? 'off' : ''}" onclick="window.toggleStock(${p.id}, ${p.inStock !== false})">
+                                                ${p.inStock !== false ? 'Visible' : 'Hidden'}
                                             </button>
                                             <button class="edit-btn" onclick="window.editPotion(${p.id})">Edit</button>
-                                            <button class="delete-btn" onclick="window.deletePotion(${p.id})">Delete</button>
+                                            <button class="delete-btn" onclick="window.deletePotion(${p.id})">X</button>
                                         </div>
                                     </div>
                                 ` : ''}
