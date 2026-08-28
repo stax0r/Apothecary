@@ -15,6 +15,7 @@
             --border: #3c3254;
             --gold: #ffb703;
             --success: #2a9d8f;
+            --success-hover: #21867a;
             --danger: #d90429;
             --stock-blue: #4cc9f0;
             --custom-order: #3a86ff;
@@ -226,6 +227,9 @@
 
         .custom-order-btn { background: var(--custom-order); color: #fff; }
         .custom-order-btn:hover { background: var(--custom-order-hover); }
+        
+        .execute-batch-btn { background: var(--success); width: 100%; padding: 12px; font-size: 1.05rem; margin-top: 15px; }
+        .execute-batch-btn:hover { background: var(--success-hover); }
 
         .badge-out {
             background: var(--danger);
@@ -345,6 +349,7 @@
         <button id="auth-btn" class="admin-toggle" onclick="toggleAuthModal()">Alchemist Login</button>
     </header>
 
+    <!-- LOGIN MODAL -->
     <div id="login-modal" class="login-modal hidden">
         <h2>Brew Master Login</h2>
         <div class="form-group" style="margin-top: 10px;">
@@ -355,6 +360,7 @@
         <p id="login-error" style="color: var(--danger); margin: 0; font-size: 0.85rem;"></p>
     </div>
 
+    <!-- ADMIN MANAGEMENT PANEL -->
     <div id="admin-panel" class="admin-panel hidden">
         <div class="collapse-header" onclick="toggleSection('ing-collapsible-wrapper', 'ing-collapse-btn')">
             <h2>Manage Ingredients & Stock</h2>
@@ -430,6 +436,7 @@
         <div id="batch-results"></div>
     </div>
 
+    <!-- CLIENT SATCHEL -->
     <div id="cart-panel" class="cart-panel">
         <div class="collapse-header" onclick="toggleSection('satchel-collapsible-wrapper', 'satchel-collapse-btn')">
             <h2>Your Satchel</h2>
@@ -444,6 +451,7 @@
         </div>
     </div>
 
+    <!-- CUSTOM ORDERS PANEL -->
     <div id="custom-panel" class="custom-panel">
         <div class="collapse-header" onclick="toggleSection('custom-collapsible-wrapper', 'custom-collapse-btn')">
             <h2 style="color: var(--custom-order);">Custom Orders</h2>
@@ -458,6 +466,7 @@
         </div>
     </div>
 
+    <!-- PUBLIC CATALOG -->
     <h2>Apothecary Stock</h2>
     <div id="filter-bar" class="filter-bar" style="margin-top: 15px;"></div>
     <div id="catalog" class="catalog-grid"></div>
@@ -467,12 +476,13 @@
     <span><strong>OOC:</strong> Whether you have questions, feedback, or just need to get in touch, please feel free to drop me a message on Discord at <code class="copyable-name" title="Click to copy">stax0r</code>. Always happy to help!</span>
 </footer>
 
+<!-- Firebase SDKs -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // REPLACE THIS WITH YOUR FIREBASE CONFIG
+    // FIREBASE CONFIG
     const firebaseConfig = {
   apiKey: "AIzaSyC8QXlIWT76AZqttFWzLn4IKRRs3wYAaX8",
   authDomain: "alchemy-shop-dcceb.firebaseapp.com",
@@ -577,8 +587,11 @@
         set(ref(db, `ingredients/${id}/stockQty`), Math.max(0, qty));
     };
 
+    // ADDED CONFIRMATION HERE
     window.deleteIngredient = (id) => {
-        remove(ref(db, `ingredients/${id}`));
+        if (window.confirm("Are you sure you want to delete this ingredient? This action cannot be undone.")) {
+            remove(ref(db, `ingredients/${id}`));
+        }
     };
 
     window.addIngredientToRecipe = () => {
@@ -701,8 +714,11 @@
         set(ref(db, `potions/${id}/inStock`), !currentStatus);
     };
 
+    // ADDED CONFIRMATION HERE
     window.deletePotion = (id) => {
-        remove(ref(db, `potions/${id}`));
+        if (window.confirm("Are you sure you want to delete this potion from the catalog? This action cannot be undone.")) {
+            remove(ref(db, `potions/${id}`));
+        }
     };
 
     window.setCategoryFilter = (cat) => {
@@ -710,18 +726,16 @@
         window.render();
     };
 
+    // Cart logic
     window.addToCart = (potionId) => {
         const p = potions[potionId];
         if (!p) return;
-
         const maxQty = p.stockQty !== undefined ? p.stockQty : 0;
         if (maxQty <= 0) return;
 
         const existing = clientCart.find(item => item.potionId === potionId);
         if (existing) {
-            if (existing.qty < maxQty) {
-                existing.qty += 1;
-            }
+            if (existing.qty < maxQty) existing.qty += 1;
         } else {
             clientCart.push({ potionId, qty: 1 });
         }
@@ -731,28 +745,16 @@
     window.updateCartQty = (index, newQty) => {
         const item = clientCart[index];
         if (!item) return;
-
         const p = potions[item.potionId];
         const maxQty = p && p.stockQty !== undefined ? p.stockQty : 0;
         let qty = parseInt(newQty) || 0;
-
-        if (qty <= 0) {
-            clientCart.splice(index, 1);
-        } else {
-            clientCart[index].qty = Math.min(qty, maxQty);
-        }
+        if (qty <= 0) clientCart.splice(index, 1);
+        else clientCart[index].qty = Math.min(qty, maxQty);
         window.renderCart();
     };
 
-    window.removeFromCart = (index) => {
-        clientCart.splice(index, 1);
-        window.renderCart();
-    };
-
-    window.clearCart = () => {
-        clientCart = [];
-        window.renderCart();
-    };
+    window.removeFromCart = (index) => { clientCart.splice(index, 1); window.renderCart(); };
+    window.clearCart = () => { clientCart = []; window.renderCart(); };
 
     window.renderCart = () => {
         const listDiv = document.getElementById('cart-items-list');
@@ -765,13 +767,10 @@
             return;
         }
 
-        let totalCost = 0;
-        let totalItems = 0;
-
+        let totalCost = 0, totalItems = 0;
         listDiv.innerHTML = clientCart.map((item, index) => {
             const p = potions[item.potionId];
             if (!p) return '';
-            
             const maxQty = p.stockQty !== undefined ? p.stockQty : 0;
             const lineTotal = (p.salePrice || 0) * item.qty;
             totalCost += lineTotal;
@@ -797,35 +796,23 @@
         `;
     };
 
+    // Custom Orders logic
     window.addCustomOrder = (potionId) => {
         const existing = customOrders.find(item => item.potionId === potionId);
-        if (existing) {
-            existing.qty += 1;
-        } else {
-            customOrders.push({ potionId, qty: 1 });
-        }
+        if (existing) existing.qty += 1;
+        else customOrders.push({ potionId, qty: 1 });
         window.renderCustomOrders();
     };
 
     window.updateCustomQty = (index, newQty) => {
         const qty = parseInt(newQty) || 0;
-        if (qty <= 0) {
-            customOrders.splice(index, 1);
-        } else {
-            customOrders[index].qty = qty;
-        }
+        if (qty <= 0) customOrders.splice(index, 1);
+        else customOrders[index].qty = qty;
         window.renderCustomOrders();
     };
 
-    window.removeCustomOrder = (index) => {
-        customOrders.splice(index, 1);
-        window.renderCustomOrders();
-    };
-
-    window.clearCustomOrders = () => {
-        customOrders = [];
-        window.renderCustomOrders();
-    };
+    window.removeCustomOrder = (index) => { customOrders.splice(index, 1); window.renderCustomOrders(); };
+    window.clearCustomOrders = () => { customOrders = []; window.renderCustomOrders(); };
 
     window.copyOrderFormat = () => {
         const copyText = document.getElementById("custom-order-copy-area");
@@ -848,14 +835,10 @@
             return;
         }
 
-        let totalCost = 0;
-        let totalItems = 0;
-        let orderLines = [];
-
+        let totalCost = 0, totalItems = 0, orderLines = [];
         listDiv.innerHTML = customOrders.map((item, index) => {
             const p = potions[item.potionId];
             if (!p) return '';
-            
             const lineTotal = (p.salePrice || 0) * item.qty;
             totalCost += lineTotal;
             totalItems += item.qty;
@@ -874,7 +857,6 @@
         }).join('');
 
         const formattedOrderString = orderLines.join('\n') + `\nTotal Cost: ${totalCost.toFixed(2)}g`;
-
         summaryDiv.innerHTML = `
             <div class="cart-summary">
                 <span>Total Custom Requests: <strong>${totalItems}</strong></span>
@@ -888,6 +870,7 @@
         `;
     };
 
+    // Batch Manifest logic
     window.addBatchRow = () => {
         const select = document.getElementById('batch-potion-select');
         const qtyInput = document.getElementById('batch-qty');
@@ -897,22 +880,15 @@
         if (!potionId || qty <= 0) return;
 
         const existing = batchManifest.find(item => item.potionId === potionId);
-        if (existing) {
-            existing.qty += qty;
-        } else {
-            batchManifest.push({ potionId, qty });
-        }
-
+        if (existing) existing.qty += qty;
+        else batchManifest.push({ potionId, qty });
         window.renderBatchCalculator();
     };
 
     window.updateBatchQty = (index, newQty) => {
         const qty = parseInt(newQty) || 0;
-        if (qty <= 0) {
-            batchManifest.splice(index, 1);
-        } else {
-            batchManifest[index].qty = qty;
-        }
+        if (qty <= 0) batchManifest.splice(index, 1);
+        else batchManifest[index].qty = qty;
         window.renderBatchCalculator();
     };
 
@@ -925,6 +901,69 @@
         if (!window.clientSuppliedQty) window.clientSuppliedQty = {};
         window.clientSuppliedQty[ingId] = Math.max(0, parseFloat(val) || 0);
         window.renderBatchCalculator();
+    };
+
+    // ADDED: Auto-Deduct Inventory Function
+    window.executeBatchCraft = () => {
+        if (batchManifest.length === 0) return;
+
+        const confirmMsg = "Are you sure you want to execute this batch? This will automatically deduct the required ingredients from your personal stock based on what the client is NOT providing.";
+        if (!window.confirm(confirmMsg)) return;
+
+        const updates = {};
+        const aggregatedIngredients = {};
+
+        // Recalculate what needs to be pulled from stock
+        batchManifest.forEach(item => {
+            const p = potions[item.potionId];
+            if (!p) return;
+
+            if (p.recipe) {
+                p.recipe.forEach(r => {
+                    const ing = ingredients[r.ingredientId];
+                    if (!ing) return;
+                    
+                    const totalNeeded = r.qty * item.qty;
+                    if (!aggregatedIngredients[r.ingredientId]) {
+                        aggregatedIngredients[r.ingredientId] = {
+                            stockQty: ing.stockQty || 0,
+                            qtyRequired: 0
+                        };
+                    }
+                    aggregatedIngredients[r.ingredientId].qtyRequired += totalNeeded;
+                });
+            }
+        });
+
+        // Determine stock deductions
+        Object.keys(aggregatedIngredients).forEach(ingId => {
+            const ing = aggregatedIngredients[ingId];
+            const clientQty = Math.min(ing.qtyRequired, parseFloat(window.clientSuppliedQty[ingId]) || 0);
+            const remainingAfterClient = Math.max(0, ing.qtyRequired - clientQty);
+            const stockUsed = Math.min(remainingAfterClient, ing.stockQty);
+
+            if (stockUsed > 0) {
+                updates[`ingredients/${ingId}/stockQty`] = ing.stockQty - stockUsed;
+            }
+        });
+
+        if (Object.keys(updates).length > 0) {
+            update(ref(db), updates)
+                .then(() => {
+                    alert("Batch successfully crafted! Personal inventory stock has been deducted.");
+                    batchManifest = []; // Clear manifest
+                    window.clientSuppliedQty = {}; // Clear client supply
+                    window.renderBatchCalculator();
+                })
+                .catch(err => {
+                    alert("Error updating inventory: " + err.message);
+                });
+        } else {
+            alert("Batch executed! (No personal stock was deducted, either due to full client supply or 0 stock).");
+            batchManifest = [];
+            window.clientSuppliedQty = {};
+            window.renderBatchCalculator();
+        }
     };
 
     window.renderBatchCalculator = () => {
@@ -958,9 +997,7 @@
         }).join('');
 
         const aggregatedIngredients = {};
-        let fullGrossCraftCost = 0;
-        let defaultSalePrice = 0;
-        let totalUnits = 0;
+        let fullGrossCraftCost = 0, defaultSalePrice = 0, totalUnits = 0;
 
         batchManifest.forEach(item => {
             const p = potions[item.potionId];
@@ -995,10 +1032,7 @@
             }
         });
 
-        let totalClientCredit = 0;
-        let netCraftCost = 0;
-        let totalStockValueUsed = 0;
-
+        let totalClientCredit = 0, netCraftCost = 0, totalStockValueUsed = 0;
         const sortedAggregated = Object.values(aggregatedIngredients).sort((a, b) => 
             (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
         );
@@ -1010,16 +1044,13 @@
         `;
 
         sortedAggregated.forEach(ing => {
-            const clientQty = Math.min(
-                ing.qtyRequired, 
-                parseFloat(window.clientSuppliedQty[ing.id]) || 0
-            );
+            const clientQty = Math.min(ing.qtyRequired, parseFloat(window.clientSuppliedQty[ing.id]) || 0);
             const remainingAfterClient = Math.max(0, ing.qtyRequired - clientQty);
             const stockUsed = Math.min(remainingAfterClient, ing.stockQty);
             const toOrder = Math.max(0, remainingAfterClient - ing.stockQty);
 
-            const ingredientNetCost = toOrder * ing.unitPrice; // Purely out-of-pocket required right now
-            const ingredientStockValue = stockUsed * ing.unitPrice; // Value of personal inventory consumed
+            const ingredientNetCost = toOrder * ing.unitPrice; 
+            const ingredientStockValue = stockUsed * ing.unitPrice; 
             const ingredientClientCredit = clientQty * ing.unitPrice;
 
             totalClientCredit += ingredientClientCredit;
@@ -1053,10 +1084,8 @@
 
         const overrideInput = document.getElementById('batch-price-override');
         const overridePriceInput = overrideInput ? overrideInput.value : "";
-        
         const finalRevenue = overridePriceInput !== "" && !isNaN(parseFloat(overridePriceInput))
-            ? parseFloat(overridePriceInput)
-            : defaultSalePrice;
+            ? parseFloat(overridePriceInput) : defaultSalePrice;
 
         const netProfit = finalRevenue - netCraftCost - totalStockValueUsed;
         const profitMargin = finalRevenue > 0 ? ((netProfit / finalRevenue) * 100).toFixed(0) : 0;
@@ -1092,6 +1121,9 @@
                         <strong class="${netProfit >= 0 ? 'profit-text' : 'loss-text'}">${netProfit.toFixed(2)}g (${profitMargin}%)</strong>
                     </div>
                 </div>
+                
+                <!-- NEW EXECUTE BATCH BUTTON -->
+                <button class="execute-batch-btn" onclick="window.executeBatchCraft()">Execute Batch & Deduct Stock</button>
             </div>
         `;
 
@@ -1152,7 +1184,6 @@
         const catalog = document.getElementById('catalog');
         if (catalog) {
             let visiblePotions = potionArray;
-
             if (selectedCategory !== 'All') {
                 visiblePotions = visiblePotions.filter(p => (p.category || 'General') === selectedCategory);
             }
@@ -1224,7 +1255,6 @@
         window.renderCustomOrders();
     };
 
-    // Initial load setup
     window.render();
 </script>
 </body>
