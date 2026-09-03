@@ -557,6 +557,13 @@
             <div class="form-group">
                 <textarea id="potion-desc" placeholder="Potion Description or Magical Effects..."></textarea>
             </div>
+            
+            <div class="form-group" style="align-items: center;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="potion-bulk-only" style="width: 18px; height: 18px;">
+                    <span style="font-size: 0.9rem; color: var(--gold);">Require Bulk Order (Sold in 10x minimum/multiples)</span>
+                </label>
+            </div>
 
             <h4>Recipe Ingredients (Optional for Found Potions)</h4>
             <div class="form-group">
@@ -589,7 +596,7 @@
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getDatabase, ref, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // FIREBASE CONFIG
+    // REPLACE THIS WITH YOUR FIREBASE CONFIG
     const firebaseConfig = {
   apiKey: "AIzaSyC8QXlIWT76AZqttFWzLn4IKRRs3wYAaX8",
   authDomain: "alchemy-shop-dcceb.firebaseapp.com",
@@ -928,6 +935,7 @@
         const desc = document.getElementById('potion-desc').value.trim();
         const price = parseFloat(document.getElementById('potion-sale-price').value);
         const stockQty = parseInt(document.getElementById('potion-stock-qty').value) || 0;
+        const bulkOnly = document.getElementById('potion-bulk-only').checked;
         const editingId = document.getElementById('editing-potion-id').value;
 
         if (name && !isNaN(price)) {
@@ -947,6 +955,7 @@
                 stockQty: stockQty,
                 inShop: existingInShop,
                 forceOut: existingForceOut,
+                bulkOnly: bulkOnly,
                 recipe: currentRecipe
             });
 
@@ -983,6 +992,7 @@
         document.getElementById('potion-desc').value = p.description || '';
         document.getElementById('potion-sale-price').value = p.salePrice;
         document.getElementById('potion-stock-qty').value = p.stockQty !== undefined ? p.stockQty : 1;
+        document.getElementById('potion-bulk-only').checked = p.bulkOnly === true;
         
         currentRecipe = p.recipe ? [...p.recipe] : [];
         window.renderRecipePreview();
@@ -1001,6 +1011,7 @@
         document.getElementById('potion-desc').value = '';
         document.getElementById('potion-sale-price').value = '';
         document.getElementById('potion-stock-qty').value = '1';
+        document.getElementById('potion-bulk-only').checked = false;
         currentRecipe = [];
         window.renderRecipePreview();
 
@@ -1031,11 +1042,9 @@
     };
 
     window.moveCategoryOrder = (catName, direction) => {
-        // Collect all unique categories
         const potionArray = Object.values(potions);
         let categories = [...new Set(potionArray.map(p => p.category || 'General'))];
 
-        // Ensure categoryOrders mapping is up to date
         categories.sort((a, b) => {
             const orderA = categoryOrders[a] !== undefined ? categoryOrders[a] : 999;
             const orderB = categoryOrders[b] !== undefined ? categoryOrders[b] : 999;
@@ -1049,12 +1058,10 @@
         const targetIndex = direction === 'up' ? index - 1 : index + 1;
         if (targetIndex < 0 || targetIndex >= categories.length) return;
 
-        // Swap positions in array
         const temp = categories[index];
         categories[index] = categories[targetIndex];
         categories[targetIndex] = temp;
 
-        // Save new order indices back to firebase
         const updates = {};
         categories.forEach((cat, idx) => {
             updates[`categoryOrders/${cat}`] = idx + 1;
@@ -1074,11 +1081,15 @@
         const maxQty = p.stockQty !== undefined ? p.stockQty : 0;
         if (maxQty <= 0 || p.forceOut) return;
 
+        const addAmount = p.bulkOnly ? 10 : 1;
+        if (maxQty < addAmount) return;
+
         const existing = clientCart.find(item => item.potionId === potionId);
         if (existing) {
-            if (existing.qty < maxQty) existing.qty += 1;
+            const nextQty = existing.qty + addAmount;
+            if (nextQty <= maxQty) existing.qty = nextQty;
         } else {
-            clientCart.push({ potionId, qty: 1 });
+            clientCart.push({ potionId, qty: addAmount });
         }
         window.renderCart();
     };
@@ -1089,8 +1100,18 @@
         const p = potions[item.potionId];
         const maxQty = p && p.stockQty !== undefined ? p.stockQty : 0;
         let qty = parseInt(newQty) || 0;
-        if (qty <= 0 || (p && p.forceOut)) clientCart.splice(index, 1);
-        else clientCart[index].qty = Math.min(qty, maxQty);
+
+        if (p && p.bulkOnly) {
+            if (qty < 10) {
+                clientCart.splice(index, 1);
+            } else {
+                qty = Math.floor(qty / 10) * 10;
+                clientCart[index].qty = Math.min(qty, maxQty);
+            }
+        } else {
+            if (qty <= 0 || (p && p.forceOut)) clientCart.splice(index, 1);
+            else clientCart[index].qty = Math.min(qty, maxQty);
+        }
         window.renderCart();
     };
 
@@ -1119,9 +1140,9 @@
 
             return `
                 <div class="item-row">
-                    <span><strong>${p.name}</strong> (${p.salePrice}g each)</span>
+                    <span><strong>${p.name}</strong> (${p.salePrice}g each) ${p.bulkOnly ? '<span style="color:var(--custom-order); font-size:0.75rem;">(10x Bulk)</span>' : ''}</span>
                     <div>
-                        <input type="number" value="${item.qty}" min="1" max="${maxQty}" style="width: 60px;" onchange="window.updateCartQty(${index}, this.value)">
+                        <input type="number" value="${item.qty}" min="${p.bulkOnly ? 10 : 1}" step="${p.bulkOnly ? 10 : 1}" max="${maxQty}" style="width: 70px;" onchange="window.updateCartQty(${index}, this.value)">
                         <span style="color: var(--gold); font-weight: bold; margin: 0 8px;">${lineTotal.toFixed(2)}g</span>
                         <button class="delete-btn" onclick="window.removeFromCart(${index})">X</button>
                     </div>
@@ -1138,16 +1159,29 @@
     };
 
     window.addCustomOrder = (potionId) => {
+        const p = potions[potionId];
+        const addQty = p && p.bulkOnly ? 10 : 1;
         const existing = customOrders.find(item => item.potionId === potionId);
-        if (existing) existing.qty += 1;
-        else customOrders.push({ potionId, qty: 1 });
+        if (existing) existing.qty += addQty;
+        else customOrders.push({ potionId, qty: addQty });
         window.renderCustomOrders();
     };
 
     window.updateCustomQty = (index, newQty) => {
-        const qty = parseInt(newQty) || 0;
-        if (qty <= 0) customOrders.splice(index, 1);
-        else customOrders[index].qty = qty;
+        const item = customOrders[index];
+        const p = item ? potions[item.potionId] : null;
+        let qty = parseInt(newQty) || 0;
+        
+        if (p && p.bulkOnly) {
+            if (qty < 10) customOrders.splice(index, 1);
+            else {
+                qty = Math.floor(qty / 10) * 10;
+                customOrders[index].qty = qty;
+            }
+        } else {
+            if (qty <= 0) customOrders.splice(index, 1);
+            else customOrders[index].qty = qty;
+        }
         window.renderCustomOrders();
     };
 
@@ -1186,9 +1220,9 @@
 
             return `
                 <div class="item-row">
-                    <span><strong>${p.name}</strong></span>
+                    <span><strong>${p.name}</strong> ${p.bulkOnly ? '<span style="color:var(--custom-order); font-size:0.75rem;">(10x Bulk)</span>' : ''}</span>
                     <div>
-                        <input type="number" value="${item.qty}" min="1" style="width: 60px;" onchange="window.updateCustomQty(${index}, this.value)">
+                        <input type="number" value="${item.qty}" min="${p.bulkOnly ? 10 : 1}" step="${p.bulkOnly ? 10 : 1}" style="width: 70px;" onchange="window.updateCustomQty(${index}, this.value)">
                         <span style="color: var(--gold); font-weight: bold; margin: 0 8px;">${lineTotal.toFixed(2)}g</span>
                         <button class="delete-btn" onclick="window.removeCustomOrder(${index})">X</button>
                     </div>
@@ -1213,10 +1247,12 @@
     window.addBatchRow = () => {
         const select = document.getElementById('batch-potion-select');
         const qtyInput = document.getElementById('batch-qty');
-        const qty = qtyInput ? (parseInt(qtyInput.value) || 1) : 1;
         const potionId = select ? select.value : null;
+        const p = potions[potionId];
+        let qty = qtyInput ? (parseInt(qtyInput.value) || 1) : 1;
 
-        if (!potionId || qty <= 0) return;
+        if (!potionId) return;
+        if (p && p.bulkOnly && qty < 10) qty = 10;
 
         const existing = batchManifest.find(item => item.potionId === potionId);
         if (existing) existing.qty += qty;
@@ -1225,9 +1261,20 @@
     };
 
     window.updateBatchQty = (index, newQty) => {
-        const qty = parseInt(newQty) || 0;
-        if (qty <= 0) batchManifest.splice(index, 1);
-        else batchManifest[index].qty = qty;
+        const item = batchManifest[index];
+        const p = item ? potions[item.potionId] : null;
+        let qty = parseInt(newQty) || 0;
+        
+        if (p && p.bulkOnly) {
+            if (qty < 10) batchManifest.splice(index, 1);
+            else {
+                qty = Math.floor(qty / 10) * 10;
+                batchManifest[index].qty = qty;
+            }
+        } else {
+            if (qty <= 0) batchManifest.splice(index, 1);
+            else batchManifest[index].qty = qty;
+        }
         window.renderBatchCalculator();
     };
 
@@ -1323,9 +1370,9 @@
             if (!p) return '';
             return `
                 <div class="item-row">
-                    <span>${p.name} (${p.salePrice}g)</span>
+                    <span>${p.name} (${p.salePrice}g) ${p.bulkOnly ? '<span style="color:var(--custom-order); font-size:0.75rem;">(10x Bulk)</span>' : ''}</span>
                     <div>
-                        <input type="number" value="${item.qty}" min="1" style="width: 60px;" onchange="window.updateBatchQty(${index}, this.value)"> units
+                        <input type="number" value="${item.qty}" min="${p.bulkOnly ? 10 : 1}" step="${p.bulkOnly ? 10 : 1}" style="width: 70px;" onchange="window.updateBatchQty(${index}, this.value)"> units
                         <button class="delete-btn" onclick="window.removeBatchRow(${index})">X</button>
                     </div>
                 </div>
@@ -1726,6 +1773,7 @@
                                 ` : ''}
 
                                 ${isOutOfStock ? `<span class="badge-out">Out of Stock</span>` : ''}
+                                ${p.bulkOnly ? `<span class="badge-out" style="background: var(--custom-order); color: #fff;">Bulk 10x Only</span>` : ''}
                                 ${!isInShop && currentUser ? `<span class="badge-out" style="background: var(--border); color: var(--text);">Hidden from Shop</span>` : ''}
                                 <div class="category-tag">${p.category || 'General'}</div>
                                 <h3 style="margin-top: 4px;">${p.name}</h3>
