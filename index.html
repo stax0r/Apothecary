@@ -241,6 +241,8 @@
         .stock-btn.off { background: var(--danger); }
         .visible-btn { background: var(--success); padding: 4px 8px; font-size: 0.75rem; }
         .visible-btn.off { background: #555; }
+        .order-btn { background: var(--border); padding: 3px 8px; font-size: 0.75rem; border-radius: 4px; color: #fff; }
+        .order-btn:hover { background: var(--accent); }
 
         .action-btn-group {
             display: flex;
@@ -475,6 +477,19 @@
 
         <hr style="border-color: var(--border); margin: 20px 0;">
 
+        <div class="collapse-header" onclick="toggleSection('tag-collapsible-wrapper', 'tag-collapse-btn')">
+            <h2>Manage Category Display Order</h2>
+            <button class="collapse-btn" id="tag-collapse-btn">Hide ▲</button>
+        </div>
+        <div id="tag-collapsible-wrapper" style="margin-top: 15px;">
+            <div style="background: var(--bg-color); border: 1px solid var(--border); border-radius: 6px; padding: 12px;">
+                <p style="font-size: 0.85rem; color: var(--text-dim); margin-top: 0; margin-bottom: 10px;">Reorder how catalog categories are displayed to customers.</p>
+                <div id="category-order-list"></div>
+            </div>
+        </div>
+
+        <hr style="border-color: var(--border); margin: 20px 0;">
+
         <h2>Batch Order Manifest</h2>
         <div class="form-group" style="margin-top: 10px;">
             <select id="batch-potion-select" style="flex: 2;"></select>
@@ -574,7 +589,7 @@
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getDatabase, ref, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    //  FIREBASE CONFIG
+    // FIREBASE CONFIG
     const firebaseConfig = {
   apiKey: "AIzaSyC8QXlIWT76AZqttFWzLn4IKRRs3wYAaX8",
   authDomain: "alchemy-shop-dcceb.firebaseapp.com",
@@ -592,6 +607,7 @@
 
     let ingredients = {};
     let potions = {};
+    let categoryOrders = {};
     let currentRecipe = [];
     let currentUser = null;
     let selectedCategory = 'All';
@@ -609,6 +625,11 @@
 
     onValue(ref(db, 'potions'), (snapshot) => {
         potions = snapshot.val() || {};
+        window.render();
+    });
+
+    onValue(ref(db, 'categoryOrders'), (snapshot) => {
+        categoryOrders = snapshot.val() || {};
         window.render();
     });
 
@@ -672,7 +693,6 @@
             return;
         }
 
-        // Duplicate check (case-insensitive)
         const nameLower = name.toLowerCase();
         const existingEntry = Object.values(ingredients).find(i => (i.name || '').toLowerCase() === nameLower);
 
@@ -718,7 +738,6 @@
             return;
         }
 
-        // Check duplicates on edit (case-insensitive, excluding current ID)
         const newNameLower = newName.toLowerCase();
         const duplicate = Object.values(ingredients).find(i => i.id !== id && (i.name || '').toLowerCase() === newNameLower);
         if (duplicate) {
@@ -728,7 +747,6 @@
 
         const oldName = ingredients[id] ? ingredients[id].name : '';
 
-        // Perform ingredient update
         update(ref(db, `ingredients/${id}`), {
             name: newName,
             price: Math.max(0, price),
@@ -737,7 +755,6 @@
         }).then(() => {
             window.editingIngredientId = null;
 
-            // Real-time recipe name synchronization across all potions
             if (oldName !== newName && potions) {
                 const potionUpdates = {};
                 let updated = false;
@@ -773,9 +790,7 @@
         if (window.confirm("Are you sure you want to delete this ingredient? It will also be automatically removed from any potion recipes.")) {
             if (window.editingIngredientId === id) window.editingIngredientId = null;
 
-            // Remove from DB
             remove(ref(db, `ingredients/${id}`)).then(() => {
-                // Scrub from all potion recipes in real time
                 if (potions) {
                     const potionUpdates = {};
                     let updated = false;
@@ -798,7 +813,6 @@
         }
     };
 
-    // Quick Deposit Autocomplete Logic
     window.handleQuickDepositInput = (query) => {
         const dropdown = document.getElementById('quick-deposit-dropdown');
         if (!dropdown) return;
@@ -821,7 +835,7 @@
         }
 
         dropdown.innerHTML = matches.map(i => `
-            <div class="autocomplete-item" onclick="window.selectQuickDepositIngredient('${i.id}', '${i.name.replace(/'/g, "\\'")}')">
+            <div class="autocomplete-item" onclick="window.selectQuickDepositIngredient('${i.id}', '${i.name.replace(/'/g, "\\'")} ')">
                 ${i.name} <span style="color: var(--stock-blue); font-size: 0.75rem;">(Stock: ${i.stockQty || 0})</span>
             </div>
         `).join('');
@@ -831,7 +845,7 @@
     window.selectQuickDepositIngredient = (id, name) => {
         window.selectedQuickDepositIngredientId = id;
         const input = document.getElementById('quick-deposit-input');
-        if (input) input.value = name;
+        if (input) input.value = name.trim();
         const dropdown = document.getElementById('quick-deposit-dropdown');
         if (dropdown) dropdown.classList.add('hidden');
     };
@@ -936,6 +950,23 @@
                 recipe: currentRecipe
             });
 
+            // Ensure category has an entry in categoryOrders if it doesn't exist yet
+            const allCats = [...new Set([...Object.values(potions).map(p => p.category || 'General'), category])];
+            const updates = {};
+            let maxOrder = 0;
+            Object.values(categoryOrders).forEach(o => { if (o > maxOrder) maxOrder = o; });
+
+            allCats.forEach(cat => {
+                if (categoryOrders[cat] === undefined) {
+                    maxOrder++;
+                    updates[`categoryOrders/${cat}`] = maxOrder;
+                }
+            });
+
+            if (Object.keys(updates).length > 0) {
+                update(ref(db), updates);
+            }
+
             window.cancelEditPotion();
         } else {
             alert("Please provide a valid potion name and sale price.");
@@ -997,6 +1028,39 @@
         if (window.confirm("Are you sure you want to delete this potion from the catalog? This action cannot be undone.")) {
             remove(ref(db, `potions/${id}`));
         }
+    };
+
+    window.moveCategoryOrder = (catName, direction) => {
+        // Collect all unique categories
+        const potionArray = Object.values(potions);
+        let categories = [...new Set(potionArray.map(p => p.category || 'General'))];
+
+        // Ensure categoryOrders mapping is up to date
+        categories.sort((a, b) => {
+            const orderA = categoryOrders[a] !== undefined ? categoryOrders[a] : 999;
+            const orderB = categoryOrders[b] !== undefined ? categoryOrders[b] : 999;
+            if (orderA !== orderB) return orderA - orderB;
+            return a.localeCompare(b);
+        });
+
+        const index = categories.indexOf(catName);
+        if (index === -1) return;
+
+        const targetIndex = direction === 'up' ? index - 1 : index + 1;
+        if (targetIndex < 0 || targetIndex >= categories.length) return;
+
+        // Swap positions in array
+        const temp = categories[index];
+        categories[index] = categories[targetIndex];
+        categories[targetIndex] = temp;
+
+        // Save new order indices back to firebase
+        const updates = {};
+        categories.forEach((cat, idx) => {
+            updates[`categoryOrders/${cat}`] = idx + 1;
+        });
+
+        update(ref(db), updates);
     };
 
     window.setCategoryFilter = (cat) => {
@@ -1409,7 +1473,6 @@
         }, 0);
     }
 
-    // Helper to determine which ingredients are actively used in any potion recipe
     function getUsedIngredientIds() {
         const usedIds = new Set();
         if (potions) {
@@ -1436,7 +1499,6 @@
         const usedIds = getUsedIngredientIds();
         let ingArray = Object.values(ingredients);
 
-        // Split into Active and Unused arrays
         let activeArray = [];
         let unusedArray = [];
 
@@ -1448,7 +1510,6 @@
             }
         });
 
-        // Sort Active Ingredients: Priority 1: Low stock (Red) -> Priority 2: Normal -> Priority 3: Unpriced (Yellow)
         activeArray.sort((a, b) => {
             const aStock = a.stockQty || 0;
             const aThreshold = a.threshold || 0;
@@ -1460,21 +1521,17 @@
             const bIsLow = bStock <= bThreshold;
             const bIsUnpriced = (b.price === 0 || b.price === '' || isNaN(b.price));
 
-            // Low stock first
             if (aIsLow && !bIsLow) return -1;
             if (!aIsLow && bIsLow) return 1;
 
-            // Then normal items before unpriced items (yellow last)
             if (!aIsUnpriced && bIsUnpriced) return -1;
             if (aIsUnpriced && !bIsUnpriced) return 1;
 
-            // Alphabetical tie-breaker
             return (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' });
         });
 
         unusedArray.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
 
-        // Update Unused Box Visibility & Count
         if (unusedArray.length > 0) {
             unusedContainer.classList.remove('hidden');
             unusedCountSpan.innerText = unusedArray.length;
@@ -1488,14 +1545,12 @@
             filteredActive = activeArray.filter(i => (i.name || '').toLowerCase().includes(query));
         }
 
-        // Render Active List
         if (filteredActive.length === 0) {
             ingList.innerHTML = `<p style="color: var(--text-dim); font-size: 0.85rem; margin: 0; padding: 6px;">No active ingredients found.</p>`;
         } else {
             ingList.innerHTML = filteredActive.map(i => generateIngredientRowHTML(i, false)).join('');
         }
 
-        // Render Unused List
         if (unusedArray.length === 0) {
             unusedList.innerHTML = `<p style="color: var(--text-dim); font-size: 0.85rem; margin: 0; padding: 6px;">No unused ingredients.</p>`;
         } else {
@@ -1565,6 +1620,36 @@
         }
     }
 
+    window.renderCategoryOrderList = () => {
+        const container = document.getElementById('category-order-list');
+        if (!container) return;
+
+        const potionArray = Object.values(potions);
+        let categories = [...new Set(potionArray.map(p => p.category || 'General'))];
+
+        categories.sort((a, b) => {
+            const orderA = categoryOrders[a] !== undefined ? categoryOrders[a] : 999;
+            const orderB = categoryOrders[b] !== undefined ? categoryOrders[b] : 999;
+            if (orderA !== orderB) return orderA - orderB;
+            return a.localeCompare(b);
+        });
+
+        if (categories.length === 0) {
+            container.innerHTML = `<p style="color: var(--text-dim); font-size: 0.85rem; margin: 0;">No categories found.</p>`;
+            return;
+        }
+
+        container.innerHTML = categories.map((cat, index) => `
+            <div class="item-row" style="background: var(--bg-color);">
+                <span><strong>${index + 1}.</strong> ${cat}</span>
+                <div style="display: flex; gap: 6px;">
+                    <button class="order-btn" onclick="window.moveCategoryOrder('${cat.replace(/'/g, "\\'")}', 'up')" ${index === 0 ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>▲ Up</button>
+                    <button class="order-btn" onclick="window.moveCategoryOrder('${cat.replace(/'/g, "\\'")}', 'down')" ${index === categories.length - 1 ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>▼ Down</button>
+                </div>
+            </div>
+        `).join('');
+    };
+
     window.render = () => {
         const ingArray = Object.values(ingredients);
         ingArray.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
@@ -1583,11 +1668,20 @@
         }
 
         window.renderIngredientsList();
+        window.renderCategoryOrderList();
 
-        const categories = ['All', ...new Set(potionArray.map(p => p.category || 'General'))];
+        let categories = [...new Set(potionArray.map(p => p.category || 'General'))];
+        categories.sort((a, b) => {
+            const orderA = categoryOrders[a] !== undefined ? categoryOrders[a] : 999;
+            const orderB = categoryOrders[b] !== undefined ? categoryOrders[b] : 999;
+            if (orderA !== orderB) return orderA - orderB;
+            return a.localeCompare(b);
+        });
+
+        const filterCategories = ['All', ...categories];
         const filterBar = document.getElementById('filter-bar');
         if (filterBar) {
-            filterBar.innerHTML = categories.map(cat => `
+            filterBar.innerHTML = filterCategories.map(cat => `
                 <button class="filter-btn ${selectedCategory === cat ? 'active' : ''}" onclick="window.setCategoryFilter('${cat}')">${cat}</button>
             `).join('');
         }
