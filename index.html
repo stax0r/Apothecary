@@ -490,6 +490,19 @@
 
         <hr style="border-color: var(--border); margin: 20px 0;">
 
+        <div class="collapse-header" onclick="toggleSection('sales-helper-collapsible-wrapper', 'sales-helper-collapse-btn')">
+            <h2>Satchel Sales Calculator</h2>
+            <button class="collapse-btn" id="sales-helper-collapse-btn">Hide ▲</button>
+        </div>
+        <div id="sales-helper-collapsible-wrapper" style="margin-top: 15px;">
+            <div style="background: var(--bg-color); border: 1px solid var(--border); border-radius: 6px; padding: 12px;">
+                <p style="font-size: 0.85rem; color: var(--text-dim); margin-top: 0; margin-bottom: 10px;">Calculates total cost, total sales price, and ingredient breakdown for everything currently in the Client Satchel.</p>
+                <div id="admin-sales-helper-content"></div>
+            </div>
+        </div>
+
+        <hr style="border-color: var(--border); margin: 20px 0;">
+
         <h2>Batch Order Manifest</h2>
         <div class="form-group" style="margin-top: 10px;">
             <select id="batch-potion-select" style="flex: 2;"></select>
@@ -959,7 +972,6 @@
                 recipe: currentRecipe
             });
 
-            // Ensure category has an entry in categoryOrders if it doesn't exist yet
             const allCats = [...new Set([...Object.values(potions).map(p => p.category || 'General'), category])];
             const updates = {};
             let maxOrder = 0;
@@ -1126,6 +1138,7 @@
         if (clientCart.length === 0) {
             listDiv.innerHTML = `<p style="color: var(--text-dim); font-size: 0.85rem; margin: 0;">Your satchel is empty. Select available potions from the catalog below.</p>`;
             summaryDiv.innerHTML = '';
+            window.renderAdminSalesHelper();
             return;
         }
 
@@ -1156,6 +1169,104 @@
                 <span style="font-size: 1.1rem;">Total Price: <strong style="color: var(--gold);">${totalCost.toFixed(2)} Gold</strong></span>
             </div>
         `;
+        window.renderAdminSalesHelper();
+    };
+
+    window.renderAdminSalesHelper = () => {
+        const container = document.getElementById('admin-sales-helper-content');
+        if (!container) return;
+
+        if (!currentUser) {
+            container.innerHTML = `<p style="color: var(--text-dim); font-size: 0.85rem; margin: 0;">Log in as Alchemist to view the satchel sales business helper.</p>`;
+            return;
+        }
+
+        if (clientCart.length === 0) {
+            container.innerHTML = `<p style="color: var(--text-dim); font-size: 0.85rem; margin: 0;">Satchel is currently empty. Add potions to review business analytics.</p>`;
+            return;
+        }
+
+        let totalSatchelPrice = 0;
+        let totalSatchelCost = 0;
+        const ingredientBreakdown = {};
+
+        clientCart.forEach(item => {
+            const p = potions[item.potionId];
+            if (!p) return;
+            const itemQty = item.qty;
+            totalSatchelPrice += (p.salePrice || 0) * itemQty;
+
+            const potionCost = calculatePotionCost(p.recipe);
+            totalSatchelCost += potionCost * itemQty;
+
+            if (p.recipe && Array.isArray(p.recipe)) {
+                p.recipe.forEach(r => {
+                    const ing = ingredients[r.ingredientId];
+                    const unitPrice = ing ? ing.price : 0;
+                    const requiredTotal = r.qty * itemQty;
+                    const finalCostPerIngredient = unitPrice * requiredTotal;
+
+                    if (!ingredientBreakdown[r.ingredientId]) {
+                        ingredientBreakdown[r.ingredientId] = {
+                            name: r.name,
+                            totalQty: 0,
+                            unitPrice: unitPrice,
+                            finalPrice: 0
+                        };
+                    }
+                    ingredientBreakdown[r.ingredientId].totalQty += requiredTotal;
+                    ingredientBreakdown[r.ingredientId].finalPrice += finalCostPerIngredient;
+                });
+            }
+        });
+
+        const netProfit = totalSatchelPrice - totalSatchelCost;
+        const profitMargin = totalSatchelPrice > 0 ? ((netProfit / totalSatchelPrice) * 100).toFixed(0) : 0;
+
+        const sortedIngredients = Object.values(ingredientBreakdown).sort((a, b) => 
+            (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
+        );
+
+        let html = `
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <div class="batch-metrics" style="margin-top: 0; padding-top: 0; border-top: none;">
+                    <div class="metric-box">
+                        <span>Satchel Revenue</span>
+                        <strong style="color: var(--gold);">${totalSatchelPrice.toFixed(2)}g</strong>
+                    </div>
+                    <div class="metric-box">
+                        <span>Satchel Craft Cost</span>
+                        <strong style="color: var(--danger);">${totalSatchelCost.toFixed(2)}g</strong>
+                    </div>
+                    <div class="metric-box">
+                        <span>Expected Profit</span>
+                        <strong class="${netProfit >= 0 ? 'profit-text' : 'loss-text'}">${netProfit.toFixed(2)}g (${profitMargin}%)</strong>
+                    </div>
+                </div>
+
+                <h4 style="font-size: 0.9rem; margin-top: 5px; color: var(--stock-blue);">Ingredient Aggregate Required</h4>
+                <div style="display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto;">
+        `;
+
+        if (sortedIngredients.length === 0) {
+            html += `<p style="color: var(--text-dim); font-size: 0.85rem; margin: 0;">No ingredients required for potions in the satchel.</p>`;
+        } else {
+            sortedIngredients.forEach(ing => {
+                html += `
+                    <div class="item-row" style="background: rgba(0,0,0,0.2); padding: 6px 10px; margin-bottom: 0;">
+                        <span><strong>${ing.name}</strong> (${ing.unitPrice}g/ea)</span>
+                        <span>Total Qty: <strong>${ing.totalQty}x</strong> | Final Price: <strong style="color: var(--gold);">${ing.finalPrice.toFixed(2)}g</strong></span>
+                    </div>
+                `;
+            });
+        }
+
+        html += `
+                </div>
+            </div>
+        `;
+
+        container.innerHTML = html;
     };
 
     window.addCustomOrder = (potionId) => {
@@ -1702,7 +1813,24 @@
         ingArray.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
 
         let potionArray = Object.values(potions);
-        potionArray.sort((a, b) => a.salePrice - b.salePrice);
+        
+        // Sorting sequence requested: In Stock > By Price > Out of Stock > By Price
+        potionArray.sort((a, b) => {
+            const aStock = a.stockQty !== undefined ? a.stockQty : 0;
+            const aForceOut = a.forceOut === true;
+            const aIsOut = aForceOut || (aStock <= 0);
+
+            const bStock = b.stockQty !== undefined ? b.stockQty : 0;
+            const bForceOut = b.forceOut === true;
+            const bIsOut = bForceOut || (bStock <= 0);
+
+            // If one is in stock and the other is out, in-stock comes first
+            if (!aIsOut && bIsOut) return -1;
+            if (aIsOut && !bIsOut) return 1;
+
+            // Otherwise, sort both groups ascending by price
+            return (a.salePrice || 0) - (b.salePrice || 0);
+        });
 
         const select = document.getElementById('recipe-ing-select');
         if (select) {
@@ -1716,6 +1844,7 @@
 
         window.renderIngredientsList();
         window.renderCategoryOrderList();
+        window.renderAdminSalesHelper();
 
         let categories = [...new Set(potionArray.map(p => p.category || 'General'))];
         categories.sort((a, b) => {
