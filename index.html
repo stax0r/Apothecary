@@ -411,23 +411,28 @@
 </head>
 <body>
 
-<!-- Admin Config Floating Button & Modal -->
-<button id="config-btn" class="admin-toggle hidden" onclick="toggleConfigModal()" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); background: var(--card-bg); padding: 10px 16px;">⚙️ Config</button>
+<!-- Theme Floating Button & Modal (Visible to Everyone) -->
+<button id="theme-btn" class="admin-toggle" onclick="toggleThemeModal()" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); background: var(--card-bg); padding: 10px 16px;">🎨 Theme</button>
 
-<div id="config-modal" class="login-modal hidden" style="position: fixed; bottom: 75px; right: 20px; z-index: 10000; width: 320px; max-height: 80vh; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.6);">
-    <h3>Alchemist Config</h3>
-    
-    <p style="font-size: 0.85rem; color: var(--text-dim); margin: 12px 0 8px 0;">Select Color Scheme:</p>
+<div id="theme-modal" class="login-modal hidden" style="position: fixed; bottom: 75px; right: 20px; z-index: 10000; width: 320px; max-height: 80vh; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.6);">
+    <h3>Select Theme</h3>
+    <p style="font-size: 0.85rem; color: var(--text-dim); margin: 12px 0 8px 0;">Choose your preferred color scheme:</p>
     <div style="display: flex; flex-direction: column; gap: 8px;">
         <button onclick="setTheme('default')" style="background: #262035; border: 1px solid #9d4edd; text-align: left;">💜 Apothecary Purple (Default)</button>
-        <button onclick="setTheme('emerald')" style="background: #13221b; border: 1px solid #2d6a4f; text-align: left;">💚 Emerald Forest</button>
-        <button onclick="setTheme('crimson')" style="background: #2a181b; border: 1px solid #c9184a; text-align: left;">❤️ Alchemist Crimson</button>
-        <button onclick="setTheme('sapphire')" style="background: #1b263b; border: 1px solid #415a77; text-align: left;">💙 Midnight Sapphire</button>
+        <button onclick="setTheme('darkgrey')" style="background: #212529; border: 1px solid #6c757d; text-align: left;">⚙️ Dark Slate / Grey-ish</button>
+        <button onclick="setTheme('forest')" style="background: #111d13; border: 1px solid #40916c; text-align: left;">🌲 Deep Forest</button>
+        <button onclick="setTheme('sunset')" style="background: #2b1d19; border: 1px solid #e07a5f; text-align: left;">🌅 Amber Sunset</button>
     </div>
+    <button onclick="toggleThemeModal()" style="margin-top: 15px; width: 100%; background: var(--border);">Close</button>
+</div>
 
-    <hr style="border-color: var(--border); margin: 15px 0;">
+<!-- Admin Config Floating Button & Modal (Admin Only) -->
+<button id="config-btn" class="admin-toggle hidden" onclick="toggleConfigModal()" style="position: fixed; bottom: 20px; right: 115px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); background: var(--card-bg); padding: 10px 16px;">⚙️ Store config</button>
 
-    <h4 style="font-size: 0.9rem; margin-bottom: 6px;">Category Display Order</h4>
+<div id="config-modal" class="login-modal hidden" style="position: fixed; bottom: 75px; right: 20px; z-index: 10000; width: 320px; max-height: 80vh; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.6);">
+    <h3>Store config</h3>
+    
+    <h4 style="font-size: 0.9rem; margin-top: 12px; margin-bottom: 6px;">Category Display Order</h4>
     <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0; margin-bottom: 10px;">Reorder how catalog categories are displayed to customers.</p>
     <div id="category-order-list"></div>
 
@@ -632,35 +637,35 @@
             '--border': '#3c3254',
             '--gold': '#ffb703'
         },
-        emerald: {
+        darkgrey: {
+            '--bg-color': '#121212',
+            '--card-bg': '#1e1e1e',
+            '--accent': '#6c757d',
+            '--accent-hover': '#495057',
+            '--text': '#f8f9fa',
+            '--text-dim': '#adb5bd',
+            '--border': '#343a40',
+            '--gold': '#ffc107'
+        },
+        forest: {
             '--bg-color': '#0b130f',
-            '--card-bg': '#13221b',
-            '--accent': '#2d6a4f',
-            '--accent-hover': '#1b4332',
+            '--card-bg': '#111d13',
+            '--accent': '#40916c',
+            '--accent-hover': '#2d6a4f',
             '--text': '#d8f3dc',
             '--text-dim': '#95d5b2',
             '--border': '#2d4a3e',
             '--gold': '#d4a373'
         },
-        crimson: {
-            '--bg-color': '#1a1012',
-            '--card-bg': '#2a181b',
-            '--accent': '#c9184a',
-            '--accent-hover': '#a5013b',
-            '--text': '#ffccd5',
-            '--text-dim': '#d88c9a',
-            '--border': '#592933',
-            '--gold': '#ffb703'
-        },
-        sapphire: {
-            '--bg-color': '#0d1b2a',
-            '--card-bg': '#1b263b',
-            '--accent': '#415a77',
-            '--accent-hover': '#778da9',
-            '--text': '#e0e1dd',
-            '--text-dim': '#8d99ae',
-            '--border': '#415a77',
-            '--gold': '#ffb703'
+        sunset: {
+            '--bg-color': '#1f1614',
+            '--card-bg': '#2b1d19',
+            '--accent': '#e07a5f',
+            '--accent-hover': '#cc583d',
+            '--text': '#f4f1de',
+            '--text-dim': '#d8b4a0',
+            '--border': '#4a3530',
+            '--gold': '#f4a261'
         }
     };
 
@@ -671,13 +676,18 @@
             root.style.setProperty(key, value);
         }
         localStorage.setItem('apothecary_theme', themeName);
-        const modal = document.getElementById('config-modal');
+        const modal = document.getElementById('theme-modal');
         if (modal) modal.classList.add('hidden');
     };
 
     // Apply saved theme immediately on load
     const savedTheme = localStorage.getItem('apothecary_theme') || 'default';
     window.setTheme(savedTheme);
+
+    window.toggleThemeModal = () => {
+        const modal = document.getElementById('theme-modal');
+        if (modal) modal.classList.toggle('hidden');
+    };
 
     window.toggleConfigModal = () => {
         const modal = document.getElementById('config-modal');
