@@ -1933,7 +1933,10 @@
 
         const batchSelect = document.getElementById('batch-potion-select');
         if (batchSelect) {
-            batchSelect.innerHTML = potionArray.map(p => `<option value="${p.id}">${p.name} (${p.salePrice}g)</option>`).join('');
+            const sortedBatchPotions = [...potionArray].sort((a, b) => 
+                (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
+            );
+            batchSelect.innerHTML = sortedBatchPotions.map(p => `<option value="${p.id}">${p.name} (${p.salePrice}g)</option>`).join('');
         }
 
         window.renderIngredientsList();
