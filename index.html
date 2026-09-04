@@ -124,6 +124,7 @@
             gap: 8px;
             margin-bottom: 20px;
             flex-wrap: wrap;
+            align-items: center;
         }
 
         .filter-btn {
@@ -368,7 +369,6 @@
             opacity: 0.8;
         }
 
-        /* Dropdown autocomplete styling */
         .autocomplete-wrapper {
             position: relative;
             flex: 2;
@@ -411,7 +411,6 @@
 </head>
 <body>
 
-<!-- Admin Config Floating Button & Modal (Admin Only) -->
 <button id="config-btn" class="admin-toggle hidden" onclick="toggleConfigModal()" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); background: var(--card-bg); padding: 10px 16px;">⚙️ Store config</button>
 
 <div id="config-modal" class="login-modal hidden" style="position: fixed; bottom: 75px; right: 20px; z-index: 10000; width: 320px; max-height: 80vh; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.6);">
@@ -596,7 +595,6 @@
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getDatabase, ref, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    //FIREBASE CONFIG
     const firebaseConfig = {
       apiKey: "AIzaSyC8QXlIWT76AZqttFWzLn4IKRRs3wYAaX8",
       authDomain: "alchemy-shop-dcceb.firebaseapp.com",
@@ -623,6 +621,7 @@
     let currentRecipe = [];
     let currentUser = null;
     let selectedCategory = 'All';
+    let catalogSearchQuery = '';
     let batchManifest = [];
     let clientCart = [];
     let customOrders = [];
@@ -1084,6 +1083,11 @@
 
     window.setCategoryFilter = (cat) => {
         selectedCategory = cat;
+        window.render();
+    };
+
+    window.handleCatalogSearch = (val) => {
+        catalogSearchQuery = val.trim().toLowerCase();
         window.render();
     };
 
@@ -1877,7 +1881,9 @@
         if (filterBar) {
             filterBar.innerHTML = filterCategories.map(cat => `
                 <button class="filter-btn ${selectedCategory === cat ? 'active' : ''}" onclick="window.setCategoryFilter('${cat}')">${cat}</button>
-            `).join('');
+            `).join('') + `
+                <input type="text" id="catalog-search-input" value="${catalogSearchQuery}" placeholder="Search catalog..." style="margin-left: auto; width: 180px; padding: 5px 10px; font-size: 0.85rem;" oninput="window.handleCatalogSearch(this.value)">
+            `;
         }
 
         const catalog = document.getElementById('catalog');
@@ -1889,9 +1895,17 @@
             if (selectedCategory !== 'All') {
                 visiblePotions = visiblePotions.filter(p => (p.category || 'General') === selectedCategory);
             }
+            if (catalogSearchQuery) {
+                visiblePotions = visiblePotions.filter(p => {
+                    const matchName = (p.name || '').toLowerCase().includes(catalogSearchQuery);
+                    const matchDesc = (p.description || '').toLowerCase().includes(catalogSearchQuery);
+                    const matchCat = (p.category || '').toLowerCase().includes(catalogSearchQuery);
+                    return matchName || matchDesc || matchCat;
+                });
+            }
 
             if (visiblePotions.length === 0) {
-                catalog.innerHTML = `<p style="color: var(--text-dim); grid-column: 1/-1;">No items available in this category.</p>`;
+                catalog.innerHTML = `<p style="color: var(--text-dim); grid-column: 1/-1;">No items available matching your criteria.</p>`;
             } else {
                 catalog.innerHTML = visiblePotions.map(p => {
                     const cost = calculatePotionCost(p.recipe);
