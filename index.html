@@ -80,6 +80,10 @@
 
         .potion-creator-panel {
             border-color: rgba(157, 78, 221, 0.4);
+            background-color: rgba(0, 0, 0, 0.15);
+            margin-top: 20px;
+            margin-bottom: 15px;
+            padding: 15px;
         }
 
         .hidden { display: none !important; }
@@ -477,46 +481,51 @@
 
         <hr style="border-color: var(--border); margin: 20px 0;">
 
-        <div class="collapse-header" onclick="toggleSection('tag-collapsible-wrapper', 'tag-collapse-btn')">
-            <h2>Manage Category Display Order</h2>
-            <button class="collapse-btn" id="tag-collapse-btn">Hide ▲</button>
+        <div class="collapse-header" onclick="toggleSection('potion-creator-container', 'brew-collapse-btn')">
+            <h2>Add New Potion to Catalog</h2>
+            <button class="collapse-btn" id="brew-collapse-btn">Hide ▲</button>
         </div>
-        <div id="tag-collapsible-wrapper" style="margin-top: 15px;">
-            <div style="background: var(--bg-color); border: 1px solid var(--border); border-radius: 6px; padding: 12px;">
-                <p style="font-size: 0.85rem; color: var(--text-dim); margin-top: 0; margin-bottom: 10px;">Reorder how catalog categories are displayed to customers.</p>
-                <div id="category-order-list"></div>
+        <div id="potion-creator-container" class="potion-creator-panel">
+            <div id="brew-collapsible-wrapper" style="margin-top: 15px;">
+                <input type="hidden" id="editing-potion-id" value="">
+                <div class="form-group">
+                    <input type="text" id="potion-name" placeholder="Potion Name" style="flex: 2;">
+                    <input type="text" id="potion-category" placeholder="Category (e.g. Restoration)" style="flex: 1;">
+                    <input type="number" id="potion-sale-price" placeholder="Sale Price" step="0.01" style="flex: 1;">
+                    <input type="number" id="potion-stock-qty" placeholder="Stock Qty" min="0" value="1" style="flex: 1;">
+                </div>
+                <div class="form-group">
+                    <textarea id="potion-desc" placeholder="Potion Description or Magical Effects..."></textarea>
+                </div>
+                
+                <div class="form-group" style="align-items: center;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="potion-bulk-only" style="width: 18px; height: 18px;">
+                        <span style="font-size: 0.9rem; color: var(--gold);">Require Bulk Order (Sold in 10x minimum/multiples)</span>
+                    </label>
+                </div>
+
+                <h4>Recipe Ingredients (Optional for Found Potions)</h4>
+                <div class="form-group">
+                    <select id="recipe-ing-select"></select>
+                    <input type="number" id="recipe-ing-qty" placeholder="Qty" value="1" min="1">
+                    <button onclick="addIngredientToRecipe()">+ Add to Recipe</button>
+                </div>
+
+                <ul id="recipe-preview-list"></ul>
+                <p>Calculated Base Cost: <strong id="calculated-cost">0</strong> gold</p>
+
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button id="save-potion-btn" onclick="savePotion()" style="flex: 1;">Create Potion</button>
+                    <button id="cancel-edit-btn" onclick="cancelEditPotion()" class="hidden" style="background: #555;">Cancel Edit</button>
+                </div>
             </div>
         </div>
-
-        <hr style="border-color: var(--border); margin: 20px 0;">
-
-        <div class="collapse-header" onclick="toggleSection('sales-helper-collapsible-wrapper', 'sales-helper-collapse-btn')">
-            <h2>Satchel Sales Calculator</h2>
-            <button class="collapse-btn" id="sales-helper-collapse-btn">Hide ▲</button>
-        </div>
-        <div id="sales-helper-collapsible-wrapper" style="margin-top: 15px;">
-            <div style="background: var(--bg-color); border: 1px solid var(--border); border-radius: 6px; padding: 12px;">
-                <p style="font-size: 0.85rem; color: var(--text-dim); margin-top: 0; margin-bottom: 10px;">Calculates total cost, default sale price, live discount overrides, and ingredient breakdowns for items in the Client Satchel.</p>
-                <div id="admin-sales-helper-content"></div>
-            </div>
-        </div>
-
-        <hr style="border-color: var(--border); margin: 20px 0;">
-
-        <h2>Batch Order Manifest</h2>
-        <div class="form-group" style="margin-top: 10px;">
-            <select id="batch-potion-select" style="flex: 2;"></select>
-            <input type="number" id="batch-qty" placeholder="Qty" value="1" min="1" style="flex: 1;">
-            <button onclick="addBatchRow()">+ Add Potion to Order</button>
-        </div>
-
-        <div id="batch-manifest-list"></div>
-        <div id="batch-results"></div>
     </div>
 
     <div id="cart-panel" class="cart-panel">
         <div class="collapse-header" onclick="toggleSection('satchel-collapsible-wrapper', 'satchel-collapse-btn')">
-            <h2>Your Satchel</h2>
+            <h2>Satchel</h2>
             <div style="display: flex; gap: 8px; align-items: center;" onclick="event.stopPropagation();">
                 <button onclick="clearCart()" style="background: var(--border); font-size: 0.8rem; padding: 4px 10px;">Empty Satchel</button>
                 <button class="collapse-btn" id="satchel-collapse-btn" onclick="toggleSection('satchel-collapsible-wrapper', 'satchel-collapse-btn'); event.stopPropagation();">Hide ▲</button>
@@ -525,12 +534,16 @@
         <div id="satchel-collapsible-wrapper" style="margin-top: 15px;">
             <div id="cart-items-list"></div>
             <div id="cart-summary-area"></div>
+            <div id="admin-sales-helper-container" style="margin-top: 20px; border-top: 1px dashed var(--border); padding-top: 15px;" class="hidden">
+                <h3 style="font-size: 1rem; margin-bottom: 10px; color: var(--accent);">Satchel Sales Calculator (Admin View)</h3>
+                <div id="admin-sales-helper-content"></div>
+            </div>
         </div>
     </div>
 
     <div id="custom-panel" class="custom-panel">
         <div class="collapse-header" onclick="toggleSection('custom-collapsible-wrapper', 'custom-collapse-btn')">
-            <h2 style="color: var(--custom-order);">Custom Orders</h2>
+            <h2 style="color: var(--custom-order);">Custom Order</h2>
             <div style="display: flex; gap: 8px; align-items: center;" onclick="event.stopPropagation();">
                 <button onclick="clearCustomOrders()" style="background: var(--border); font-size: 0.8rem; padding: 4px 10px;">Empty Custom Orders</button>
                 <button class="collapse-btn" id="custom-collapse-btn" onclick="toggleSection('custom-collapsible-wrapper', 'custom-collapse-btn'); event.stopPropagation();">Hide ▲</button>
@@ -539,48 +552,18 @@
         <div id="custom-collapsible-wrapper" style="margin-top: 15px;">
             <div id="custom-items-list"></div>
             <div id="custom-summary-area"></div>
-        </div>
-    </div>
-
-    <div id="potion-creator-container" class="potion-creator-panel hidden">
-        <div class="collapse-header" onclick="toggleSection('brew-collapsible-wrapper', 'brew-collapse-btn')">
-            <h2 id="potion-form-title">Add New Potion to the Catalog</h2>
-            <button class="collapse-btn" id="brew-collapse-btn">Hide ▲</button>
-        </div>
-
-        <div id="brew-collapsible-wrapper" style="margin-top: 15px;">
-            <input type="hidden" id="editing-potion-id" value="">
-            <div class="form-group">
-                <input type="text" id="potion-name" placeholder="Potion Name" style="flex: 2;">
-                <input type="text" id="potion-category" placeholder="Category (e.g. Restoration)" style="flex: 1;">
-                <input type="number" id="potion-sale-price" placeholder="Sale Price" step="0.01" style="flex: 1;">
-                <input type="number" id="potion-stock-qty" placeholder="Stock Qty" min="0" value="1" style="flex: 1;">
-            </div>
-            <div class="form-group">
-                <textarea id="potion-desc" placeholder="Potion Description or Magical Effects..."></textarea>
-            </div>
             
-            <div class="form-group" style="align-items: center;">
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                    <input type="checkbox" id="potion-bulk-only" style="width: 18px; height: 18px;">
-                    <span style="font-size: 0.9rem; color: var(--gold);">Require Bulk Order (Sold in 10x minimum/multiples)</span>
-                </label>
+            <hr style="border-color: var(--border); margin: 20px 0;">
+
+            <h2>Bulk Batch</h2>
+            <div class="form-group" style="margin-top: 10px;">
+                <select id="batch-potion-select" style="flex: 2;"></select>
+                <input type="number" id="batch-qty" placeholder="Qty" value="1" min="1" style="flex: 1;">
+                <button onclick="addBatchRow()">+ Add Potion to Order</button>
             </div>
 
-            <h4>Recipe Ingredients (Optional for Found Potions)</h4>
-            <div class="form-group">
-                <select id="recipe-ing-select"></select>
-                <input type="number" id="recipe-ing-qty" placeholder="Qty" value="1" min="1">
-                <button onclick="addIngredientToRecipe()">+ Add to Recipe</button>
-            </div>
-
-            <ul id="recipe-preview-list"></ul>
-            <p>Calculated Base Cost: <strong id="calculated-cost">0</strong> gold</p>
-
-            <div style="display: flex; gap: 10px; margin-top: 10px;">
-                <button id="save-potion-btn" onclick="savePotion()" style="flex: 1;">Create Potion</button>
-                <button id="cancel-edit-btn" onclick="cancelEditPotion()" class="hidden" style="background: #555;">Cancel Edit</button>
-            </div>
+            <div id="batch-manifest-list"></div>
+            <div id="batch-results"></div>
         </div>
     </div>
 
@@ -590,6 +573,14 @@
 </div>
 
 <footer>
+    <details style="margin-bottom: 15px; text-align: left; display: inline-block; width: 100%; max-width: 400px;" id="category-display-order-details">
+        <summary style="cursor: pointer; font-size: 0.85rem; color: var(--text-dim); text-align: center;">Category Display Order</summary>
+        <div style="background: var(--bg-color); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-top: 8px;">
+            <p style="font-size: 0.8rem; color: var(--text-dim); margin-top: 0; margin-bottom: 10px;">Reorder how catalog categories are displayed to customers.</p>
+            <div id="category-order-list"></div>
+        </div>
+    </details>
+    <br>
     <span><strong>OOC:</strong> Whether you have questions, feedback, or just need to get in touch, please feel free to drop me a message on Discord at <code class="copyable-name" title="Click to copy">stax0r</code>. Always happy to help!</span>
 </footer>
 
@@ -647,18 +638,15 @@
         currentUser = user;
         const authBtn = document.getElementById('auth-btn');
         const adminPanel = document.getElementById('admin-panel');
-        const potionCreatorContainer = document.getElementById('potion-creator-container');
         const loginModal = document.getElementById('login-modal');
 
         if (user) {
             if (authBtn) authBtn.innerText = "Logout";
             if (adminPanel) adminPanel.classList.remove('hidden');
-            if (potionCreatorContainer) potionCreatorContainer.classList.remove('hidden');
             if (loginModal) loginModal.classList.add('hidden');
         } else {
             if (authBtn) authBtn.innerText = "Alchemist Login";
             if (adminPanel) adminPanel.classList.add('hidden');
-            if (potionCreatorContainer) potionCreatorContainer.classList.add('hidden');
         }
         window.render();
     });
@@ -1017,7 +1005,8 @@
         currentRecipe = [];
         window.renderRecipePreview();
 
-        document.getElementById('potion-form-title').innerText = "Add New Potion to the Catalog";
+        const titleElem = document.getElementById('potion-form-title');
+        if (titleElem) titleElem.innerText = "Add New Potion to the Catalog";
         document.getElementById('save-potion-btn').innerText = "Create Potion";
         document.getElementById('cancel-edit-btn').classList.add('hidden');
     };
@@ -1173,12 +1162,15 @@
 
     window.renderAdminSalesHelper = () => {
         const container = document.getElementById('admin-sales-helper-content');
-        if (!container) return;
+        const wrapperContainer = document.getElementById('admin-sales-helper-container');
+        if (!container || !wrapperContainer) return;
 
         if (!currentUser) {
-            container.innerHTML = `<p style="color: var(--text-dim); font-size: 0.85rem; margin: 0;">Log in as Alchemist to view the satchel sales business helper.</p>`;
+            wrapperContainer.classList.add('hidden');
             return;
         }
+
+        wrapperContainer.classList.remove('hidden');
 
         if (clientCart.length === 0) {
             container.innerHTML = `<p style="color: var(--text-dim); font-size: 0.85rem; margin: 0;">Satchel is currently empty. Add potions to review business analytics.</p>`;
@@ -1819,7 +1811,6 @@
 
         let potionArray = Object.values(potions);
         
-        // Sorting sequence: In Stock > By Price > Out of Stock > By Price
         potionArray.sort((a, b) => {
             const aStock = a.stockQty !== undefined ? a.stockQty : 0;
             const aForceOut = a.forceOut === true;
