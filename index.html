@@ -411,6 +411,21 @@
 </head>
 <body>
 
+<!-- Admin Config Floating Button & Modal -->
+<button id="config-btn" class="admin-toggle hidden" onclick="toggleConfigModal()" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); background: var(--card-bg); padding: 10px 16px;">⚙️ Config</button>
+
+<div id="config-modal" class="login-modal hidden" style="position: fixed; bottom: 75px; right: 20px; z-index: 10000; width: 280px; box-shadow: 0 8px 24px rgba(0,0,0,0.6);">
+    <h3>Alchemist Config</h3>
+    <p style="font-size: 0.85rem; color: var(--text-dim); margin: 8px 0 12px 0;">Select Color Scheme:</p>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+        <button onclick="setTheme('default')" style="background: #262035; border: 1px solid #9d4edd; text-align: left;">💜 Apothecary Purple (Default)</button>
+        <button onclick="setTheme('emerald')" style="background: #13221b; border: 1px solid #2d6a4f; text-align: left;">💚 Emerald Forest</button>
+        <button onclick="setTheme('crimson')" style="background: #2a181b; border: 1px solid #c9184a; text-align: left;">❤️ Alchemist Crimson</button>
+        <button onclick="setTheme('sapphire')" style="background: #1b263b; border: 1px solid #415a77; text-align: left;">💙 Midnight Sapphire</button>
+    </div>
+    <button onclick="toggleConfigModal()" style="margin-top: 15px; width: 100%; background: var(--border);">Close</button>
+</div>
+
 <div class="container">
     <header>
         <div class="titles">
@@ -591,19 +606,83 @@
 
     //FIREBASE CONFIG
     const firebaseConfig = {
-  apiKey: "AIzaSyC8QXlIWT76AZqttFWzLn4IKRRs3wYAaX8",
-  authDomain: "alchemy-shop-dcceb.firebaseapp.com",
-  databaseURL: "https://alchemy-shop-dcceb-default-rtdb.firebaseio.com",
-  projectId: "alchemy-shop-dcceb",
-  storageBucket: "alchemy-shop-dcceb.firebasestorage.app",
-  messagingSenderId: "268082568197",
-  appId: "1:268082568197:web:31de53d83bece61f0d506c",
-  measurementId: "G-H2DY8TMDMN"
+      apiKey: "AIzaSyC8QXlIWT76AZqttFWzLn4IKRRs3wYAaX8",
+      authDomain: "alchemy-shop-dcceb.firebaseapp.com",
+      databaseURL: "https://alchemy-shop-dcceb-default-rtdb.firebaseio.com",
+      projectId: "alchemy-shop-dcceb",
+      storageBucket: "alchemy-shop-dcceb.firebasestorage.app",
+      messagingSenderId: "268082568197",
+      appId: "1:268082568197:web:31de53d83bece61f0d506c",
+      measurementId: "G-H2DY8TMDMN"
     };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
+
+    // THEMES DEFINITION
+    const themes = {
+        default: {
+            '--bg-color': '#1a1625',
+            '--card-bg': '#262035',
+            '--accent': '#9d4edd',
+            '--accent-hover': '#7b2cbf',
+            '--text': '#e0d6f6',
+            '--text-dim': '#a093c4',
+            '--border': '#3c3254',
+            '--gold': '#ffb703'
+        },
+        emerald: {
+            '--bg-color': '#0b130f',
+            '--card-bg': '#13221b',
+            '--accent': '#2d6a4f',
+            '--accent-hover': '#1b4332',
+            '--text': '#d8f3dc',
+            '--text-dim': '#95d5b2',
+            '--border': '#2d4a3e',
+            '--gold': '#d4a373'
+        },
+        crimson: {
+            '--bg-color': '#1a1012',
+            '--card-bg': '#2a181b',
+            '--accent': '#c9184a',
+            '--accent-hover': '#a5013b',
+            '--text': '#ffccd5',
+            '--text-dim': '#d88c9a',
+            '--border': '#592933',
+            '--gold': '#ffb703'
+        },
+        sapphire: {
+            '--bg-color': '#0d1b2a',
+            '--card-bg': '#1b263b',
+            '--accent': '#415a77',
+            '--accent-hover': '#778da9',
+            '--text': '#e0e1dd',
+            '--text-dim': '#8d99ae',
+            '--border': '#415a77',
+            '--gold': '#ffb703'
+        }
+    };
+
+    window.setTheme = (themeName) => {
+        const theme = themes[themeName] || themes.default;
+        const root = document.documentElement;
+        for (const [key, value] of Object.entries(theme)) {
+            root.style.setProperty(key, value);
+        }
+        localStorage.setItem('apothecary_theme', themeName);
+        const modal = document.getElementById('config-modal');
+        if (modal) modal.classList.add('hidden');
+    };
+
+    // Apply saved theme immediately on load
+    const savedTheme = localStorage.getItem('apothecary_theme') || 'default';
+    window.setTheme(savedTheme);
+
+    window.toggleConfigModal = () => {
+        const modal = document.getElementById('config-modal');
+        if (modal) modal.classList.toggle('hidden');
+    };
 
     let ingredients = {};
     let potions = {};
@@ -639,14 +718,19 @@
         const authBtn = document.getElementById('auth-btn');
         const adminPanel = document.getElementById('admin-panel');
         const loginModal = document.getElementById('login-modal');
+        const configBtn = document.getElementById('config-btn');
+        const configModal = document.getElementById('config-modal');
 
         if (user) {
             if (authBtn) authBtn.innerText = "Logout";
             if (adminPanel) adminPanel.classList.remove('hidden');
             if (loginModal) loginModal.classList.add('hidden');
+            if (configBtn) configBtn.classList.remove('hidden');
         } else {
             if (authBtn) authBtn.innerText = "Alchemist Login";
             if (adminPanel) adminPanel.classList.add('hidden');
+            if (configBtn) configBtn.classList.add('hidden');
+            if (configModal) configModal.classList.add('hidden');
         }
         window.render();
     });
@@ -987,7 +1071,8 @@
         currentRecipe = p.recipe ? [...p.recipe] : [];
         window.renderRecipePreview();
 
-        document.getElementById('potion-form-title').innerText = "Edit Potion";
+        const titleElem = document.getElementById('potion-form-title');
+        if (titleElem) titleElem.innerText = "Edit Potion";
         document.getElementById('save-potion-btn').innerText = "Update Potion";
         document.getElementById('cancel-edit-btn').classList.remove('hidden');
 
