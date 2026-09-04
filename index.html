@@ -414,15 +414,23 @@
 <!-- Admin Config Floating Button & Modal -->
 <button id="config-btn" class="admin-toggle hidden" onclick="toggleConfigModal()" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); background: var(--card-bg); padding: 10px 16px;">⚙️ Config</button>
 
-<div id="config-modal" class="login-modal hidden" style="position: fixed; bottom: 75px; right: 20px; z-index: 10000; width: 280px; box-shadow: 0 8px 24px rgba(0,0,0,0.6);">
+<div id="config-modal" class="login-modal hidden" style="position: fixed; bottom: 75px; right: 20px; z-index: 10000; width: 320px; max-height: 80vh; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.6);">
     <h3>Alchemist Config</h3>
-    <p style="font-size: 0.85rem; color: var(--text-dim); margin: 8px 0 12px 0;">Select Color Scheme:</p>
+    
+    <p style="font-size: 0.85rem; color: var(--text-dim); margin: 12px 0 8px 0;">Select Color Scheme:</p>
     <div style="display: flex; flex-direction: column; gap: 8px;">
         <button onclick="setTheme('default')" style="background: #262035; border: 1px solid #9d4edd; text-align: left;">💜 Apothecary Purple (Default)</button>
         <button onclick="setTheme('emerald')" style="background: #13221b; border: 1px solid #2d6a4f; text-align: left;">💚 Emerald Forest</button>
         <button onclick="setTheme('crimson')" style="background: #2a181b; border: 1px solid #c9184a; text-align: left;">❤️ Alchemist Crimson</button>
         <button onclick="setTheme('sapphire')" style="background: #1b263b; border: 1px solid #415a77; text-align: left;">💙 Midnight Sapphire</button>
     </div>
+
+    <hr style="border-color: var(--border); margin: 15px 0;">
+
+    <h4 style="font-size: 0.9rem; margin-bottom: 6px;">Category Display Order</h4>
+    <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0; margin-bottom: 10px;">Reorder how catalog categories are displayed to customers.</p>
+    <div id="category-order-list"></div>
+
     <button onclick="toggleConfigModal()" style="margin-top: 15px; width: 100%; background: var(--border);">Close</button>
 </div>
 
@@ -588,14 +596,6 @@
 </div>
 
 <footer>
-    <details style="margin-bottom: 15px; text-align: left; display: inline-block; width: 100%; max-width: 400px;" id="category-display-order-details">
-        <summary style="cursor: pointer; font-size: 0.85rem; color: var(--text-dim); text-align: center;">Category Display Order</summary>
-        <div style="background: var(--bg-color); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-top: 8px;">
-            <p style="font-size: 0.8rem; color: var(--text-dim); margin-top: 0; margin-bottom: 10px;">Reorder how catalog categories are displayed to customers.</p>
-            <div id="category-order-list"></div>
-        </div>
-    </details>
-    <br>
     <span><strong>OOC:</strong> Whether you have questions, feedback, or just need to get in touch, please feel free to drop me a message on Discord at <code class="copyable-name" title="Click to copy">stax0r</code>. Always happy to help!</span>
 </footer>
 
