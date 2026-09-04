@@ -481,19 +481,6 @@
 
         <hr style="border-color: var(--border); margin: 20px 0;">
 
-        <div class="collapse-header" onclick="toggleSection('tag-collapsible-wrapper', 'tag-collapse-btn')">
-            <h2>Manage Category Display Order</h2>
-            <button class="collapse-btn" id="tag-collapse-btn">Hide ▲</button>
-        </div>
-        <div id="tag-collapsible-wrapper" style="margin-top: 15px;">
-            <div style="background: var(--bg-color); border: 1px solid var(--border); border-radius: 6px; padding: 12px;">
-                <p style="font-size: 0.85rem; color: var(--text-dim); margin-top: 0; margin-bottom: 10px;">Reorder how catalog categories are displayed to customers.</p>
-                <div id="category-order-list"></div>
-            </div>
-        </div>
-
-        <hr style="border-color: var(--border); margin: 20px 0;">
-
         <div class="collapse-header" onclick="toggleSection('potion-creator-container', 'brew-collapse-btn')">
             <h2>Add New Potion to Catalog</h2>
             <button class="collapse-btn" id="brew-collapse-btn">Hide ▲</button>
@@ -534,23 +521,11 @@
                 </div>
             </div>
         </div>
-
-        <hr style="border-color: var(--border); margin: 20px 0;">
-
-        <h2>Batch Order Manifest</h2>
-        <div class="form-group" style="margin-top: 10px;">
-            <select id="batch-potion-select" style="flex: 2;"></select>
-            <input type="number" id="batch-qty" placeholder="Qty" value="1" min="1" style="flex: 1;">
-            <button onclick="addBatchRow()">+ Add Potion to Order</button>
-        </div>
-
-        <div id="batch-manifest-list"></div>
-        <div id="batch-results"></div>
     </div>
 
     <div id="cart-panel" class="cart-panel">
         <div class="collapse-header" onclick="toggleSection('satchel-collapsible-wrapper', 'satchel-collapse-btn')">
-            <h2>Your Satchel</h2>
+            <h2>Satchel</h2>
             <div style="display: flex; gap: 8px; align-items: center;" onclick="event.stopPropagation();">
                 <button onclick="clearCart()" style="background: var(--border); font-size: 0.8rem; padding: 4px 10px;">Empty Satchel</button>
                 <button class="collapse-btn" id="satchel-collapse-btn" onclick="toggleSection('satchel-collapsible-wrapper', 'satchel-collapse-btn'); event.stopPropagation();">Hide ▲</button>
@@ -568,7 +543,7 @@
 
     <div id="custom-panel" class="custom-panel">
         <div class="collapse-header" onclick="toggleSection('custom-collapsible-wrapper', 'custom-collapse-btn')">
-            <h2 style="color: var(--custom-order);">Custom Orders</h2>
+            <h2 style="color: var(--custom-order);">Custom Order</h2>
             <div style="display: flex; gap: 8px; align-items: center;" onclick="event.stopPropagation();">
                 <button onclick="clearCustomOrders()" style="background: var(--border); font-size: 0.8rem; padding: 4px 10px;">Empty Custom Orders</button>
                 <button class="collapse-btn" id="custom-collapse-btn" onclick="toggleSection('custom-collapsible-wrapper', 'custom-collapse-btn'); event.stopPropagation();">Hide ▲</button>
@@ -577,6 +552,18 @@
         <div id="custom-collapsible-wrapper" style="margin-top: 15px;">
             <div id="custom-items-list"></div>
             <div id="custom-summary-area"></div>
+            
+            <hr style="border-color: var(--border); margin: 20px 0;">
+
+            <h2>Bulk Batch</h2>
+            <div class="form-group" style="margin-top: 10px;">
+                <select id="batch-potion-select" style="flex: 2;"></select>
+                <input type="number" id="batch-qty" placeholder="Qty" value="1" min="1" style="flex: 1;">
+                <button onclick="addBatchRow()">+ Add Potion to Order</button>
+            </div>
+
+            <div id="batch-manifest-list"></div>
+            <div id="batch-results"></div>
         </div>
     </div>
 
@@ -586,6 +573,14 @@
 </div>
 
 <footer>
+    <details style="margin-bottom: 15px; text-align: left; display: inline-block; width: 100%; max-width: 400px;" id="category-display-order-details">
+        <summary style="cursor: pointer; font-size: 0.85rem; color: var(--text-dim); text-align: center;">Category Display Order</summary>
+        <div style="background: var(--bg-color); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-top: 8px;">
+            <p style="font-size: 0.8rem; color: var(--text-dim); margin-top: 0; margin-bottom: 10px;">Reorder how catalog categories are displayed to customers.</p>
+            <div id="category-order-list"></div>
+        </div>
+    </details>
+    <br>
     <span><strong>OOC:</strong> Whether you have questions, feedback, or just need to get in touch, please feel free to drop me a message on Discord at <code class="copyable-name" title="Click to copy">stax0r</code>. Always happy to help!</span>
 </footer>
 
@@ -1959,4 +1954,3 @@
 </script>
 </body>
 </html>
-```[cite: 1]
