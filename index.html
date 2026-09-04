@@ -119,11 +119,20 @@
             font-size: 0.8rem;
         }
 
+        .filter-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
         .filter-bar {
             display: flex;
             gap: 8px;
-            margin-bottom: 20px;
             flex-wrap: wrap;
+            flex: 1;
         }
 
         .filter-btn {
@@ -139,6 +148,11 @@
             background: var(--accent);
             color: #fff;
             border-color: var(--accent);
+        }
+
+        .catalog-search-input {
+            width: 220px;
+            font-size: 0.85rem;
         }
 
         .catalog-grid {
@@ -368,6 +382,43 @@
             opacity: 0.8;
         }
 
+        /* Toast Notifications Styling */
+        #toast-container {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 100000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 350px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: var(--card-bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--accent);
+            padding: 12px 16px;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            font-size: 0.85rem;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            pointer-events: auto;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast.success { border-left-color: var(--success); }
+        .toast.error { border-left-color: var(--danger); }
+        .toast.warning { border-left-color: var(--warning); }
+
         /* Dropdown autocomplete styling */
         .autocomplete-wrapper {
             position: relative;
@@ -410,6 +461,9 @@
     </style>
 </head>
 <body>
+
+<!-- Toast Notification Container -->
+<div id="toast-container"></div>
 
 <!-- Theme Floating Button & Modal (Visible to Everyone) -->
 <button id="theme-btn" class="admin-toggle" onclick="toggleThemeModal()" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); background: var(--card-bg); padding: 10px 16px;">🎨 Theme</button>
@@ -598,7 +652,10 @@
     </div>
 
     <h2>Apothecary Stock</h2>
-    <div id="filter-bar" class="filter-bar" style="margin-top: 15px;"></div>
+    <div class="filter-container" style="margin-top: 15px;">
+        <div id="filter-bar" class="filter-bar"></div>
+        <input type="text" id="catalog-search-input" class="catalog-search-input" placeholder="Search catalog..." oninput="handleCatalogSearch(this.value)">
+    </div>
     <div id="catalog" class="catalog-grid"></div>
 </div>
 
@@ -626,6 +683,26 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
+
+    // TOAST NOTIFICATION HELPER
+    window.showToast = (message, type = 'info') => {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerText = message;
+        container.appendChild(toast);
+
+        // Trigger transition
+        setTimeout(() => toast.classList.add('show'), 10);
+
+        // Remove after 3.5s
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3500);
+    };
 
     // THEMES DEFINITION
     const themes = {
@@ -680,6 +757,7 @@
         localStorage.setItem('apothecary_theme', themeName);
         const modal = document.getElementById('theme-modal');
         if (modal) modal.classList.add('hidden');
+        showToast(`Theme changed to ${themeName}`, 'success');
     };
 
     // Apply saved theme immediately on load
@@ -702,6 +780,7 @@
     let currentRecipe = [];
     let currentUser = null;
     let selectedCategory = 'All';
+    let catalogSearchQuery = '';
     let batchManifest = [];
     let clientCart = [];
     let customOrders = [];
@@ -740,6 +819,7 @@
             if (loginModal) loginModal.classList.add('hidden');
             if (configBtn) configBtn.classList.remove('hidden');
             if (bulkBatchSection) bulkBatchSection.classList.remove('hidden');
+            showToast("Successfully logged in as Alchemist.", "success");
         } else {
             if (authBtn) authBtn.innerText = "Alchemist Login";
             if (adminPanel) adminPanel.classList.add('hidden');
@@ -753,6 +833,7 @@
     window.toggleAuthModal = () => {
         if (currentUser) {
             signOut(auth);
+            showToast("Logged out successfully.", "info");
         } else {
             const loginModal = document.getElementById('login-modal');
             if (loginModal) loginModal.classList.toggle('hidden');
@@ -775,7 +856,10 @@
 
         signInWithEmailAndPassword(auth, email, pass)
             .then(() => { if (errDiv) errDiv.innerText = ""; })
-            .catch(err => { if (errDiv) errDiv.innerText = err.message; });
+            .catch(err => { 
+                if (errDiv) errDiv.innerText = err.message; 
+                showToast(err.message, 'error');
+            });
     };
 
     window.addIngredient = () => {
@@ -786,7 +870,7 @@
         const threshold = parseInt(document.getElementById('ing-threshold').value) || 0;
 
         if (!name || isNaN(price)) {
-            alert("Please provide a valid name and price for the ingredient.");
+            showToast("Please provide a valid name and price for the ingredient.", "warning");
             return;
         }
 
@@ -794,13 +878,14 @@
         const existingEntry = Object.values(ingredients).find(i => (i.name || '').toLowerCase() === nameLower);
 
         if (existingEntry) {
-            alert(`An ingredient named "${existingEntry.name}" already exists in your directory! Please update its stock or price instead.`);
+            showToast(`Ingredient "${existingEntry.name}" already exists! Updating view.`, "warning");
             window.startEditIngredient(existingEntry.id);
             return;
         }
 
         const id = Date.now();
-        set(ref(db, `ingredients/${id}`), { id, name, price, stockQty: Math.max(0, stock), threshold: Math.max(0, threshold) });
+        set(ref(db, `ingredients/${id}`), { id, name, price, stockQty: Math.max(0, stock), threshold: Math.max(0, threshold) })
+            .then(() => showToast(`Added ingredient: ${name}`, 'success'));
         nameInput.value = '';
         document.getElementById('ing-price').value = '';
         document.getElementById('ing-stock').value = '0';
@@ -831,14 +916,14 @@
         const threshold = parseInt(thresholdInput.value) || 0;
 
         if (!newName || isNaN(price)) {
-            alert("Name and price cannot be empty.");
+            showToast("Name and price cannot be empty.", "warning");
             return;
         }
 
         const newNameLower = newName.toLowerCase();
         const duplicate = Object.values(ingredients).find(i => i.id !== id && (i.name || '').toLowerCase() === newNameLower);
         if (duplicate) {
-            alert(`Another ingredient named "${duplicate.name}" already exists!`);
+            showToast(`Another ingredient named "${duplicate.name}" already exists!`, "error");
             return;
         }
 
@@ -851,6 +936,7 @@
             threshold: Math.max(0, threshold)
         }).then(() => {
             window.editingIngredientId = null;
+            showToast("Ingredient updated successfully.", "success");
 
             if (oldName !== newName && potions) {
                 const potionUpdates = {};
@@ -888,6 +974,7 @@
             if (window.editingIngredientId === id) window.editingIngredientId = null;
 
             remove(ref(db, `ingredients/${id}`)).then(() => {
+                showToast("Ingredient deleted.", "info");
                 if (potions) {
                     const potionUpdates = {};
                     let updated = false;
@@ -953,7 +1040,7 @@
         const addQty = parseInt(qtyInput ? qtyInput.value : 1) || 0;
 
         if (!id || !ingredients[id] || addQty <= 0) {
-            alert("Please select a valid ingredient from the dropdown and enter a positive quantity to deposit.");
+            showToast("Please select a valid ingredient and positive quantity.", "warning");
             return;
         }
 
@@ -962,14 +1049,14 @@
 
         set(ref(db, `ingredients/${id}/stockQty`), newStock)
             .then(() => {
-                alert(`Successfully added ${addQty} to ${ingredients[id].name}. New stock: ${newStock}`);
+                showToast(`Deposited ${addQty}x to ${ingredients[id].name}. New stock: ${newStock}`, 'success');
                 const input = document.getElementById('quick-deposit-input');
                 if (input) input.value = '';
                 if (qtyInput) qtyInput.value = '1';
                 window.selectedQuickDepositIngredientId = null;
             })
             .catch(err => {
-                alert("Error depositing stock: " + err.message);
+                showToast("Error depositing stock: " + err.message, 'error');
             });
     };
 
@@ -1047,6 +1134,8 @@
                 forceOut: existingForceOut,
                 bulkOnly: bulkOnly,
                 recipe: currentRecipe
+            }).then(() => {
+                showToast(editingId ? "Potion updated successfully." : "New potion created!", "success");
             });
 
             const allCats = [...new Set([...Object.values(potions).map(p => p.category || 'General'), category])];
@@ -1067,7 +1156,7 @@
 
             window.cancelEditPotion();
         } else {
-            alert("Please provide a valid potion name and sale price.");
+            showToast("Please provide a valid potion name and sale price.", "warning");
         }
     };
 
@@ -1113,22 +1202,26 @@
 
     window.updatePotionStockQty = (id, newQty) => {
         const qty = parseInt(newQty) || 0;
-        set(ref(db, `potions/${id}/stockQty`), qty);
+        set(ref(db, `potions/${id}/stockQty`), qty)
+            .then(() => showToast("Stock quantity updated.", "success"));
     };
 
     window.toggleShopVisibility = (id, currentInShop) => {
         const newVal = currentInShop !== false ? false : true;
-        set(ref(db, `potions/${id}/inShop`), newVal);
+        set(ref(db, `potions/${id}/inShop`), newVal)
+            .then(() => showToast(newVal ? "Potion is now visible in shop." : "Potion hidden from shop.", "info"));
     };
 
     window.toggleForceOutStock = (id, currentForceOut) => {
         const newVal = currentForceOut ? false : true;
-        set(ref(db, `potions/${id}/forceOut`), newVal);
+        set(ref(db, `potions/${id}/forceOut`), newVal)
+            .then(() => showToast(newVal ? "Potion marked as Force Out of Stock." : "Potion stock availability restored.", "info"));
     };
 
     window.deletePotion = (id) => {
         if (window.confirm("Are you sure you want to delete this potion from the catalog? This action cannot be undone.")) {
-            remove(ref(db, `potions/${id}`));
+            remove(ref(db, `potions/${id}`))
+                .then(() => showToast("Potion removed from catalog.", "info"));
         }
     };
 
@@ -1158,11 +1251,16 @@
             updates[`categoryOrders/${cat}`] = idx + 1;
         });
 
-        update(ref(db), updates);
+        update(ref(db), updates).then(() => showToast("Category display order updated.", "success"));
     };
 
     window.setCategoryFilter = (cat) => {
         selectedCategory = cat;
+        window.render();
+    };
+
+    window.handleCatalogSearch = (query) => {
+        catalogSearchQuery = query.trim().toLowerCase();
         window.render();
     };
 
@@ -1173,7 +1271,10 @@
         if (maxQty <= 0 || p.forceOut) return;
 
         const addAmount = p.bulkOnly ? 10 : 1;
-        if (maxQty < addAmount) return;
+        if (maxQty < addAmount) {
+            showToast("Not enough stock available.", "warning");
+            return;
+        }
 
         const existing = clientCart.find(item => item.potionId === potionId);
         if (existing) {
@@ -1182,6 +1283,7 @@
         } else {
             clientCart.push({ potionId, qty: addAmount });
         }
+        showToast(`Added ${p.name} to your satchel.`, "success");
         window.renderCart();
     };
 
@@ -1206,10 +1308,16 @@
         window.renderCart();
     };
 
-    window.removeFromCart = (index) => { clientCart.splice(index, 1); window.renderCart(); };
+    window.removeFromCart = (index) => { 
+        clientCart.splice(index, 1); 
+        showToast("Item removed from satchel.", "info");
+        window.renderCart(); 
+    };
+
     window.clearCart = () => { 
         clientCart = []; 
         window.satchelPriceOverride = "";
+        showToast("Satchel emptied.", "info");
         window.renderCart(); 
     };
 
@@ -1381,6 +1489,7 @@
         const existing = customOrders.find(item => item.potionId === potionId);
         if (existing) existing.qty += addQty;
         else customOrders.push({ potionId, qty: addQty });
+        showToast(`Added custom request for ${p.name}.`, "success");
         window.renderCustomOrders();
     };
 
@@ -1402,8 +1511,17 @@
         window.renderCustomOrders();
     };
 
-    window.removeCustomOrder = (index) => { customOrders.splice(index, 1); window.renderCustomOrders(); };
-    window.clearCustomOrders = () => { customOrders = []; window.renderCustomOrders(); };
+    window.removeCustomOrder = (index) => { 
+        customOrders.splice(index, 1); 
+        showToast("Custom order item removed.", "info");
+        window.renderCustomOrders(); 
+    };
+    
+    window.clearCustomOrders = () => { 
+        customOrders = []; 
+        showToast("Custom orders cleared.", "info");
+        window.renderCustomOrders(); 
+    };
 
     window.copyOrderFormat = () => {
         const copyText = document.getElementById("custom-order-copy-area");
@@ -1411,7 +1529,7 @@
             copyText.select();
             copyText.setSelectionRange(0, 99999);
             navigator.clipboard.writeText(copyText.value);
-            alert("Order letter copied to clipboard!");
+            showToast("Order letter copied to clipboard!", "success");
         }
     };
 
@@ -1454,7 +1572,7 @@
                 <span style="font-size: 1.1rem;">Estimated Cost: <strong style="color: var(--gold);">${totalCost.toFixed(2)} Gold</strong></span>
             </div>
             <div class="dispatch-box">
-                <p>Send a letter with your order to <code class="copyable-name" title="Click to copy">stax0r</code> on the Atherius. Copy the scroll contents below:</p>
+                <p>Send a letter with your order to <code class="copyable-name" title="Click to copy">stax0r</code> on Atherius. Copy the scroll contents below:</p>
                 <textarea id="custom-order-copy-area" class="copy-text-area" readonly>${formattedOrderString}</textarea>
                 <button onclick="window.copyOrderFormat()" style="margin-top: 8px; font-size: 0.8rem; background: var(--custom-order);">Copy Order Scroll</button>
             </div>
@@ -1550,16 +1668,16 @@
         if (Object.keys(updates).length > 0) {
             update(ref(db), updates)
                 .then(() => {
-                    alert("Batch successfully crafted! Personal inventory stock has been deducted.");
+                    showToast("Batch successfully crafted! Personal inventory stock has been deducted.", "success");
                     batchManifest = [];
                     window.clientSuppliedQty = {};
                     window.renderBatchCalculator();
                 })
                 .catch(err => {
-                    alert("Error updating inventory: " + err.message);
+                    showToast("Error updating inventory: " + err.message, "error");
                 });
         } else {
-            alert("Batch executed! (No personal stock was deducted, either due to full client supply or 0 stock).");
+            showToast("Batch executed! No personal stock was deducted.", "info");
             batchManifest = [];
             window.clientSuppliedQty = {};
             window.renderBatchCalculator();
@@ -1968,9 +2086,16 @@
             if (selectedCategory !== 'All') {
                 visiblePotions = visiblePotions.filter(p => (p.category || 'General') === selectedCategory);
             }
+            if (catalogSearchQuery) {
+                visiblePotions = visiblePotions.filter(p => 
+                    (p.name || '').toLowerCase().includes(catalogSearchQuery) || 
+                    (p.description || '').toLowerCase().includes(catalogSearchQuery) ||
+                    (p.category || '').toLowerCase().includes(catalogSearchQuery)
+                );
+            }
 
             if (visiblePotions.length === 0) {
-                catalog.innerHTML = `<p style="color: var(--text-dim); grid-column: 1/-1;">No items available in this category.</p>`;
+                catalog.innerHTML = `<p style="color: var(--text-dim); grid-column: 1/-1;">No items available matching your criteria.</p>`;
             } else {
                 catalog.innerHTML = visiblePotions.map(p => {
                     const cost = calculatePotionCost(p.recipe);
