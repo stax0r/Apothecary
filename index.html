@@ -548,6 +548,7 @@
             <div id="cart-summary-area"></div>
             <div id="admin-sales-helper-container" style="margin-top: 20px; border-top: 1px dashed var(--border); padding-top: 15px;" class="hidden">
                 <h3 style="font-size: 1rem; margin-bottom: 10px; color: var(--accent);">Satchel Sales Calculator (Admin View)</h3>
+                <div id="satchel-override-control-area"></div>
                 <div id="admin-sales-helper-content"></div>
             </div>
         </div>
@@ -1088,7 +1089,7 @@
 
     window.handleCatalogSearch = (val) => {
         catalogSearchQuery = val.trim().toLowerCase();
-        window.render();
+        window.renderCatalogOnly();
     };
 
     window.addToCart = (potionId) => {
@@ -1185,6 +1186,27 @@
         window.renderAdminSalesHelper();
     };
 
+    window.renderSatchelOverrideInput = () => {
+        const controlArea = document.getElementById('satchel-override-control-area');
+        if (!controlArea) return;
+        
+        let totalSatchelDefaultPrice = 0;
+        clientCart.forEach(item => {
+            const p = potions[item.potionId];
+            if (p) totalSatchelDefaultPrice += (p.salePrice || 0) * item.qty;
+        });
+
+        controlArea.innerHTML = `
+            <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; border: 1px solid var(--border); display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 225px;">
+                    <label style="font-size: 0.75rem; color: var(--text-dim); display: block; margin-bottom: 4px;">Deal Discount Override (Final Sale Price)</label>
+                    <input type="number" id="satchel-price-override-input" value="${window.satchelPriceOverride}" placeholder="Default: ${totalSatchelDefaultPrice.toFixed(2)}g" step="0.01" style="width: 100%; box-sizing: border-box;" oninput="window.updateSatchelPriceOverride(this.value)">
+                </div>
+                ${window.satchelPriceOverride !== "" ? `<button onclick="window.updateSatchelPriceOverride('')" style="background: var(--border); font-size: 0.8rem; padding: 6px 10px; margin-top: 18px;">Reset Default</button>` : ''}
+            </div>
+        `;
+    };
+
     window.renderAdminSalesHelper = () => {
         const container = document.getElementById('admin-sales-helper-content');
         const wrapperContainer = document.getElementById('admin-sales-helper-container');
@@ -1196,6 +1218,7 @@
         }
 
         wrapperContainer.classList.remove('hidden');
+        window.renderSatchelOverrideInput();
 
         if (clientCart.length === 0) {
             container.innerHTML = `<p style="color: var(--text-dim); font-size: 0.85rem; margin: 0;">Satchel is currently empty. Add potions to review business analytics.</p>`;
@@ -1247,15 +1270,7 @@
         );
 
         let html = `
-            <div style="display: flex; flex-direction: column; gap: 12px;">
-                <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; border: 1px solid var(--border); display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                    <div style="flex: 1; min-width: 225px;">
-                        <label style="font-size: 0.75rem; color: var(--text-dim); display: block; margin-bottom: 4px;">Deal Discount Override (Final Sale Price)</label>
-                        <input type="number" id="satchel-price-override-input" value="${window.satchelPriceOverride}" placeholder="Default: ${totalSatchelDefaultPrice.toFixed(2)}g" step="0.01" style="width: 100%; box-sizing: border-box;" oninput="window.updateSatchelPriceOverride(this.value)">
-                    </div>
-                    ${window.satchelPriceOverride !== "" ? `<button onclick="window.updateSatchelPriceOverride('')" style="background: var(--border); font-size: 0.8rem; padding: 6px 10px; margin-top: 18px;">Reset Default</button>` : ''}
-                </div>
-
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 12px;">
                 <div class="batch-metrics" style="margin-top: 0; padding-top: 0; border-top: none;">
                     <div class="metric-box">
                         <span>Default Satchel Price</span>
@@ -1830,10 +1845,7 @@
         `).join('');
     };
 
-    window.render = () => {
-        const ingArray = Object.values(ingredients);
-        ingArray.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
-
+    window.renderCatalogOnly = () => {
         let potionArray = Object.values(potions);
         
         potionArray.sort((a, b) => {
@@ -1850,41 +1862,6 @@
 
             return (a.salePrice || 0) - (b.salePrice || 0);
         });
-
-        const select = document.getElementById('recipe-ing-select');
-        if (select) {
-            select.innerHTML = ingArray.map(i => `<option value="${i.id}">${i.name} (${i.price}g)</option>`).join('');
-        }
-
-        const batchSelect = document.getElementById('batch-potion-select');
-        if (batchSelect) {
-            const sortedBatchPotions = [...potionArray].sort((a, b) => 
-                (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
-            );
-            batchSelect.innerHTML = sortedBatchPotions.map(p => `<option value="${p.id}">${p.name} (${p.salePrice}g)</option>`).join('');
-        }
-
-        window.renderIngredientsList();
-        window.renderCategoryOrderList();
-        window.renderAdminSalesHelper();
-
-        let categories = [...new Set(potionArray.map(p => p.category || 'General'))];
-        categories.sort((a, b) => {
-            const orderA = categoryOrders[a] !== undefined ? categoryOrders[a] : 999;
-            const orderB = categoryOrders[b] !== undefined ? categoryOrders[b] : 999;
-            if (orderA !== orderB) return orderA - orderB;
-            return a.localeCompare(b);
-        });
-
-        const filterCategories = ['All', ...categories];
-        const filterBar = document.getElementById('filter-bar');
-        if (filterBar) {
-            filterBar.innerHTML = filterCategories.map(cat => `
-                <button class="filter-btn ${selectedCategory === cat ? 'active' : ''}" onclick="window.setCategoryFilter('${cat}')">${cat}</button>
-            `).join('') + `
-                <input type="text" id="catalog-search-input" value="${catalogSearchQuery}" placeholder="Search catalog..." style="margin-left: auto; width: 180px; padding: 5px 10px; font-size: 0.85rem;" oninput="window.handleCatalogSearch(this.value)">
-            `;
-        }
 
         const catalog = document.getElementById('catalog');
         if (catalog) {
@@ -1982,7 +1959,50 @@
                 }).join('');
             }
         }
+    };
 
+    window.render = () => {
+        const ingArray = Object.values(ingredients);
+        ingArray.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
+
+        let potionArray = Object.values(potions);
+
+        const select = document.getElementById('recipe-ing-select');
+        if (select) {
+            select.innerHTML = ingArray.map(i => `<option value="${i.id}">${i.name} (${i.price}g)</option>`).join('');
+        }
+
+        const batchSelect = document.getElementById('batch-potion-select');
+        if (batchSelect) {
+            const sortedBatchPotions = [...potionArray].sort((a, b) => 
+                (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
+            );
+            batchSelect.innerHTML = sortedBatchPotions.map(p => `<option value="${p.id}">${p.name} (${p.salePrice}g)</option>`).join('');
+        }
+
+        window.renderIngredientsList();
+        window.renderCategoryOrderList();
+        window.renderAdminSalesHelper();
+
+        let categories = [...new Set(potionArray.map(p => p.category || 'General'))];
+        categories.sort((a, b) => {
+            const orderA = categoryOrders[a] !== undefined ? categoryOrders[a] : 999;
+            const orderB = categoryOrders[b] !== undefined ? categoryOrders[b] : 999;
+            if (orderA !== orderB) return orderA - orderB;
+            return a.localeCompare(b);
+        });
+
+        const filterCategories = ['All', ...categories];
+        const filterBar = document.getElementById('filter-bar');
+        if (filterBar) {
+            filterBar.innerHTML = filterCategories.map(cat => `
+                <button class="filter-btn ${selectedCategory === cat ? 'active' : ''}" onclick="window.setCategoryFilter('${cat}')">${cat}</button>
+            `).join('') + `
+                <input type="text" id="catalog-search-input" value="${catalogSearchQuery}" placeholder="Search catalog..." style="margin-left: auto; width: 180px; padding: 5px 10px; font-size: 0.85rem;" oninput="window.handleCatalogSearch(this.value)">
+            `;
+        }
+
+        window.renderCatalogOnly();
         window.renderBatchCalculator();
         window.renderCart();
         window.renderCustomOrders();
