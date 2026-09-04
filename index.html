@@ -581,17 +581,19 @@
             <div id="custom-items-list"></div>
             <div id="custom-summary-area"></div>
             
-            <hr style="border-color: var(--border); margin: 20px 0;">
+            <div id="bulk-batch-section" class="hidden">
+                <hr style="border-color: var(--border); margin: 20px 0;">
 
-            <h2>Bulk Batch</h2>
-            <div class="form-group" style="margin-top: 10px;">
-                <select id="batch-potion-select" style="flex: 2;"></select>
-                <input type="number" id="batch-qty" placeholder="Qty" value="1" min="1" style="flex: 1;">
-                <button onclick="addBatchRow()">+ Add Potion to Order</button>
+                <h2>Bulk Batch</h2>
+                <div class="form-group" style="margin-top: 10px;">
+                    <select id="batch-potion-select" style="flex: 2;"></select>
+                    <input type="number" id="batch-qty" placeholder="Qty" value="1" min="1" style="flex: 1;">
+                    <button onclick="addBatchRow()">+ Add Potion to Order</button>
+                </div>
+
+                <div id="batch-manifest-list"></div>
+                <div id="batch-results"></div>
             </div>
-
-            <div id="batch-manifest-list"></div>
-            <div id="batch-results"></div>
         </div>
     </div>
 
@@ -730,17 +732,20 @@
         const loginModal = document.getElementById('login-modal');
         const configBtn = document.getElementById('config-btn');
         const configModal = document.getElementById('config-modal');
+        const bulkBatchSection = document.getElementById('bulk-batch-section');
 
         if (user) {
             if (authBtn) authBtn.innerText = "Logout";
             if (adminPanel) adminPanel.classList.remove('hidden');
             if (loginModal) loginModal.classList.add('hidden');
             if (configBtn) configBtn.classList.remove('hidden');
+            if (bulkBatchSection) bulkBatchSection.classList.remove('hidden');
         } else {
             if (authBtn) authBtn.innerText = "Alchemist Login";
             if (adminPanel) adminPanel.classList.add('hidden');
             if (configBtn) configBtn.classList.add('hidden');
             if (configModal) configModal.classList.add('hidden');
+            if (bulkBatchSection) bulkBatchSection.classList.add('hidden');
         }
         window.render();
     });
