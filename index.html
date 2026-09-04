@@ -496,7 +496,7 @@
         </div>
         <div id="sales-helper-collapsible-wrapper" style="margin-top: 15px;">
             <div style="background: var(--bg-color); border: 1px solid var(--border); border-radius: 6px; padding: 12px;">
-                <p style="font-size: 0.85rem; color: var(--text-dim); margin-top: 0; margin-bottom: 10px;">Calculates total cost, total sales price, and ingredient breakdown for everything currently in the Client Satchel.</p>
+                <p style="font-size: 0.85rem; color: var(--text-dim); margin-top: 0; margin-bottom: 10px;">Calculates total cost, default sale price, live discount overrides, and ingredient breakdowns for items in the Client Satchel.</p>
                 <div id="admin-sales-helper-content"></div>
             </div>
         </div>
@@ -511,17 +511,6 @@
         </div>
 
         <div id="batch-manifest-list"></div>
-        
-        <div id="batch-adjustments" class="hidden" style="margin-top: 15px; background: var(--bg-color); padding: 12px; border-radius: 6px; border: 1px solid var(--border);">
-            <h4 style="margin-bottom: 10px;">Deal Adjustments & Override</h4>
-            <div class="form-group" style="margin-bottom: 0;">
-                <div style="flex: 1;">
-                    <label style="font-size: 0.75rem; color: var(--text-dim); display: block; margin-bottom: 4px;">Final Sale Price Override (Leave blank for default total)</label>
-                    <input type="number" id="batch-price-override" placeholder="Default Total" step="0.01" style="width: 100%; box-sizing: border-box;" oninput="renderBatchCalculator()">
-                </div>
-            </div>
-        </div>
-
         <div id="batch-results"></div>
     </div>
 
@@ -609,7 +598,7 @@
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getDatabase, ref, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // REPLACE THIS WITH YOUR FIREBASE CONFIG
+    //FIREBASE CONFIG
     const firebaseConfig = {
   apiKey: "AIzaSyC8QXlIWT76AZqttFWzLn4IKRRs3wYAaX8",
   authDomain: "alchemy-shop-dcceb.firebaseapp.com",
@@ -635,6 +624,7 @@
     let clientCart = [];
     let customOrders = [];
     window.clientSuppliedQty = {};
+    window.satchelPriceOverride = "";
     window.editingIngredientId = null;
     window.selectedQuickDepositIngredientId = null;
 
@@ -1128,7 +1118,11 @@
     };
 
     window.removeFromCart = (index) => { clientCart.splice(index, 1); window.renderCart(); };
-    window.clearCart = () => { clientCart = []; window.renderCart(); };
+    window.clearCart = () => { 
+        clientCart = []; 
+        window.satchelPriceOverride = "";
+        window.renderCart(); 
+    };
 
     window.renderCart = () => {
         const listDiv = document.getElementById('cart-items-list');
@@ -1172,6 +1166,11 @@
         window.renderAdminSalesHelper();
     };
 
+    window.updateSatchelPriceOverride = (val) => {
+        window.satchelPriceOverride = val;
+        window.renderAdminSalesHelper();
+    };
+
     window.renderAdminSalesHelper = () => {
         const container = document.getElementById('admin-sales-helper-content');
         if (!container) return;
@@ -1186,7 +1185,7 @@
             return;
         }
 
-        let totalSatchelPrice = 0;
+        let totalSatchelDefaultPrice = 0;
         let totalSatchelCost = 0;
         const ingredientBreakdown = {};
 
@@ -1194,7 +1193,7 @@
             const p = potions[item.potionId];
             if (!p) return;
             const itemQty = item.qty;
-            totalSatchelPrice += (p.salePrice || 0) * itemQty;
+            totalSatchelDefaultPrice += (p.salePrice || 0) * itemQty;
 
             const potionCost = calculatePotionCost(p.recipe);
             totalSatchelCost += potionCost * itemQty;
@@ -1220,31 +1219,46 @@
             }
         });
 
-        const netProfit = totalSatchelPrice - totalSatchelCost;
-        const profitMargin = totalSatchelPrice > 0 ? ((netProfit / totalSatchelPrice) * 100).toFixed(0) : 0;
+        const finalRevenue = window.satchelPriceOverride !== "" && !isNaN(parseFloat(window.satchelPriceOverride))
+            ? parseFloat(window.satchelPriceOverride) : totalSatchelDefaultPrice;
+
+        const netProfit = finalRevenue - totalSatchelCost;
+        const profitMargin = finalRevenue > 0 ? ((netProfit / finalRevenue) * 100).toFixed(0) : 0;
 
         const sortedIngredients = Object.values(ingredientBreakdown).sort((a, b) => 
             (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
         );
 
         let html = `
-            <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; border: 1px solid var(--border); display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 225px;">
+                        <label style="font-size: 0.75rem; color: var(--text-dim); display: block; margin-bottom: 4px;">Deal Discount Override (Final Sale Price)</label>
+                        <input type="number" id="satchel-price-override-input" value="${window.satchelPriceOverride}" placeholder="Default: ${totalSatchelDefaultPrice.toFixed(2)}g" step="0.01" style="width: 100%; box-sizing: border-box;" oninput="window.updateSatchelPriceOverride(this.value)">
+                    </div>
+                    ${window.satchelPriceOverride !== "" ? `<button onclick="window.updateSatchelPriceOverride('')" style="background: var(--border); font-size: 0.8rem; padding: 6px 10px; margin-top: 18px;">Reset Default</button>` : ''}
+                </div>
+
                 <div class="batch-metrics" style="margin-top: 0; padding-top: 0; border-top: none;">
                     <div class="metric-box">
-                        <span>Satchel Revenue</span>
-                        <strong style="color: var(--gold);">${totalSatchelPrice.toFixed(2)}g</strong>
+                        <span>Default Satchel Price</span>
+                        <span>${totalSatchelDefaultPrice.toFixed(2)}g</span>
+                    </div>
+                    <div class="metric-box">
+                        <span>Final Sale Revenue</span>
+                        <strong style="color: var(--gold);">${finalRevenue.toFixed(2)}g</strong>
                     </div>
                     <div class="metric-box">
                         <span>Satchel Craft Cost</span>
                         <strong style="color: var(--danger);">${totalSatchelCost.toFixed(2)}g</strong>
                     </div>
                     <div class="metric-box">
-                        <span>Expected Profit</span>
+                        <span>Net Profit / Loss</span>
                         <strong class="${netProfit >= 0 ? 'profit-text' : 'loss-text'}">${netProfit.toFixed(2)}g (${profitMargin}%)</strong>
                     </div>
                 </div>
 
-                <h4 style="font-size: 0.9rem; margin-top: 5px; color: var(--stock-blue);">Ingredient Aggregate Required</h4>
+                <h4 style="font-size: 0.9rem; margin-top: 5px; color: var(--stock-blue);">Ingredient Price Breakdown & Requirements</h4>
                 <div style="display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto;">
         `;
 
@@ -1254,8 +1268,8 @@
             sortedIngredients.forEach(ing => {
                 html += `
                     <div class="item-row" style="background: rgba(0,0,0,0.2); padding: 6px 10px; margin-bottom: 0;">
-                        <span><strong>${ing.name}</strong> (${ing.unitPrice}g/ea)</span>
-                        <span>Total Qty: <strong>${ing.totalQty}x</strong> | Final Price: <strong style="color: var(--gold);">${ing.finalPrice.toFixed(2)}g</strong></span>
+                        <span><strong>${ing.name}</strong> <span style="font-size: 0.75rem; color: var(--text-dim);">(${ing.unitPrice}g per unit)</span></span>
+                        <span>Qty: <strong>${ing.totalQty}x</strong> | Total Cost: <strong style="color: var(--gold);">${ing.finalPrice.toFixed(2)}g</strong></span>
                     </div>
                 `;
             });
@@ -1463,18 +1477,14 @@
     window.renderBatchCalculator = () => {
         const listDiv = document.getElementById('batch-manifest-list');
         const resultsDiv = document.getElementById('batch-results');
-        const adjustmentsDiv = document.getElementById('batch-adjustments');
 
-        if (!listDiv || !resultsDiv || !adjustmentsDiv) return;
+        if (!listDiv || !resultsDiv) return;
 
         if (batchManifest.length === 0) {
             listDiv.innerHTML = '';
             resultsDiv.innerHTML = `<p style="color: var(--text-dim); font-size: 0.85rem;">Add potions above to calculate total requirements, costs, and profit.</p>`;
-            adjustmentsDiv.classList.add('hidden');
             return;
         }
-
-        adjustmentsDiv.classList.remove('hidden');
 
         listDiv.innerHTML = batchManifest.map((item, index) => {
             const p = potions[item.potionId];
@@ -1576,13 +1586,8 @@
 
         html += `</div>`;
 
-        const overrideInput = document.getElementById('batch-price-override');
-        const overridePriceInput = overrideInput ? overrideInput.value : "";
-        const finalRevenue = overridePriceInput !== "" && !isNaN(parseFloat(overridePriceInput))
-            ? parseFloat(overridePriceInput) : defaultSalePrice;
-
-        const netProfit = finalRevenue - netCraftCost - totalStockValueUsed;
-        const profitMargin = finalRevenue > 0 ? ((netProfit / finalRevenue) * 100).toFixed(0) : 0;
+        const netProfit = defaultSalePrice - netCraftCost - totalStockValueUsed;
+        const profitMargin = defaultSalePrice > 0 ? ((netProfit / defaultSalePrice) * 100).toFixed(0) : 0;
 
         html += `
                 <div class="batch-metrics">
@@ -1607,8 +1612,8 @@
                         <strong style="color: var(--danger);">${netCraftCost.toFixed(2)}g</strong>
                     </div>
                     <div class="metric-box">
-                        <span>Final Revenue</span>
-                        <strong style="color: var(--gold);">${finalRevenue.toFixed(2)}g</strong>
+                        <span>Default Sale Revenue</span>
+                        <strong style="color: var(--gold);">${defaultSalePrice.toFixed(2)}g</strong>
                     </div>
                     <div class="metric-box">
                         <span>True Net Profit</span>
@@ -1814,7 +1819,7 @@
 
         let potionArray = Object.values(potions);
         
-        // Sorting sequence requested: In Stock > By Price > Out of Stock > By Price
+        // Sorting sequence: In Stock > By Price > Out of Stock > By Price
         potionArray.sort((a, b) => {
             const aStock = a.stockQty !== undefined ? a.stockQty : 0;
             const aForceOut = a.forceOut === true;
@@ -1824,11 +1829,9 @@
             const bForceOut = b.forceOut === true;
             const bIsOut = bForceOut || (bStock <= 0);
 
-            // If one is in stock and the other is out, in-stock comes first
             if (!aIsOut && bIsOut) return -1;
             if (aIsOut && !bIsOut) return 1;
 
-            // Otherwise, sort both groups ascending by price
             return (a.salePrice || 0) - (b.salePrice || 0);
         });
 
