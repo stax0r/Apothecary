@@ -1374,16 +1374,11 @@
         });
 
         const payload = {
-            content: `📦 **New Custom Potion Order!**\n\n**Name:** ${clientName}\n**Location:** ${clientLocation}\n\n**Items:**\n${orderLines.join('\n')}\n\n**Estimated Total Cost:** ${totalCost.toFixed(2)} Gold`
+            content: `📦 **New Custom Order!**\n\n**Name:** ${clientName}\n**Location:** ${clientLocation}\n\n**Items:**\n${orderLines.join('\n')}\n\n**Estimated Total Cost:** ${totalCost.toFixed(2)} Gold`
         };
 
         //WEBHOOK URL
         const webhookUrl = "https://discord.com/api/webhooks/1542816073177370655/IA6vDW8SmSDKEqYGDYY8unc0T3i4NXDnn21OXHNGWLpL4JM6Y_KZ0-LL-qTY7EwBTz7C";
-
-        if (webhookUrl === "OUR_DISCORD_WEBHOOK_URL_HERE") {
-            alert("Webhook error!");
-            return;
-        }
 
         try {
             const response = await fetch(webhookUrl, {
@@ -1395,16 +1390,16 @@
             });
 
             if (response.ok) {
-                alert("Order successfully sent via Discord webhook!");
+                alert("Order successfully sent!");
                 customOrders = [];
                 if (nameInput) nameInput.value = "";
                 if (locationInput) locationInput.value = "";
                 window.renderCustomOrders();
             } else {
-                alert("Failed to send order through the webhook. Status: " + response.status);
+                alert("Failed to send order! Status: " + response.status);
             }
         } catch (err) {
-            alert("Error sending webhook: " + err.message);
+            alert("Error sending order: " + err.message);
         }
     };
 
