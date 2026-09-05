@@ -463,6 +463,10 @@
     <p style="font-size: 0.7rem; color: var(--text-dim); margin-top: 0; margin-bottom: 8px;">Reorder categories.</p>
     <div id="category-order-list"></div>
 
+    <h4 style="font-size: 0.85rem; margin-top: 15px; margin-bottom: 4px;">Global Profit Margin (%)</h4>
+    <p style="font-size: 0.7rem; color: var(--text-dim); margin-top: 0; margin-bottom: 8px;">Default markup percentage for potions.</p>
+    <input type="number" id="config-global-margin" value="50" step="1" style="width: 100%; box-sizing: border-box; font-size: 0.85rem; padding: 6px;" onchange="window.updateGlobalMargin(this.value)">
+
     <button onclick="toggleConfigModal()" style="margin-top: 10px; width: 100%; background: var(--border); padding: 6px; font-size: 0.8rem;">Close</button>
 </div>
 
@@ -569,6 +573,10 @@
 
                 <ul id="recipe-preview-list"></ul>
                 <p>Calculated Base Cost: <strong id="calculated-cost">0</strong> gold</p>
+                <div style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 15px; display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 4px; border: 1px solid var(--border);">
+                    <span>Suggested Price (<span id="suggested-margin-label">50</span>% margin): <strong id="suggested-price-display" style="color: var(--gold);">0.00</strong> gold</span>
+                    <button type="button" onclick="window.applySuggestedPrice()" style="padding: 3px 8px; font-size: 0.75rem; background: var(--success);">Apply</button>
+                </div>
 
                 <div style="display: flex; gap: 10px; margin-top: 10px;">
                     <button id="save-potion-btn" onclick="savePotion()" style="flex: 1;">Create Potion</button>
@@ -683,6 +691,8 @@
     let batchManifest = [];
     let clientCart = [];
     let customOrders = [];
+    let globalProfitMargin = 50;
+    let currentCalculatedSuggestedPrice = 0;
 
     // State preservation variables for custom order text fields & confirmation checkbox
     let customInputState = {
@@ -722,6 +732,13 @@
         activeLocationId = snapshot.val() || "";
         window.renderLocationsConfig();
         window.renderCustomOrders();
+    });
+
+    onValue(ref(db, 'globalProfitMargin'), (snapshot) => {
+        globalProfitMargin = snapshot.val() !== null ? snapshot.val() : 50;
+        const marginInput = document.getElementById('config-global-margin');
+        if (marginInput) marginInput.value = globalProfitMargin;
+        window.renderRecipePreview();
     });
 
     window.renderLocationsConfig = () => {
@@ -802,6 +819,26 @@
             }).catch(err => {
                 showBanner("Error deleting location: " + err.message, 'error');
             });
+        }
+    };
+
+    window.updateGlobalMargin = (val) => {
+        const margin = parseFloat(val);
+        if (isNaN(margin)) return;
+        set(ref(db, 'globalProfitMargin'), margin).then(() => {
+            showBanner("Global profit margin updated!");
+        }).catch(err => {
+            showBanner("Error updating margin: " + err.message, 'error');
+        });
+    };
+
+    window.applySuggestedPrice = () => {
+        const priceInput = document.getElementById('potion-sale-price');
+        if (priceInput && currentCalculatedSuggestedPrice > 0) {
+            priceInput.value = currentCalculatedSuggestedPrice.toFixed(2);
+            showBanner("Suggested price applied!");
+        } else {
+            showBanner("No valid suggested price available.", 'error');
         }
     };
 
@@ -1092,6 +1129,14 @@
 
         const calcCost = document.getElementById('calculated-cost');
         if (calcCost) calcCost.textContent = totalCost.toFixed(2);
+
+        // Compute Suggested Price based on Global Margin %
+        currentCalculatedSuggestedPrice = totalCost * (1 + (globalProfitMargin / 100));
+        
+        const suggestedDisplay = document.getElementById('suggested-price-display');
+        const marginLabel = document.getElementById('suggested-margin-label');
+        if (suggestedDisplay) suggestedDisplay.textContent = currentCalculatedSuggestedPrice.toFixed(2);
+        if (marginLabel) marginLabel.textContent = globalProfitMargin;
     };
 
     window.removeRecipeItem = (index) => {
