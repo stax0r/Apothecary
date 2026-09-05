@@ -416,6 +416,13 @@
 <div id="config-modal" class="login-modal hidden" style="position: fixed; bottom: 75px; right: 20px; z-index: 10000; width: 320px; max-height: 80vh; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.6);">
     <h3>Store config</h3>
     
+    <h4 style="font-size: 0.9rem; margin-top: 12px; margin-bottom: 6px;">Order Receiving Location</h4>
+    <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0; margin-bottom: 10px;">Set where custom orders are being taken/dropped off.</p>
+    <div class="form-group" style="margin-bottom: 15px;">
+        <input type="text" id="config-store-location" placeholder="e.g. Vault 3, Main Shelf..." style="width: 100%; box-sizing: border-box;">
+        <button onclick="saveStoreLocation()" style="width: 100%; background: var(--success); margin-top: 6px;">Save Location</button>
+    </div>
+
     <h4 style="font-size: 0.9rem; margin-top: 12px; margin-bottom: 6px;">Category Display Order</h4>
     <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0; margin-bottom: 10px;">Reorder how catalog categories are displayed to customers.</p>
     <div id="category-order-list"></div>
@@ -619,6 +626,7 @@
     let ingredients = {};
     let potions = {};
     let categoryOrders = {};
+    let storeLocation = "";
     let currentRecipe = [];
     let currentUser = null;
     let selectedCategory = 'All';
@@ -645,6 +653,23 @@
         categoryOrders = snapshot.val() || {};
         window.render();
     });
+
+    onValue(ref(db, 'storeLocation'), (snapshot) => {
+        storeLocation = snapshot.val() || "";
+        const locInput = document.getElementById('config-store-location');
+        if (locInput) locInput.value = storeLocation;
+        window.renderCustomOrders();
+    });
+
+    window.saveStoreLocation = () => {
+        const locInput = document.getElementById('config-store-location');
+        const val = locInput ? locInput.value.trim() : "";
+        set(ref(db, 'storeLocation'), val).then(() => {
+            alert("Store order location successfully saved to database!");
+        }).catch(err => {
+            alert("Error saving location: " + err.message);
+        });
+    };
 
     onAuthStateChanged(auth, (user) => {
         currentUser = user;
@@ -1348,14 +1373,11 @@
     window.sendDiscordWebhookOrder = async () => {
         const nameInput = document.getElementById("custom-order-name");
         const locationInput = document.getElementById("custom-order-location");
+        const messageInput = document.getElementById("custom-order-message");
         
         const clientName = nameInput ? nameInput.value.trim() : "";
         const clientLocation = locationInput ? locationInput.value.trim() : "";
-
-        if (!clientName || !clientLocation) {
-            alert("Please fill in both your Name and Location before sending the order.");
-            return;
-        }
+        const clientMessage = messageInput ? messageInput.value.trim() : "";
 
         if (customOrders.length === 0) {
             alert("Your custom order is empty. Please add items before sending.");
@@ -1373,8 +1395,19 @@
             orderLines.push(`• ${item.qty}x ${p.name} (${lineTotal.toFixed(2)}g)`);
         });
 
+        const activeLocation = storeLocation || "Not specified";
+        const reminderText = `⚠️ **Reminder:** Orders will not be received if the note with the order is not left at the proper location (**${activeLocation}**)!`;
+
+        let contentParts = [`📦 **New Custom Order!**`];
+        if (clientName) contentParts.push(`**Discord ID:** ${clientName}`);
+        contentParts.push(`**Location:** ${clientLocation || 'Not provided'}`);
+        if (clientMessage) contentParts.push(`**Custom Message:** ${clientMessage}`);
+        contentParts.push(`\n**Items:**\n${orderLines.join('\n')}`);
+        contentParts.push(`**Estimated Total Cost:** ${totalCost.toFixed(2)} Gold`);
+        contentParts.push(`\n${reminderText}`);
+
         const payload = {
-            content: `📦 **New Custom Order!**\n\n**Name:** ${clientName}\n**Location:** ${clientLocation}\n\n**Items:**\n${orderLines.join('\n')}\n\n**Estimated Total Cost:** ${totalCost.toFixed(2)} Gold`
+            content: contentParts.join('\n')
         };
 
         //WEBHOOK URL
@@ -1394,6 +1427,7 @@
                 customOrders = [];
                 if (nameInput) nameInput.value = "";
                 if (locationInput) locationInput.value = "";
+                if (messageInput) messageInput.value = "";
                 window.renderCustomOrders();
             } else {
                 alert("Failed to send order! Status: " + response.status);
@@ -1434,15 +1468,21 @@
             `;
         }).join('');
 
+        const activeLocation = storeLocation || "Not specified";
+
         summaryDiv.innerHTML = `
             <div class="cart-summary">
                 <span>Total Custom Requests: <strong>${totalItems}</strong></span>
                 <span style="font-size: 1.1rem;">Estimated Cost: <strong style="color: var(--gold);">${totalCost.toFixed(2)} Gold</strong></span>
             </div>
             <div class="dispatch-box">
+                <p style="color: var(--warning); margin-bottom: 10px;">⚠️ Remember: Orders will not be received if the note with the order is not left at the proper location (<strong>${activeLocation}</strong>).</p>
                 <div class="form-group" style="margin-bottom: 10px;">
-                    <input type="text" id="custom-order-name" placeholder="Your Name" style="flex: 1;">
+                    <input type="text" id="custom-order-name" placeholder="Discord ID (Optional)" style="flex: 1;">
                     <input type="text" id="custom-order-location" placeholder="Your Location" style="flex: 1;">
+                </div>
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <textarea id="custom-order-message" placeholder="Leave a custom message and stuff..." style="width: 100%;"></textarea>
                 </div>
                 <button onclick="window.sendDiscordWebhookOrder()" style="width: 100%; font-size: 0.9rem; background: var(--custom-order);">Send Complete Order</button>
             </div>
