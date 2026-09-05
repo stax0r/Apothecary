@@ -1633,7 +1633,7 @@
                 <span style="font-size: 1.1rem;">Estimated Cost: <strong style="color: var(--gold);">${totalCost.toFixed(2)} Gold</strong></span>
             </div>
             <div class="dispatch-box">
-                <p style="color: var(--warning); margin-bottom: 10px;">⚠️ OOC: You should keep proof of being at *${activeLocationName}* before creating an order to avoid being banned for metagaming.⚠️</p>
+                <p style="color: var(--warning); margin-bottom: 10px;">⚠️ OOC: You should keep proof of being at <strong>${activeLocationName}</strong> before creating an order to avoid being banned for metagaming.⚠️</p>
                 <div class="form-group" style="margin-bottom: 10px;">
                     <input type="text" id="custom-order-name" placeholder="Name (Required)" value="${customInputState.name}" style="flex: 1;" oninput="window.updateCustomInputState()">
                     <input type="text" id="custom-order-discord" placeholder="Discord ID (Optional)" value="${customInputState.discord}" style="flex: 1;" oninput="window.updateCustomInputState()">
@@ -1644,7 +1644,7 @@
                 <div class="form-group" style="margin-bottom: 15px; align-items: center;">
                     <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--text);">
                         <input type="checkbox" id="custom-order-at-location-check" ${customInputState.atLocationChecked ? 'checked' : ''} style="width: 18px; height: 18px;" onchange="window.updateCustomInputState()">
-                        <span style="font-size: 0.9rem;">I confirm that I'm currently at *${activeLocationName}*</span>
+                        <span style="font-size: 0.9rem;">I confirm that I'm currently at <strong>${activeLocationName}</strong></span>
                     </label>
                 </div>
                 <button onclick="window.sendDiscordWebhookOrder()" style="width: 100%; font-size: 0.9rem; background: var(--custom-order);">Create new order</button>
