@@ -407,20 +407,63 @@
             font-size: 0.85rem;
             color: var(--text-dim);
         }
+
+        /* Non-aggressive status feedback banner */
+        #status-banner {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 99999;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 10px 16px;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            font-size: 0.85rem;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            pointer-events: none;
+        }
+        #status-banner.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        #status-banner.success { border-color: var(--success); color: var(--success); }
+        #status-banner.error { border-color: var(--danger); color: var(--danger); }
     </style>
 </head>
 <body>
 
-<button id="config-btn" class="admin-toggle hidden" onclick="toggleConfigModal()" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); background: var(--card-bg); padding: 10px 16px;">⚙️ Store config</button>
+<div id="status-banner"></div>
 
-<div id="config-modal" class="login-modal hidden" style="position: fixed; bottom: 75px; right: 20px; z-index: 10000; width: 320px; max-height: 80vh; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.6);">
-    <h3>Store config</h3>
+<button id="config-btn" class="admin-toggle hidden" onclick="toggleConfigModal()" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); background: var(--card-bg); padding: 6px 12px; font-size: 0.8rem;">⚙️ Config</button>
+
+<div id="config-modal" class="login-modal hidden" style="position: fixed; bottom: 65px; right: 20px; z-index: 10000; width: 310px; max-height: 75vh; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.6); padding: 15px;">
+    <h3 style="font-size: 1rem;">Store config</h3>
     
-    <h4 style="font-size: 0.9rem; margin-top: 12px; margin-bottom: 6px;">Category Display Order</h4>
-    <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0; margin-bottom: 10px;">Reorder how catalog categories are displayed to customers.</p>
+    <h4 style="font-size: 0.85rem; margin-top: 10px; margin-bottom: 4px;">Order Receiving Locations</h4>
+    <p style="font-size: 0.7rem; color: var(--text-dim); margin-top: 0; margin-bottom: 8px;">Add, choose active, or delete drop-off locations.</p>
+    
+    <div class="form-group" style="margin-bottom: 10px;">
+        <input type="text" id="config-new-location-name" placeholder="New location name..." style="flex: 1; box-sizing: border-box; font-size: 0.85rem; padding: 6px;">
+        <button onclick="addNewLocation()" style="background: var(--success); padding: 6px 10px; font-size: 0.8rem;">Add</button>
+    </div>
+
+    <div style="margin-bottom: 12px;">
+        <label style="font-size: 0.75rem; color: var(--text-dim); display: block; margin-bottom: 4px;">Active Location Selection</label>
+        <div style="display: flex; gap: 6px;">
+            <select id="config-location-select" style="flex: 1; font-size: 0.85rem; padding: 6px;" onchange="setActiveLocation(this.value)"></select>
+            <button onclick="deleteActiveLocation()" class="delete-btn" style="padding: 6px 10px; font-size: 0.75rem;" title="Delete selected location">Delete</button>
+        </div>
+    </div>
+
+    <h4 style="font-size: 0.85rem; margin-top: 15px; margin-bottom: 4px;">Category Display Order</h4>
+    <p style="font-size: 0.7rem; color: var(--text-dim); margin-top: 0; margin-bottom: 8px;">Reorder categories.</p>
     <div id="category-order-list"></div>
 
-    <button onclick="toggleConfigModal()" style="margin-top: 15px; width: 100%; background: var(--border);">Close</button>
+    <button onclick="toggleConfigModal()" style="margin-top: 10px; width: 100%; background: var(--border); padding: 6px; font-size: 0.8rem;">Close</button>
 </div>
 
 <div class="container">
@@ -611,6 +654,18 @@
     const auth = getAuth(app);
     const db = getDatabase(app);
 
+    // Non-aggressive status feedback banner helper
+    function showBanner(message, type = 'success') {
+        const banner = document.getElementById('status-banner');
+        if (!banner) return;
+        banner.className = '';
+        banner.textContent = message;
+        banner.classList.add('show', type);
+        setTimeout(() => {
+            banner.classList.remove('show');
+        }, 3000);
+    }
+
     window.toggleConfigModal = () => {
         const modal = document.getElementById('config-modal');
         if (modal) modal.classList.toggle('hidden');
@@ -619,6 +674,8 @@
     let ingredients = {};
     let potions = {};
     let categoryOrders = {};
+    let locations = {};
+    let activeLocationId = "";
     let currentRecipe = [];
     let currentUser = null;
     let selectedCategory = 'All';
@@ -626,6 +683,15 @@
     let batchManifest = [];
     let clientCart = [];
     let customOrders = [];
+
+    // State preservation variables for custom order text fields & confirmation checkbox
+    let customInputState = {
+        name: "",
+        discord: "",
+        message: "",
+        atLocationChecked: false
+    };
+
     window.clientSuppliedQty = {};
     window.satchelPriceOverride = "";
     window.editingIngredientId = null;
@@ -645,6 +711,99 @@
         categoryOrders = snapshot.val() || {};
         window.render();
     });
+
+    onValue(ref(db, 'locations'), (snapshot) => {
+        locations = snapshot.val() || {};
+        window.renderLocationsConfig();
+        window.renderCustomOrders();
+    });
+
+    onValue(ref(db, 'activeLocationId'), (snapshot) => {
+        activeLocationId = snapshot.val() || "";
+        window.renderLocationsConfig();
+        window.renderCustomOrders();
+    });
+
+    window.renderLocationsConfig = () => {
+        const select = document.getElementById('config-location-select');
+        if (!select) return;
+
+        const locArray = Object.values(locations);
+        locArray.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
+
+        if (locArray.length === 0) {
+            select.innerHTML = `<option value="">No locations added</option>`;
+            return;
+        }
+
+        select.innerHTML = locArray.map(l => `
+            <option value="${l.id}" ${l.id === activeLocationId ? 'selected' : ''}>${l.name}</option>
+        `).join('');
+    };
+
+    window.addNewLocation = () => {
+        const input = document.getElementById('config-new-location-name');
+        if (!input) return;
+        const name = input.value.trim();
+        if (!name) {
+            showBanner("Please enter a location name.", 'error');
+            return;
+        }
+
+        const id = 'loc_' + Date.now();
+        const locArray = Object.values(locations);
+        
+        const updates = {};
+        updates[`locations/${id}`] = { id, name };
+        
+        // If this is the first location added, make it active automatically
+        if (locArray.length === 0 || !activeLocationId) {
+            updates[`activeLocationId`] = id;
+        }
+
+        update(ref(db), updates).then(() => {
+            input.value = '';
+            showBanner("Location successfully added!");
+        }).catch(err => {
+            showBanner("Error adding location: " + err.message, 'error');
+        });
+    };
+
+    window.setActiveLocation = (id) => {
+        if (!id) return;
+        set(ref(db, 'activeLocationId'), id).then(() => {
+            showBanner("Active location updated!");
+        }).catch(err => {
+            showBanner("Error updating active location: " + err.message, 'error');
+        });
+    };
+
+    window.deleteActiveLocation = () => {
+        const select = document.getElementById('config-location-select');
+        if (!select || !select.value) {
+            showBanner("No location selected to delete.", 'error');
+            return;
+        }
+        const idToDelete = select.value;
+        const locName = locations[idToDelete] ? locations[idToDelete].name : "this location";
+
+        if (window.confirm(`Are you sure you want to delete "${locName}"?`)) {
+            const updates = {};
+            updates[`locations/${idToDelete}`] = null;
+
+            // If deleting the active location, clear or pick another one
+            if (activeLocationId === idToDelete) {
+                const remaining = Object.keys(locations).filter(id => id !== idToDelete);
+                updates[`activeLocationId`] = remaining.length > 0 ? remaining[0] : "";
+            }
+
+            update(ref(db), updates).then(() => {
+                showBanner("Location successfully deleted!");
+            }).catch(err => {
+                showBanner("Error deleting location: " + err.message, 'error');
+            });
+        }
+    };
 
     onAuthStateChanged(auth, (user) => {
         currentUser = user;
@@ -707,7 +866,7 @@
         const threshold = parseInt(document.getElementById('ing-threshold').value) || 0;
 
         if (!name || isNaN(price)) {
-            alert("Please provide a valid name and price for the ingredient.");
+            showBanner("Please provide a valid name and price for the ingredient.", 'error');
             return;
         }
 
@@ -715,7 +874,7 @@
         const existingEntry = Object.values(ingredients).find(i => (i.name || '').toLowerCase() === nameLower);
 
         if (existingEntry) {
-            alert(`An ingredient named "${existingEntry.name}" already exists in your directory! Please update its stock or price instead.`);
+            showBanner(`An ingredient named "${existingEntry.name}" already exists!`, 'error');
             window.startEditIngredient(existingEntry.id);
             return;
         }
@@ -752,14 +911,14 @@
         const threshold = parseInt(thresholdInput.value) || 0;
 
         if (!newName || isNaN(price)) {
-            alert("Name and price cannot be empty.");
+            showBanner("Name and price cannot be empty.", 'error');
             return;
         }
 
         const newNameLower = newName.toLowerCase();
         const duplicate = Object.values(ingredients).find(i => i.id !== id && (i.name || '').toLowerCase() === newNameLower);
         if (duplicate) {
-            alert(`Another ingredient named "${duplicate.name}" already exists!`);
+            showBanner(`Another ingredient named "${duplicate.name}" already exists!`, 'error');
             return;
         }
 
@@ -874,7 +1033,7 @@
         const addQty = parseInt(qtyInput ? qtyInput.value : 1) || 0;
 
         if (!id || !ingredients[id] || addQty <= 0) {
-            alert("Please select a valid ingredient from the dropdown and enter a positive quantity to deposit.");
+            showBanner("Please select a valid ingredient and enter a positive quantity.", 'error');
             return;
         }
 
@@ -883,14 +1042,14 @@
 
         set(ref(db, `ingredients/${id}/stockQty`), newStock)
             .then(() => {
-                alert(`Successfully added ${addQty} to ${ingredients[id].name}. New stock: ${newStock}`);
+                showBanner(`Successfully added ${addQty} to ${ingredients[id].name}. New stock: ${newStock}`);
                 const input = document.getElementById('quick-deposit-input');
                 if (input) input.value = '';
                 if (qtyInput) qtyInput.value = '1';
                 window.selectedQuickDepositIngredientId = null;
             })
             .catch(err => {
-                alert("Error depositing stock: " + err.message);
+                showBanner("Error depositing stock: " + err.message, 'error');
             });
     };
 
@@ -988,7 +1147,7 @@
 
             window.cancelEditPotion();
         } else {
-            alert("Please provide a valid potion name and sale price.");
+            showBanner("Please provide a valid potion name and sale price.", 'error');
         }
     };
 
@@ -1345,17 +1504,96 @@
     window.removeCustomOrder = (index) => { customOrders.splice(index, 1); window.renderCustomOrders(); };
     window.clearCustomOrders = () => { customOrders = []; window.renderCustomOrders(); };
 
-    window.copyOrderFormat = () => {
-        const copyText = document.getElementById("custom-order-copy-area");
-        if (copyText) {
-            copyText.select();
-            copyText.setSelectionRange(0, 99999);
-            navigator.clipboard.writeText(copyText.value);
-            alert("Order letter copied to clipboard!");
+    // Function to update local custom input state during any render/change
+    window.updateCustomInputState = () => {
+        const nameInput = document.getElementById("custom-order-name");
+        const discordInput = document.getElementById("custom-order-discord");
+        const messageInput = document.getElementById("custom-order-message");
+        const checkInput = document.getElementById("custom-order-at-location-check");
+
+        if (nameInput) customInputState.name = nameInput.value;
+        if (discordInput) customInputState.discord = discordInput.value;
+        if (messageInput) customInputState.message = messageInput.value;
+        if (checkInput) customInputState.atLocationChecked = checkInput.checked;
+    };
+
+    window.sendDiscordWebhookOrder = async () => {
+        window.updateCustomInputState();
+        
+        const clientName = customInputState.name.trim();
+        const clientDiscord = customInputState.discord.trim();
+        const clientMessage = customInputState.message.trim();
+        const isAtLocation = customInputState.atLocationChecked;
+
+        if (!clientName) {
+            showBanner("Please enter your name.", 'error');
+            return;
+        }
+
+        if (!isAtLocation) {
+            showBanner("You must confirm that you're currently at location before sending the order.", 'error');
+            return;
+        }
+
+        if (customOrders.length === 0) {
+            showBanner("Your custom order is empty. Please add items before sending.", 'error');
+            return;
+        }
+
+        let totalCost = 0;
+        let orderLines = [];
+
+        customOrders.forEach(item => {
+            const p = potions[item.potionId];
+            if (!p) return;
+            const lineTotal = (p.salePrice || 0) * item.qty;
+            totalCost += lineTotal;
+            orderLines.push(`• ${item.qty}x ${p.name} (${lineTotal.toFixed(2)}g)`);
+        });
+
+        const activeLocObj = locations[activeLocationId];
+        const activeLocationName = activeLocObj ? activeLocObj.name : "Not specified";
+
+        let contentParts = [`📦 **New Custom Order!**`];
+        contentParts.push(`**Name:** ${clientName}`);
+        if (clientDiscord) contentParts.push(`**Discord ID:** ${clientDiscord}`);
+        contentParts.push(`**Active Location:** ${activeLocationName}`);
+        if (clientMessage) contentParts.push(`**Delivery Instructions & Inquiries:** ${clientMessage}`);
+        contentParts.push(`\n**Items:**\n${orderLines.join('\n')}`);
+        contentParts.push(`**Estimated Total Cost:** ${totalCost.toFixed(2)} Gold`);
+
+        const payload = {
+            content: contentParts.join('\n')
+        };
+
+        //WEBHOOK URL
+        const webhookUrl = "https://discord.com/api/webhooks/1545635810873708594/py7qvIEJKnaeOAIlEOCGgeCrDD3yw0Tcg_sFKUwCPnDtwOftCkg7b1TcXYOTyKO_0Qz4";
+
+        try {
+            const response = await fetch(webhookUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                showBanner("Order successfully sent!");
+                customOrders = [];
+                customInputState = { name: "", discord: "", message: "", atLocationChecked: false };
+                window.renderCustomOrders();
+            } else {
+                showBanner("Failed to send order! Status: " + response.status, 'error');
+            }
+        } catch (err) {
+            showBanner("Error sending order: " + err.message, 'error');
         }
     };
 
     window.renderCustomOrders = () => {
+        window.updateCustomInputState();
+
         const listDiv = document.getElementById('custom-items-list');
         const summaryDiv = document.getElementById('custom-summary-area');
         if (!listDiv || !summaryDiv) return;
@@ -1366,14 +1604,13 @@
             return;
         }
 
-        let totalCost = 0, totalItems = 0, orderLines = [];
+        let totalCost = 0, totalItems = 0;
         listDiv.innerHTML = customOrders.map((item, index) => {
             const p = potions[item.potionId];
             if (!p) return '';
             const lineTotal = (p.salePrice || 0) * item.qty;
             totalCost += lineTotal;
             totalItems += item.qty;
-            orderLines.push(`${p.name} x ${item.qty}`);
 
             return `
                 <div class="item-row">
@@ -1387,16 +1624,30 @@
             `;
         }).join('');
 
-        const formattedOrderString = orderLines.join('\n') + `\nTotal Cost: ${totalCost.toFixed(2)}g`;
+        const activeLocObj = locations[activeLocationId];
+        const activeLocationName = activeLocObj ? activeLocObj.name : "Not specified";
+
         summaryDiv.innerHTML = `
             <div class="cart-summary">
                 <span>Total Custom Requests: <strong>${totalItems}</strong></span>
                 <span style="font-size: 1.1rem;">Estimated Cost: <strong style="color: var(--gold);">${totalCost.toFixed(2)} Gold</strong></span>
             </div>
             <div class="dispatch-box">
-                <p>Send a letter with your order to <code class="copyable-name" title="Click to copy">stax0r</code> on the Atherius. Copy the scroll contents below:</p>
-                <textarea id="custom-order-copy-area" class="copy-text-area" readonly>${formattedOrderString}</textarea>
-                <button onclick="window.copyOrderFormat()" style="margin-top: 8px; font-size: 0.8rem; background: var(--custom-order);">Copy Order Scroll</button>
+                <p style="color: var(--warning); margin-bottom: 10px;">⚠️ OOC: You should keep proof of being at <strong>${activeLocationName}</strong> before creating an order to avoid being banned for metagaming.⚠️</p>
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <input type="text" id="custom-order-name" placeholder="Name (Required)" value="${customInputState.name}" style="flex: 1;" oninput="window.updateCustomInputState()">
+                    <input type="text" id="custom-order-discord" placeholder="Discord ID (Optional)" value="${customInputState.discord}" style="flex: 1;" oninput="window.updateCustomInputState()">
+                </div>
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <textarea id="custom-order-message" placeholder="Delivery instructions and any other inquiries..." style="width: 100%; min-height: 80px;" oninput="window.updateCustomInputState()">${customInputState.message}</textarea>
+                </div>
+                <div class="form-group" style="margin-bottom: 15px; align-items: center;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--text);">
+                        <input type="checkbox" id="custom-order-at-location-check" ${customInputState.atLocationChecked ? 'checked' : ''} style="width: 18px; height: 18px;" onchange="window.updateCustomInputState()">
+                        <span style="font-size: 0.9rem;">I confirm that I'm currently at <strong>${activeLocationName}</strong></span>
+                    </label>
+                </div>
+                <button onclick="window.sendDiscordWebhookOrder()" style="width: 100%; font-size: 0.9rem; background: var(--custom-order);">Create new order</button>
             </div>
         `;
     };
@@ -1490,16 +1741,16 @@
         if (Object.keys(updates).length > 0) {
             update(ref(db), updates)
                 .then(() => {
-                    alert("Batch successfully crafted! Personal inventory stock has been deducted.");
+                    showBanner("Batch successfully crafted! Personal inventory stock has been deducted.");
                     batchManifest = [];
                     window.clientSuppliedQty = {};
                     window.renderBatchCalculator();
                 })
                 .catch(err => {
-                    alert("Error updating inventory: " + err.message);
+                    showBanner("Error updating inventory: " + err.message, 'error');
                 });
         } else {
-            alert("Batch executed! (No personal stock was deducted, either due to full client supply or 0 stock).");
+            showBanner("Batch executed! (No personal stock was deducted).");
             batchManifest = [];
             window.clientSuppliedQty = {};
             window.renderBatchCalculator();
@@ -1830,16 +2081,16 @@
         });
 
         if (categories.length === 0) {
-            container.innerHTML = `<p style="color: var(--text-dim); font-size: 0.85rem; margin: 0;">No categories found.</p>`;
+            container.innerHTML = `<p style="color: var(--text-dim); font-size: 0.8rem; margin: 0;">No categories found.</p>`;
             return;
         }
 
         container.innerHTML = categories.map((cat, index) => `
-            <div class="item-row" style="background: var(--bg-color);">
-                <span><strong>${index + 1}.</strong> ${cat}</span>
-                <div style="display: flex; gap: 6px;">
-                    <button class="order-btn" onclick="window.moveCategoryOrder('${cat.replace(/'/g, "\\'")}', 'up')" ${index === 0 ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>▲ Up</button>
-                    <button class="order-btn" onclick="window.moveCategoryOrder('${cat.replace(/'/g, "\\'")}', 'down')" ${index === categories.length - 1 ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>▼ Down</button>
+            <div class="item-row" style="background: var(--bg-color); padding: 6px 8px; margin-bottom: 6px;">
+                <span style="font-size: 0.8rem;"><strong>${index + 1}.</strong> ${cat}</span>
+                <div style="display: flex; gap: 4px;">
+                    <button class="order-btn" style="padding: 2px 6px; font-size: 0.7rem;" onclick="window.moveCategoryOrder('${cat.replace(/'/g, "\\'")}', 'up')" ${index === 0 ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>▲</button>
+                    <button class="order-btn" style="padding: 2px 6px; font-size: 0.7rem;" onclick="window.moveCategoryOrder('${cat.replace(/'/g, "\\'")}', 'down')" ${index === categories.length - 1 ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>▼</button>
                 </div>
             </div>
         `).join('');
@@ -1962,6 +2213,8 @@
     };
 
     window.render = () => {
+        window.updateCustomInputState();
+
         const ingArray = Object.values(ingredients);
         ingArray.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
 
@@ -1982,6 +2235,7 @@
 
         window.renderIngredientsList();
         window.renderCategoryOrderList();
+        window.renderLocationsConfig();
         window.renderAdminSalesHelper();
 
         let categories = [...new Set(potionArray.map(p => p.category || 'General'))];
