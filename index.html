@@ -6,14 +6,14 @@
     <title>The Wandering Apothecary</title>
     <style>
         :root {
-            --bg-color: #1a1625;
-            --card-bg: #262035;
-            --accent: #9d4edd;
-            --accent-hover: #7b2cbf;
-            --text: #e0d6f6;
-            --text-dim: #a093c4;
-            --border: #3c3254;
-            --gold: #ffb703;
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --accent: #6c757d;
+            --accent-hover: #495057;
+            --text: #f8f9fa;
+            --text-dim: #adb5bd;
+            --border: #343a40;
+            --gold: #ffc107;
             --success: #2a9d8f;
             --success-hover: #21867a;
             --danger: #d90429;
@@ -79,7 +79,7 @@
         }
 
         .potion-creator-panel {
-            border-color: rgba(157, 78, 221, 0.4);
+            border-color: rgba(108, 117, 125, 0.4);
             background-color: rgba(0, 0, 0, 0.15);
             margin-top: 20px;
             margin-bottom: 15px;
@@ -119,20 +119,12 @@
             font-size: 0.8rem;
         }
 
-        .filter-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
         .filter-bar {
             display: flex;
             gap: 8px;
+            margin-bottom: 20px;
             flex-wrap: wrap;
-            flex: 1;
+            align-items: center;
         }
 
         .filter-btn {
@@ -148,11 +140,6 @@
             background: var(--accent);
             color: #fff;
             border-color: var(--accent);
-        }
-
-        .catalog-search-input {
-            width: 220px;
-            font-size: 0.85rem;
         }
 
         .catalog-grid {
@@ -382,44 +369,6 @@
             opacity: 0.8;
         }
 
-        /* Toast Notifications Styling */
-        #toast-container {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            z-index: 100000;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            max-width: 350px;
-            pointer-events: none;
-        }
-
-        .toast {
-            background: var(--card-bg);
-            color: var(--text);
-            border: 1px solid var(--border);
-            border-left: 4px solid var(--accent);
-            padding: 12px 16px;
-            border-radius: 6px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-            font-size: 0.85rem;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: opacity 0.3s ease, transform 0.3s ease;
-            pointer-events: auto;
-        }
-
-        .toast.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .toast.success { border-left-color: var(--success); }
-        .toast.error { border-left-color: var(--danger); }
-        .toast.warning { border-left-color: var(--warning); }
-
-        /* Dropdown autocomplete styling */
         .autocomplete-wrapper {
             position: relative;
             flex: 2;
@@ -462,26 +411,7 @@
 </head>
 <body>
 
-<!-- Toast Notification Container -->
-<div id="toast-container"></div>
-
-<!-- Theme Floating Button & Modal (Visible to Everyone) -->
-<button id="theme-btn" class="admin-toggle" onclick="toggleThemeModal()" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); background: var(--card-bg); padding: 10px 16px;">🎨 Theme</button>
-
-<div id="theme-modal" class="login-modal hidden" style="position: fixed; bottom: 75px; right: 20px; z-index: 10000; width: 320px; max-height: 80vh; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.6);">
-    <h3>Select Theme</h3>
-    <p style="font-size: 0.85rem; color: var(--text-dim); margin: 12px 0 8px 0;">Choose your preferred color scheme:</p>
-    <div style="display: flex; flex-direction: column; gap: 8px;">
-        <button onclick="setTheme('default')" style="background: #262035; border: 1px solid #9d4edd; text-align: left;">💜 Apothecary Purple (Default)</button>
-        <button onclick="setTheme('darkgrey')" style="background: #212529; border: 1px solid #6c757d; text-align: left;">⚙️ Dark Slate / Grey-ish</button>
-        <button onclick="setTheme('forest')" style="background: #111d13; border: 1px solid #40916c; text-align: left;">🌲 Deep Forest</button>
-        <button onclick="setTheme('sunset')" style="background: #2b1d19; border: 1px solid #e07a5f; text-align: left;">🌅 Amber Sunset</button>
-    </div>
-    <button onclick="toggleThemeModal()" style="margin-top: 15px; width: 100%; background: var(--border);">Close</button>
-</div>
-
-<!-- Admin Config Floating Button & Modal (Admin Only) -->
-<button id="config-btn" class="admin-toggle hidden" onclick="toggleConfigModal()" style="position: fixed; bottom: 20px; right: 115px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); background: var(--card-bg); padding: 10px 16px;">⚙️ Store config</button>
+<button id="config-btn" class="admin-toggle hidden" onclick="toggleConfigModal()" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); background: var(--card-bg); padding: 10px 16px;">⚙️ Store config</button>
 
 <div id="config-modal" class="login-modal hidden" style="position: fixed; bottom: 75px; right: 20px; z-index: 10000; width: 320px; max-height: 80vh; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.6);">
     <h3>Store config</h3>
@@ -618,6 +548,7 @@
             <div id="cart-summary-area"></div>
             <div id="admin-sales-helper-container" style="margin-top: 20px; border-top: 1px dashed var(--border); padding-top: 15px;" class="hidden">
                 <h3 style="font-size: 1rem; margin-bottom: 10px; color: var(--accent);">Satchel Sales Calculator (Admin View)</h3>
+                <div id="satchel-override-control-area"></div>
                 <div id="admin-sales-helper-content"></div>
             </div>
         </div>
@@ -652,22 +583,11 @@
     </div>
 
     <h2>Apothecary Stock</h2>
-    <div class="filter-container" style="margin-top: 15px;">
-        <div id="filter-bar" class="filter-bar"></div>
-        <input type="text" id="catalog-search-input" class="catalog-search-input" placeholder="Search catalog..." oninput="handleCatalogSearch(this.value)">
-    </div>
+    <div id="filter-bar" class="filter-bar" style="margin-top: 15px;"></div>
     <div id="catalog" class="catalog-grid"></div>
 </div>
 
 <footer>
-    <details style="margin-bottom: 15px; text-align: left; display: inline-block; width: 100%; max-width: 400px;" id="category-display-order-details">
-        <summary style="cursor: pointer; font-size: 0.85rem; color: var(--text-dim); text-align: center;">Category Display Order</summary>
-        <div style="background: var(--bg-color); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-top: 8px;">
-            <p style="font-size: 0.8rem; color: var(--text-dim); margin-top: 0; margin-bottom: 10px;">Reorder how catalog categories are displayed to customers.</p>
-            <div id="category-order-list"></div>
-        </div>
-    </details>
-    <br>
     <span><strong>OOC:</strong> Whether you have questions, feedback, or just need to get in touch, please feel free to drop me a message on Discord at <code class="copyable-name" title="Click to copy">stax0r</code>. Always happy to help!</span>
 </footer>
 
@@ -676,7 +596,6 @@
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getDatabase, ref, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    //FIREBASE CONFIG
     const firebaseConfig = {
       apiKey: "AIzaSyC8QXlIWT76AZqttFWzLn4IKRRs3wYAaX8",
       authDomain: "alchemy-shop-dcceb.firebaseapp.com",
@@ -691,91 +610,6 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
-
-    // TOAST NOTIFICATION HELPER
-    window.showToast = (message, type = 'info') => {
-        const container = document.getElementById('toast-container');
-        if (!container) return;
-
-        const toast = document.createElement('div');
-        toast.className = `toast ${type}`;
-        toast.innerText = message;
-        container.appendChild(toast);
-
-        // Trigger transition
-        setTimeout(() => toast.classList.add('show'), 10);
-
-        // Remove after 3.5s
-        setTimeout(() => {
-            toast.classList.remove('show');
-            setTimeout(() => toast.remove(), 300);
-        }, 3500);
-    };
-
-    // THEMES DEFINITION
-    const themes = {
-        default: {
-            '--bg-color': '#1a1625',
-            '--card-bg': '#262035',
-            '--accent': '#9d4edd',
-            '--accent-hover': '#7b2cbf',
-            '--text': '#e0d6f6',
-            '--text-dim': '#a093c4',
-            '--border': '#3c3254',
-            '--gold': '#ffb703'
-        },
-        darkgrey: {
-            '--bg-color': '#121212',
-            '--card-bg': '#1e1e1e',
-            '--accent': '#6c757d',
-            '--accent-hover': '#495057',
-            '--text': '#f8f9fa',
-            '--text-dim': '#adb5bd',
-            '--border': '#343a40',
-            '--gold': '#ffc107'
-        },
-        forest: {
-            '--bg-color': '#0b130f',
-            '--card-bg': '#111d13',
-            '--accent': '#40916c',
-            '--accent-hover': '#2d6a4f',
-            '--text': '#d8f3dc',
-            '--text-dim': '#95d5b2',
-            '--border': '#2d4a3e',
-            '--gold': '#d4a373'
-        },
-        sunset: {
-            '--bg-color': '#1f1614',
-            '--card-bg': '#2b1d19',
-            '--accent': '#e07a5f',
-            '--accent-hover': '#cc583d',
-            '--text': '#f4f1de',
-            '--text-dim': '#d8b4a0',
-            '--border': '#4a3530',
-            '--gold': '#f4a261'
-        }
-    };
-
-    window.setTheme = (themeName) => {
-        const theme = themes[themeName] || themes.default;
-        const root = document.documentElement;
-        for (const [key, value] of Object.entries(theme)) {
-            root.style.setProperty(key, value);
-        }
-        localStorage.setItem('apothecary_theme', themeName);
-        const modal = document.getElementById('theme-modal');
-        if (modal) modal.classList.add('hidden');
-        showToast(`Theme changed to ${themeName}`, 'success');
-    };
-
-    // Apply saved theme immediately on load
-    const savedTheme = localStorage.getItem('apothecary_theme') || 'default';
-    window.setTheme(savedTheme);
-
-    window.toggleThemeModal = () => {
-        const modal = document.getElementById('theme-modal');
-        if (modal) modal.classList.toggle('hidden');
-    };
 
     window.toggleConfigModal = () => {
         const modal = document.getElementById('config-modal');
@@ -827,7 +661,6 @@
             if (loginModal) loginModal.classList.add('hidden');
             if (configBtn) configBtn.classList.remove('hidden');
             if (bulkBatchSection) bulkBatchSection.classList.remove('hidden');
-            showToast("Successfully logged in as Alchemist.", "success");
         } else {
             if (authBtn) authBtn.innerText = "Alchemist Login";
             if (adminPanel) adminPanel.classList.add('hidden');
@@ -841,7 +674,6 @@
     window.toggleAuthModal = () => {
         if (currentUser) {
             signOut(auth);
-            showToast("Logged out successfully.", "info");
         } else {
             const loginModal = document.getElementById('login-modal');
             if (loginModal) loginModal.classList.toggle('hidden');
@@ -864,10 +696,7 @@
 
         signInWithEmailAndPassword(auth, email, pass)
             .then(() => { if (errDiv) errDiv.innerText = ""; })
-            .catch(err => { 
-                if (errDiv) errDiv.innerText = err.message; 
-                showToast(err.message, 'error');
-            });
+            .catch(err => { if (errDiv) errDiv.innerText = err.message; });
     };
 
     window.addIngredient = () => {
@@ -878,7 +707,7 @@
         const threshold = parseInt(document.getElementById('ing-threshold').value) || 0;
 
         if (!name || isNaN(price)) {
-            showToast("Please provide a valid name and price for the ingredient.", "warning");
+            alert("Please provide a valid name and price for the ingredient.");
             return;
         }
 
@@ -886,14 +715,13 @@
         const existingEntry = Object.values(ingredients).find(i => (i.name || '').toLowerCase() === nameLower);
 
         if (existingEntry) {
-            showToast(`Ingredient "${existingEntry.name}" already exists! Updating view.`, "warning");
+            alert(`An ingredient named "${existingEntry.name}" already exists in your directory! Please update its stock or price instead.`);
             window.startEditIngredient(existingEntry.id);
             return;
         }
 
         const id = Date.now();
-        set(ref(db, `ingredients/${id}`), { id, name, price, stockQty: Math.max(0, stock), threshold: Math.max(0, threshold) })
-            .then(() => showToast(`Added ingredient: ${name}`, 'success'));
+        set(ref(db, `ingredients/${id}`), { id, name, price, stockQty: Math.max(0, stock), threshold: Math.max(0, threshold) });
         nameInput.value = '';
         document.getElementById('ing-price').value = '';
         document.getElementById('ing-stock').value = '0';
@@ -924,14 +752,14 @@
         const threshold = parseInt(thresholdInput.value) || 0;
 
         if (!newName || isNaN(price)) {
-            showToast("Name and price cannot be empty.", "warning");
+            alert("Name and price cannot be empty.");
             return;
         }
 
         const newNameLower = newName.toLowerCase();
         const duplicate = Object.values(ingredients).find(i => i.id !== id && (i.name || '').toLowerCase() === newNameLower);
         if (duplicate) {
-            showToast(`Another ingredient named "${duplicate.name}" already exists!`, "error");
+            alert(`Another ingredient named "${duplicate.name}" already exists!`);
             return;
         }
 
@@ -944,7 +772,6 @@
             threshold: Math.max(0, threshold)
         }).then(() => {
             window.editingIngredientId = null;
-            showToast("Ingredient updated successfully.", "success");
 
             if (oldName !== newName && potions) {
                 const potionUpdates = {};
@@ -982,7 +809,6 @@
             if (window.editingIngredientId === id) window.editingIngredientId = null;
 
             remove(ref(db, `ingredients/${id}`)).then(() => {
-                showToast("Ingredient deleted.", "info");
                 if (potions) {
                     const potionUpdates = {};
                     let updated = false;
@@ -1048,7 +874,7 @@
         const addQty = parseInt(qtyInput ? qtyInput.value : 1) || 0;
 
         if (!id || !ingredients[id] || addQty <= 0) {
-            showToast("Please select a valid ingredient and positive quantity.", "warning");
+            alert("Please select a valid ingredient from the dropdown and enter a positive quantity to deposit.");
             return;
         }
 
@@ -1057,14 +883,14 @@
 
         set(ref(db, `ingredients/${id}/stockQty`), newStock)
             .then(() => {
-                showToast(`Deposited ${addQty}x to ${ingredients[id].name}. New stock: ${newStock}`, 'success');
+                alert(`Successfully added ${addQty} to ${ingredients[id].name}. New stock: ${newStock}`);
                 const input = document.getElementById('quick-deposit-input');
                 if (input) input.value = '';
                 if (qtyInput) qtyInput.value = '1';
                 window.selectedQuickDepositIngredientId = null;
             })
             .catch(err => {
-                showToast("Error depositing stock: " + err.message, 'error');
+                alert("Error depositing stock: " + err.message);
             });
     };
 
@@ -1142,8 +968,6 @@
                 forceOut: existingForceOut,
                 bulkOnly: bulkOnly,
                 recipe: currentRecipe
-            }).then(() => {
-                showToast(editingId ? "Potion updated successfully." : "New potion created!", "success");
             });
 
             const allCats = [...new Set([...Object.values(potions).map(p => p.category || 'General'), category])];
@@ -1164,7 +988,7 @@
 
             window.cancelEditPotion();
         } else {
-            showToast("Please provide a valid potion name and sale price.", "warning");
+            alert("Please provide a valid potion name and sale price.");
         }
     };
 
@@ -1210,26 +1034,22 @@
 
     window.updatePotionStockQty = (id, newQty) => {
         const qty = parseInt(newQty) || 0;
-        set(ref(db, `potions/${id}/stockQty`), qty)
-            .then(() => showToast("Stock quantity updated.", "success"));
+        set(ref(db, `potions/${id}/stockQty`), qty);
     };
 
     window.toggleShopVisibility = (id, currentInShop) => {
         const newVal = currentInShop !== false ? false : true;
-        set(ref(db, `potions/${id}/inShop`), newVal)
-            .then(() => showToast(newVal ? "Potion is now visible in shop." : "Potion hidden from shop.", "info"));
+        set(ref(db, `potions/${id}/inShop`), newVal);
     };
 
     window.toggleForceOutStock = (id, currentForceOut) => {
         const newVal = currentForceOut ? false : true;
-        set(ref(db, `potions/${id}/forceOut`), newVal)
-            .then(() => showToast(newVal ? "Potion marked as Force Out of Stock." : "Potion stock availability restored.", "info"));
+        set(ref(db, `potions/${id}/forceOut`), newVal);
     };
 
     window.deletePotion = (id) => {
         if (window.confirm("Are you sure you want to delete this potion from the catalog? This action cannot be undone.")) {
-            remove(ref(db, `potions/${id}`))
-                .then(() => showToast("Potion removed from catalog.", "info"));
+            remove(ref(db, `potions/${id}`));
         }
     };
 
@@ -1259,7 +1079,7 @@
             updates[`categoryOrders/${cat}`] = idx + 1;
         });
 
-        update(ref(db), updates).then(() => showToast("Category display order updated.", "success"));
+        update(ref(db), updates);
     };
 
     window.setCategoryFilter = (cat) => {
@@ -1267,9 +1087,9 @@
         window.render();
     };
 
-    window.handleCatalogSearch = (query) => {
-        catalogSearchQuery = query.trim().toLowerCase();
-        window.render();
+    window.handleCatalogSearch = (val) => {
+        catalogSearchQuery = val.trim().toLowerCase();
+        window.renderCatalogOnly();
     };
 
     window.addToCart = (potionId) => {
@@ -1279,10 +1099,7 @@
         if (maxQty <= 0 || p.forceOut) return;
 
         const addAmount = p.bulkOnly ? 10 : 1;
-        if (maxQty < addAmount) {
-            showToast("Not enough stock available.", "warning");
-            return;
-        }
+        if (maxQty < addAmount) return;
 
         const existing = clientCart.find(item => item.potionId === potionId);
         if (existing) {
@@ -1291,7 +1108,6 @@
         } else {
             clientCart.push({ potionId, qty: addAmount });
         }
-        showToast(`Added ${p.name} to your satchel.`, "success");
         window.renderCart();
     };
 
@@ -1316,16 +1132,10 @@
         window.renderCart();
     };
 
-    window.removeFromCart = (index) => { 
-        clientCart.splice(index, 1); 
-        showToast("Item removed from satchel.", "info");
-        window.renderCart(); 
-    };
-
+    window.removeFromCart = (index) => { clientCart.splice(index, 1); window.renderCart(); };
     window.clearCart = () => { 
         clientCart = []; 
         window.satchelPriceOverride = "";
-        showToast("Satchel emptied.", "info");
         window.renderCart(); 
     };
 
@@ -1376,6 +1186,27 @@
         window.renderAdminSalesHelper();
     };
 
+    window.renderSatchelOverrideInput = () => {
+        const controlArea = document.getElementById('satchel-override-control-area');
+        if (!controlArea) return;
+        
+        let totalSatchelDefaultPrice = 0;
+        clientCart.forEach(item => {
+            const p = potions[item.potionId];
+            if (p) totalSatchelDefaultPrice += (p.salePrice || 0) * item.qty;
+        });
+
+        controlArea.innerHTML = `
+            <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; border: 1px solid var(--border); display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 225px;">
+                    <label style="font-size: 0.75rem; color: var(--text-dim); display: block; margin-bottom: 4px;">Deal Discount Override (Final Sale Price)</label>
+                    <input type="number" id="satchel-price-override-input" value="${window.satchelPriceOverride}" placeholder="Default: ${totalSatchelDefaultPrice.toFixed(2)}g" step="0.01" style="width: 100%; box-sizing: border-box;" oninput="window.updateSatchelPriceOverride(this.value)">
+                </div>
+                ${window.satchelPriceOverride !== "" ? `<button onclick="window.updateSatchelPriceOverride('')" style="background: var(--border); font-size: 0.8rem; padding: 6px 10px; margin-top: 18px;">Reset Default</button>` : ''}
+            </div>
+        `;
+    };
+
     window.renderAdminSalesHelper = () => {
         const container = document.getElementById('admin-sales-helper-content');
         const wrapperContainer = document.getElementById('admin-sales-helper-container');
@@ -1387,6 +1218,7 @@
         }
 
         wrapperContainer.classList.remove('hidden');
+        window.renderSatchelOverrideInput();
 
         if (clientCart.length === 0) {
             container.innerHTML = `<p style="color: var(--text-dim); font-size: 0.85rem; margin: 0;">Satchel is currently empty. Add potions to review business analytics.</p>`;
@@ -1438,15 +1270,7 @@
         );
 
         let html = `
-            <div style="display: flex; flex-direction: column; gap: 12px;">
-                <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; border: 1px solid var(--border); display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                    <div style="flex: 1; min-width: 225px;">
-                        <label style="font-size: 0.75rem; color: var(--text-dim); display: block; margin-bottom: 4px;">Deal Discount Override (Final Sale Price)</label>
-                        <input type="number" id="satchel-price-override-input" value="${window.satchelPriceOverride}" placeholder="Default: ${totalSatchelDefaultPrice.toFixed(2)}g" step="0.01" style="width: 100%; box-sizing: border-box;" oninput="window.updateSatchelPriceOverride(this.value)">
-                    </div>
-                    ${window.satchelPriceOverride !== "" ? `<button onclick="window.updateSatchelPriceOverride('')" style="background: var(--border); font-size: 0.8rem; padding: 6px 10px; margin-top: 18px;">Reset Default</button>` : ''}
-                </div>
-
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 12px;">
                 <div class="batch-metrics" style="margin-top: 0; padding-top: 0; border-top: none;">
                     <div class="metric-box">
                         <span>Default Satchel Price</span>
@@ -1497,7 +1321,6 @@
         const existing = customOrders.find(item => item.potionId === potionId);
         if (existing) existing.qty += addQty;
         else customOrders.push({ potionId, qty: addQty });
-        showToast(`Added custom request for ${p.name}.`, "success");
         window.renderCustomOrders();
     };
 
@@ -1519,17 +1342,8 @@
         window.renderCustomOrders();
     };
 
-    window.removeCustomOrder = (index) => { 
-        customOrders.splice(index, 1); 
-        showToast("Custom order item removed.", "info");
-        window.renderCustomOrders(); 
-    };
-    
-    window.clearCustomOrders = () => { 
-        customOrders = []; 
-        showToast("Custom orders cleared.", "info");
-        window.renderCustomOrders(); 
-    };
+    window.removeCustomOrder = (index) => { customOrders.splice(index, 1); window.renderCustomOrders(); };
+    window.clearCustomOrders = () => { customOrders = []; window.renderCustomOrders(); };
 
     window.copyOrderFormat = () => {
         const copyText = document.getElementById("custom-order-copy-area");
@@ -1537,7 +1351,7 @@
             copyText.select();
             copyText.setSelectionRange(0, 99999);
             navigator.clipboard.writeText(copyText.value);
-            showToast("Order letter copied to clipboard!", "success");
+            alert("Order letter copied to clipboard!");
         }
     };
 
@@ -1580,7 +1394,7 @@
                 <span style="font-size: 1.1rem;">Estimated Cost: <strong style="color: var(--gold);">${totalCost.toFixed(2)} Gold</strong></span>
             </div>
             <div class="dispatch-box">
-                <p>Send a letter with your order to <code class="copyable-name" title="Click to copy">stax0r</code> on Atherius. Copy the scroll contents below:</p>
+                <p>Send a letter with your order to <code class="copyable-name" title="Click to copy">stax0r</code> on the Atherius. Copy the scroll contents below:</p>
                 <textarea id="custom-order-copy-area" class="copy-text-area" readonly>${formattedOrderString}</textarea>
                 <button onclick="window.copyOrderFormat()" style="margin-top: 8px; font-size: 0.8rem; background: var(--custom-order);">Copy Order Scroll</button>
             </div>
@@ -1676,16 +1490,16 @@
         if (Object.keys(updates).length > 0) {
             update(ref(db), updates)
                 .then(() => {
-                    showToast("Batch successfully crafted! Personal inventory stock has been deducted.", "success");
+                    alert("Batch successfully crafted! Personal inventory stock has been deducted.");
                     batchManifest = [];
                     window.clientSuppliedQty = {};
                     window.renderBatchCalculator();
                 })
                 .catch(err => {
-                    showToast("Error updating inventory: " + err.message, "error");
+                    alert("Error updating inventory: " + err.message);
                 });
         } else {
-            showToast("Batch executed! No personal stock was deducted.", "info");
+            alert("Batch executed! (No personal stock was deducted, either due to full client supply or 0 stock).");
             batchManifest = [];
             window.clientSuppliedQty = {};
             window.renderBatchCalculator();
@@ -2031,10 +1845,7 @@
         `).join('');
     };
 
-    window.render = () => {
-        const ingArray = Object.values(ingredients);
-        ingArray.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
-
+    window.renderCatalogOnly = () => {
         let potionArray = Object.values(potions);
         
         potionArray.sort((a, b) => {
@@ -2052,39 +1863,6 @@
             return (a.salePrice || 0) - (b.salePrice || 0);
         });
 
-        const select = document.getElementById('recipe-ing-select');
-        if (select) {
-            select.innerHTML = ingArray.map(i => `<option value="${i.id}">${i.name} (${i.price}g)</option>`).join('');
-        }
-
-        const batchSelect = document.getElementById('batch-potion-select');
-        if (batchSelect) {
-            const sortedBatchPotions = [...potionArray].sort((a, b) => 
-                (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
-            );
-            batchSelect.innerHTML = sortedBatchPotions.map(p => `<option value="${p.id}">${p.name} (${p.salePrice}g)</option>`).join('');
-        }
-
-        window.renderIngredientsList();
-        window.renderCategoryOrderList();
-        window.renderAdminSalesHelper();
-
-        let categories = [...new Set(potionArray.map(p => p.category || 'General'))];
-        categories.sort((a, b) => {
-            const orderA = categoryOrders[a] !== undefined ? categoryOrders[a] : 999;
-            const orderB = categoryOrders[b] !== undefined ? categoryOrders[b] : 999;
-            if (orderA !== orderB) return orderA - orderB;
-            return a.localeCompare(b);
-        });
-
-        const filterCategories = ['All', ...categories];
-        const filterBar = document.getElementById('filter-bar');
-        if (filterBar) {
-            filterBar.innerHTML = filterCategories.map(cat => `
-                <button class="filter-btn ${selectedCategory === cat ? 'active' : ''}" onclick="window.setCategoryFilter('${cat}')">${cat}</button>
-            `).join('');
-        }
-
         const catalog = document.getElementById('catalog');
         if (catalog) {
             let visiblePotions = potionArray;
@@ -2095,11 +1873,12 @@
                 visiblePotions = visiblePotions.filter(p => (p.category || 'General') === selectedCategory);
             }
             if (catalogSearchQuery) {
-                visiblePotions = visiblePotions.filter(p => 
-                    (p.name || '').toLowerCase().includes(catalogSearchQuery) || 
-                    (p.description || '').toLowerCase().includes(catalogSearchQuery) ||
-                    (p.category || '').toLowerCase().includes(catalogSearchQuery)
-                );
+                visiblePotions = visiblePotions.filter(p => {
+                    const matchName = (p.name || '').toLowerCase().includes(catalogSearchQuery);
+                    const matchDesc = (p.description || '').toLowerCase().includes(catalogSearchQuery);
+                    const matchCat = (p.category || '').toLowerCase().includes(catalogSearchQuery);
+                    return matchName || matchDesc || matchCat;
+                });
             }
 
             if (visiblePotions.length === 0) {
@@ -2180,7 +1959,50 @@
                 }).join('');
             }
         }
+    };
 
+    window.render = () => {
+        const ingArray = Object.values(ingredients);
+        ingArray.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
+
+        let potionArray = Object.values(potions);
+
+        const select = document.getElementById('recipe-ing-select');
+        if (select) {
+            select.innerHTML = ingArray.map(i => `<option value="${i.id}">${i.name} (${i.price}g)</option>`).join('');
+        }
+
+        const batchSelect = document.getElementById('batch-potion-select');
+        if (batchSelect) {
+            const sortedBatchPotions = [...potionArray].sort((a, b) => 
+                (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
+            );
+            batchSelect.innerHTML = sortedBatchPotions.map(p => `<option value="${p.id}">${p.name} (${p.salePrice}g)</option>`).join('');
+        }
+
+        window.renderIngredientsList();
+        window.renderCategoryOrderList();
+        window.renderAdminSalesHelper();
+
+        let categories = [...new Set(potionArray.map(p => p.category || 'General'))];
+        categories.sort((a, b) => {
+            const orderA = categoryOrders[a] !== undefined ? categoryOrders[a] : 999;
+            const orderB = categoryOrders[b] !== undefined ? categoryOrders[b] : 999;
+            if (orderA !== orderB) return orderA - orderB;
+            return a.localeCompare(b);
+        });
+
+        const filterCategories = ['All', ...categories];
+        const filterBar = document.getElementById('filter-bar');
+        if (filterBar) {
+            filterBar.innerHTML = filterCategories.map(cat => `
+                <button class="filter-btn ${selectedCategory === cat ? 'active' : ''}" onclick="window.setCategoryFilter('${cat}')">${cat}</button>
+            `).join('') + `
+                <input type="text" id="catalog-search-input" value="${catalogSearchQuery}" placeholder="Search catalog..." style="margin-left: auto; width: 180px; padding: 5px 10px; font-size: 0.85rem;" oninput="window.handleCatalogSearch(this.value)">
+            `;
+        }
+
+        window.renderCatalogOnly();
         window.renderBatchCalculator();
         window.renderCart();
         window.renderCustomOrders();
