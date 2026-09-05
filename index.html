@@ -1531,7 +1531,7 @@
         }
 
         if (!isAtLocation) {
-            showBanner("You must confirm that you are currently at the active location before sending the order.", 'error');
+            showBanner("You must confirm that you're currently at location before sending the order.", 'error');
             return;
         }
 
@@ -1553,7 +1553,6 @@
 
         const activeLocObj = locations[activeLocationId];
         const activeLocationName = activeLocObj ? activeLocObj.name : "Not specified";
-        const reminderText = `⚠️ OOC: Take a screenshot at (**${activeLocationName}**) before sending the order to avoid metagaming accusations!⚠️`;
 
         let contentParts = [`📦 **New Custom Order!**`];
         contentParts.push(`**Name:** ${clientName}`);
@@ -1562,7 +1561,6 @@
         if (clientMessage) contentParts.push(`**Delivery Instructions & Inquiries:** ${clientMessage}`);
         contentParts.push(`\n**Items:**\n${orderLines.join('\n')}`);
         contentParts.push(`**Estimated Total Cost:** ${totalCost.toFixed(2)} Gold`);
-        contentParts.push(`\n${reminderText}`);
 
         const payload = {
             content: contentParts.join('\n')
@@ -1635,7 +1633,7 @@
                 <span style="font-size: 1.1rem;">Estimated Cost: <strong style="color: var(--gold);">${totalCost.toFixed(2)} Gold</strong></span>
             </div>
             <div class="dispatch-box">
-                <p style="color: var(--warning); margin-bottom: 10px;">⚠️ Remember: Orders will not be received if the note with the order is not left at the proper active location (<strong>${activeLocationName}</strong>).</p>
+                <p style="color: var(--warning); margin-bottom: 10px;">⚠️ Reminder: You should keep proof of being at "${activeLocationName}" before creating an order to avoid being banned for metagaming.</p>
                 <div class="form-group" style="margin-bottom: 10px;">
                     <input type="text" id="custom-order-name" placeholder="Name (Required)" value="${customInputState.name}" style="flex: 1;" oninput="window.updateCustomInputState()">
                     <input type="text" id="custom-order-discord" placeholder="Discord ID (Optional)" value="${customInputState.discord}" style="flex: 1;" oninput="window.updateCustomInputState()">
@@ -1646,10 +1644,10 @@
                 <div class="form-group" style="margin-bottom: 15px; align-items: center;">
                     <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--text);">
                         <input type="checkbox" id="custom-order-at-location-check" ${customInputState.atLocationChecked ? 'checked' : ''} style="width: 18px; height: 18px;" onchange="window.updateCustomInputState()">
-                        <span style="font-size: 0.9rem;">I confirm that I am currently at the active location (<strong>${activeLocationName}</strong>)</span>
+                        <span style="font-size: 0.9rem;">I confirm that I'm currently at "${activeLocationName}"</span>
                     </label>
                 </div>
-                <button onclick="window.sendDiscordWebhookOrder()" style="width: 100%; font-size: 0.9rem; background: var(--custom-order);">Send Complete Order</button>
+                <button onclick="window.sendDiscordWebhookOrder()" style="width: 100%; font-size: 0.9rem; background: var(--custom-order);">Create new order</button>
             </div>
         `;
     };
