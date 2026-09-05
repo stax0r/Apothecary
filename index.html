@@ -1345,13 +1345,66 @@
     window.removeCustomOrder = (index) => { customOrders.splice(index, 1); window.renderCustomOrders(); };
     window.clearCustomOrders = () => { customOrders = []; window.renderCustomOrders(); };
 
-    window.copyOrderFormat = () => {
-        const copyText = document.getElementById("custom-order-copy-area");
-        if (copyText) {
-            copyText.select();
-            copyText.setSelectionRange(0, 99999);
-            navigator.clipboard.writeText(copyText.value);
-            alert("Order letter copied to clipboard!");
+    window.sendDiscordWebhookOrder = async () => {
+        const nameInput = document.getElementById("custom-order-name");
+        const locationInput = document.getElementById("custom-order-location");
+        
+        const clientName = nameInput ? nameInput.value.trim() : "";
+        const clientLocation = locationInput ? locationInput.value.trim() : "";
+
+        if (!clientName || !clientLocation) {
+            alert("Please fill in both your Name and Location before sending the order.");
+            return;
+        }
+
+        if (customOrders.length === 0) {
+            alert("Your custom order is empty. Please add items before sending.");
+            return;
+        }
+
+        let totalCost = 0;
+        let orderLines = [];
+
+        customOrders.forEach(item => {
+            const p = potions[item.potionId];
+            if (!p) return;
+            const lineTotal = (p.salePrice || 0) * item.qty;
+            totalCost += lineTotal;
+            orderLines.push(`• ${item.qty}x ${p.name} (${lineTotal.toFixed(2)}g)`);
+        });
+
+        const payload = {
+            content: `📦 **New Custom Potion Order!**\n\n**Name:** ${clientName}\n**Location:** ${clientLocation}\n\n**Items:**\n${orderLines.join('\n')}\n\n**Estimated Total Cost:** ${totalCost.toFixed(2)} Gold`
+        };
+
+        //WEBHOOK URL
+        const webhookUrl = "https://discord.com/api/webhooks/1542816073177370655/IA6vDW8SmSDKEqYGDYY8unc0T3i4NXDnn21OXHNGWLpL4JM6Y_KZ0-LL-qTY7EwBTz7C";
+
+        if (webhookUrl === "https://discord.com/api/webhooks/1542816073177370655/IA6vDW8SmSDKEqYGDYY8unc0T3i4NXDnn21OXHNGWLpL4JM6Y_KZ0-LL-qTY7EwBTz7C") {
+            alert("Webhook URL not configured! Please replace 'YOUR_DISCORD_WEBHOOK_URL_HERE' in the code with your actual Discord Webhook URL.");
+            return;
+        }
+
+        try {
+            const response = await fetch(webhookUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                alert("Order successfully sent via Discord webhook!");
+                customOrders = [];
+                if (nameInput) nameInput.value = "";
+                if (locationInput) locationInput.value = "";
+                window.renderCustomOrders();
+            } else {
+                alert("Failed to send order through the webhook. Status: " + response.status);
+            }
+        } catch (err) {
+            alert("Error sending webhook: " + err.message);
         }
     };
 
@@ -1366,14 +1419,13 @@
             return;
         }
 
-        let totalCost = 0, totalItems = 0, orderLines = [];
+        let totalCost = 0, totalItems = 0;
         listDiv.innerHTML = customOrders.map((item, index) => {
             const p = potions[item.potionId];
             if (!p) return '';
             const lineTotal = (p.salePrice || 0) * item.qty;
             totalCost += lineTotal;
             totalItems += item.qty;
-            orderLines.push(`${p.name} x ${item.qty}`);
 
             return `
                 <div class="item-row">
@@ -1387,16 +1439,17 @@
             `;
         }).join('');
 
-        const formattedOrderString = orderLines.join('\n') + `\nTotal Cost: ${totalCost.toFixed(2)}g`;
         summaryDiv.innerHTML = `
             <div class="cart-summary">
                 <span>Total Custom Requests: <strong>${totalItems}</strong></span>
                 <span style="font-size: 1.1rem;">Estimated Cost: <strong style="color: var(--gold);">${totalCost.toFixed(2)} Gold</strong></span>
             </div>
             <div class="dispatch-box">
-                <p>Send a letter with your order to <code class="copyable-name" title="Click to copy">stax0r</code> on the Atherius. Copy the scroll contents below:</p>
-                <textarea id="custom-order-copy-area" class="copy-text-area" readonly>${formattedOrderString}</textarea>
-                <button onclick="window.copyOrderFormat()" style="margin-top: 8px; font-size: 0.8rem; background: var(--custom-order);">Copy Order Scroll</button>
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <input type="text" id="custom-order-name" placeholder="Your Name" style="flex: 1;">
+                    <input type="text" id="custom-order-location" placeholder="Your Location" style="flex: 1;">
+                </div>
+                <button onclick="window.sendDiscordWebhookOrder()" style="width: 100%; font-size: 0.9rem; background: var(--custom-order);">Send Complete Order</button>
             </div>
         `;
     };
