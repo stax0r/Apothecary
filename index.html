@@ -440,17 +440,26 @@
 
 <button id="config-btn" class="admin-toggle hidden" onclick="toggleConfigModal()" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); background: var(--card-bg); padding: 6px 12px; font-size: 0.8rem;">⚙️ Config</button>
 
-<div id="config-modal" class="login-modal hidden" style="position: fixed; bottom: 65px; right: 20px; z-index: 10000; width: 280px; max-height: 75vh; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.6); padding: 15px;">
+<div id="config-modal" class="login-modal hidden" style="position: fixed; bottom: 65px; right: 20px; z-index: 10000; width: 310px; max-height: 75vh; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.6); padding: 15px;">
     <h3 style="font-size: 1rem;">Store config</h3>
     
-    <h4 style="font-size: 0.85rem; margin-top: 10px; margin-bottom: 4px;">Order Receiving Location</h4>
-    <p style="font-size: 0.7rem; color: var(--text-dim); margin-top: 0; margin-bottom: 8px;">Set drop off location.</p>
+    <h4 style="font-size: 0.85rem; margin-top: 10px; margin-bottom: 4px;">Order Receiving Locations</h4>
+    <p style="font-size: 0.7rem; color: var(--text-dim); margin-top: 0; margin-bottom: 8px;">Add, choose active, or delete drop-off locations.</p>
+    
     <div class="form-group" style="margin-bottom: 10px;">
-        <input type="text" id="config-store-location" placeholder="e.g. Vault 3..." style="width: 100%; box-sizing: border-box; font-size: 0.85rem; padding: 6px;">
-        <button onclick="saveStoreLocation()" style="width: 100%; background: var(--success); margin-top: 4px; padding: 6px; font-size: 0.8rem;">Save Location</button>
+        <input type="text" id="config-new-location-name" placeholder="New location name..." style="flex: 1; box-sizing: border-box; font-size: 0.85rem; padding: 6px;">
+        <button onclick="addNewLocation()" style="background: var(--success); padding: 6px 10px; font-size: 0.8rem;">Add</button>
     </div>
 
-    <h4 style="font-size: 0.85rem; margin-top: 10px; margin-bottom: 4px;">Category Display Order</h4>
+    <div style="margin-bottom: 12px;">
+        <label style="font-size: 0.75rem; color: var(--text-dim); display: block; margin-bottom: 4px;">Active Location Selection</label>
+        <div style="display: flex; gap: 6px;">
+            <select id="config-location-select" style="flex: 1; font-size: 0.85rem; padding: 6px;" onchange="setActiveLocation(this.value)"></select>
+            <button onclick="deleteActiveLocation()" class="delete-btn" style="padding: 6px 10px; font-size: 0.75rem;" title="Delete selected location">Delete</button>
+        </div>
+    </div>
+
+    <h4 style="font-size: 0.85rem; margin-top: 15px; margin-bottom: 4px;">Category Display Order</h4>
     <p style="font-size: 0.7rem; color: var(--text-dim); margin-top: 0; margin-bottom: 8px;">Reorder categories.</p>
     <div id="category-order-list"></div>
 
@@ -665,7 +674,8 @@
     let ingredients = {};
     let potions = {};
     let categoryOrders = {};
-    let storeLocation = "";
+    let locations = {};
+    let activeLocationId = "";
     let currentRecipe = [];
     let currentUser = null;
     let selectedCategory = 'All';
@@ -674,11 +684,12 @@
     let clientCart = [];
     let customOrders = [];
 
-    // State preservation variables for custom order text fields
+    // State preservation variables for custom order text fields & confirmation checkbox
     let customInputState = {
         name: "",
         discord: "",
-        message: ""
+        message: "",
+        atLocationChecked: false
     };
 
     window.clientSuppliedQty = {};
@@ -701,21 +712,97 @@
         window.render();
     });
 
-    onValue(ref(db, 'storeLocation'), (snapshot) => {
-        storeLocation = snapshot.val() || "";
-        const locInput = document.getElementById('config-store-location');
-        if (locInput) locInput.value = storeLocation;
+    onValue(ref(db, 'locations'), (snapshot) => {
+        locations = snapshot.val() || {};
+        window.renderLocationsConfig();
         window.renderCustomOrders();
     });
 
-    window.saveStoreLocation = () => {
-        const locInput = document.getElementById('config-store-location');
-        const val = locInput ? locInput.value.trim() : "";
-        set(ref(db, 'storeLocation'), val).then(() => {
-            showBanner("Store order location successfully saved to database!");
+    onValue(ref(db, 'activeLocationId'), (snapshot) => {
+        activeLocationId = snapshot.val() || "";
+        window.renderLocationsConfig();
+        window.renderCustomOrders();
+    });
+
+    window.renderLocationsConfig = () => {
+        const select = document.getElementById('config-location-select');
+        if (!select) return;
+
+        const locArray = Object.values(locations);
+        locArray.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
+
+        if (locArray.length === 0) {
+            select.innerHTML = `<option value="">No locations added</option>`;
+            return;
+        }
+
+        select.innerHTML = locArray.map(l => `
+            <option value="${l.id}" ${l.id === activeLocationId ? 'selected' : ''}>${l.name}</option>
+        `).join('');
+    };
+
+    window.addNewLocation = () => {
+        const input = document.getElementById('config-new-location-name');
+        if (!input) return;
+        const name = input.value.trim();
+        if (!name) {
+            showBanner("Please enter a location name.", 'error');
+            return;
+        }
+
+        const id = 'loc_' + Date.now();
+        const locArray = Object.values(locations);
+        
+        const updates = {};
+        updates[`locations/${id}`] = { id, name };
+        
+        // If this is the first location added, make it active automatically
+        if (locArray.length === 0 || !activeLocationId) {
+            updates[`activeLocationId`] = id;
+        }
+
+        update(ref(db), updates).then(() => {
+            input.value = '';
+            showBanner("Location successfully added!");
         }).catch(err => {
-            showBanner("Error saving location: " + err.message, 'error');
+            showBanner("Error adding location: " + err.message, 'error');
         });
+    };
+
+    window.setActiveLocation = (id) => {
+        if (!id) return;
+        set(ref(db, 'activeLocationId'), id).then(() => {
+            showBanner("Active location updated!");
+        }).catch(err => {
+            showBanner("Error updating active location: " + err.message, 'error');
+        });
+    };
+
+    window.deleteActiveLocation = () => {
+        const select = document.getElementById('config-location-select');
+        if (!select || !select.value) {
+            showBanner("No location selected to delete.", 'error');
+            return;
+        }
+        const idToDelete = select.value;
+        const locName = locations[idToDelete] ? locations[idToDelete].name : "this location";
+
+        if (window.confirm(`Are you sure you want to delete "${locName}"?`)) {
+            const updates = {};
+            updates[`locations/${idToDelete}`] = null;
+
+            // If deleting the active location, clear or pick another one
+            if (activeLocationId === idToDelete) {
+                const remaining = Object.keys(locations).filter(id => id !== idToDelete);
+                updates[`activeLocationId`] = remaining.length > 0 ? remaining[0] : "";
+            }
+
+            update(ref(db), updates).then(() => {
+                showBanner("Location successfully deleted!");
+            }).catch(err => {
+                showBanner("Error deleting location: " + err.message, 'error');
+            });
+        }
     };
 
     onAuthStateChanged(auth, (user) => {
@@ -1422,10 +1509,12 @@
         const nameInput = document.getElementById("custom-order-name");
         const discordInput = document.getElementById("custom-order-discord");
         const messageInput = document.getElementById("custom-order-message");
+        const checkInput = document.getElementById("custom-order-at-location-check");
 
         if (nameInput) customInputState.name = nameInput.value;
         if (discordInput) customInputState.discord = discordInput.value;
         if (messageInput) customInputState.message = messageInput.value;
+        if (checkInput) customInputState.atLocationChecked = checkInput.checked;
     };
 
     window.sendDiscordWebhookOrder = async () => {
@@ -1434,9 +1523,15 @@
         const clientName = customInputState.name.trim();
         const clientDiscord = customInputState.discord.trim();
         const clientMessage = customInputState.message.trim();
+        const isAtLocation = customInputState.atLocationChecked;
 
         if (!clientName) {
             showBanner("Please enter your name.", 'error');
+            return;
+        }
+
+        if (!isAtLocation) {
+            showBanner("You must confirm that you are currently at the active location before sending the order.", 'error');
             return;
         }
 
@@ -1456,12 +1551,14 @@
             orderLines.push(`• ${item.qty}x ${p.name} (${lineTotal.toFixed(2)}g)`);
         });
 
-        const activeLocation = storeLocation || "Not specified";
-        const reminderText = `⚠️ **Reminder:** Orders will not be received if the note with the order is not left at the proper location (**${activeLocation}**)!`;
+        const activeLocObj = locations[activeLocationId];
+        const activeLocationName = activeLocObj ? activeLocObj.name : "Not specified";
+        const reminderText = `⚠️ **Reminder:** Orders will not be received if the note with the order is not left at the proper location (**${activeLocationName}**)!`;
 
         let contentParts = [`📦 **New Custom Order!**`];
         contentParts.push(`**Name:** ${clientName}`);
         if (clientDiscord) contentParts.push(`**Discord ID:** ${clientDiscord}`);
+        contentParts.push(`**Active Location:** ${activeLocationName}`);
         if (clientMessage) contentParts.push(`**Delivery Instructions & Inquiries:** ${clientMessage}`);
         contentParts.push(`\n**Items:**\n${orderLines.join('\n')}`);
         contentParts.push(`**Estimated Total Cost:** ${totalCost.toFixed(2)} Gold`);
@@ -1486,7 +1583,7 @@
             if (response.ok) {
                 showBanner("Order successfully sent!");
                 customOrders = [];
-                customInputState = { name: "", discord: "", message: "" };
+                customInputState = { name: "", discord: "", message: "", atLocationChecked: false };
                 window.renderCustomOrders();
             } else {
                 showBanner("Failed to send order! Status: " + response.status, 'error');
@@ -1529,7 +1626,8 @@
             `;
         }).join('');
 
-        const activeLocation = storeLocation || "Not specified";
+        const activeLocObj = locations[activeLocationId];
+        const activeLocationName = activeLocObj ? activeLocObj.name : "Not specified";
 
         summaryDiv.innerHTML = `
             <div class="cart-summary">
@@ -1537,13 +1635,19 @@
                 <span style="font-size: 1.1rem;">Estimated Cost: <strong style="color: var(--gold);">${totalCost.toFixed(2)} Gold</strong></span>
             </div>
             <div class="dispatch-box">
-                <p style="color: var(--warning); margin-bottom: 10px;">⚠️ Remember: Orders will not be received if the note with the order is not left at the proper location (<strong>${activeLocation}</strong>).</p>
+                <p style="color: var(--warning); margin-bottom: 10px;">⚠️ Remember: Orders will not be received if the note with the order is not left at the proper active location (<strong>${activeLocationName}</strong>).</p>
                 <div class="form-group" style="margin-bottom: 10px;">
                     <input type="text" id="custom-order-name" placeholder="Name (Required)" value="${customInputState.name}" style="flex: 1;" oninput="window.updateCustomInputState()">
                     <input type="text" id="custom-order-discord" placeholder="Discord ID (Optional)" value="${customInputState.discord}" style="flex: 1;" oninput="window.updateCustomInputState()">
                 </div>
                 <div class="form-group" style="margin-bottom: 10px;">
                     <textarea id="custom-order-message" placeholder="Delivery instructions and any other inquiries..." style="width: 100%; min-height: 80px;" oninput="window.updateCustomInputState()">${customInputState.message}</textarea>
+                </div>
+                <div class="form-group" style="margin-bottom: 15px; align-items: center;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--text);">
+                        <input type="checkbox" id="custom-order-at-location-check" ${customInputState.atLocationChecked ? 'checked' : ''} style="width: 18px; height: 18px;" onchange="window.updateCustomInputState()">
+                        <span style="font-size: 0.9rem;">I confirm that I am currently at the active location (<strong>${activeLocationName}</strong>)</span>
+                    </label>
                 </div>
                 <button onclick="window.sendDiscordWebhookOrder()" style="width: 100%; font-size: 0.9rem; background: var(--custom-order);">Send Complete Order</button>
             </div>
@@ -2133,6 +2237,7 @@
 
         window.renderIngredientsList();
         window.renderCategoryOrderList();
+        window.renderLocationsConfig();
         window.renderAdminSalesHelper();
 
         let categories = [...new Set(potionArray.map(p => p.category || 'General'))];
