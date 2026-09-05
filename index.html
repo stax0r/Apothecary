@@ -407,27 +407,54 @@
             font-size: 0.85rem;
             color: var(--text-dim);
         }
+
+        /* Non-aggressive status feedback banner */
+        #status-banner {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 99999;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 10px 16px;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            font-size: 0.85rem;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            pointer-events: none;
+        }
+        #status-banner.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        #status-banner.success { border-color: var(--success); color: var(--success); }
+        #status-banner.error { border-color: var(--danger); color: var(--danger); }
     </style>
 </head>
 <body>
 
-<button id="config-btn" class="admin-toggle hidden" onclick="toggleConfigModal()" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); background: var(--card-bg); padding: 10px 16px;">⚙️ Store config</button>
+<div id="status-banner"></div>
 
-<div id="config-modal" class="login-modal hidden" style="position: fixed; bottom: 75px; right: 20px; z-index: 10000; width: 320px; max-height: 80vh; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.6);">
-    <h3>Store config</h3>
+<button id="config-btn" class="admin-toggle hidden" onclick="toggleConfigModal()" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); background: var(--card-bg); padding: 6px 12px; font-size: 0.8rem;">⚙️ Config</button>
+
+<div id="config-modal" class="login-modal hidden" style="position: fixed; bottom: 65px; right: 20px; z-index: 10000; width: 280px; max-height: 75vh; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.6); padding: 15px;">
+    <h3 style="font-size: 1rem;">Store config</h3>
     
-    <h4 style="font-size: 0.9rem; margin-top: 12px; margin-bottom: 6px;">Order Receiving Location</h4>
-    <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0; margin-bottom: 10px;">Set where custom orders are being taken/dropped off.</p>
-    <div class="form-group" style="margin-bottom: 15px;">
-        <input type="text" id="config-store-location" placeholder="e.g. Vault 3, Main Shelf..." style="width: 100%; box-sizing: border-box;">
-        <button onclick="saveStoreLocation()" style="width: 100%; background: var(--success); margin-top: 6px;">Save Location</button>
+    <h4 style="font-size: 0.85rem; margin-top: 10px; margin-bottom: 4px;">Order Receiving Location</h4>
+    <p style="font-size: 0.7rem; color: var(--text-dim); margin-top: 0; margin-bottom: 8px;">Set drop off location.</p>
+    <div class="form-group" style="margin-bottom: 10px;">
+        <input type="text" id="config-store-location" placeholder="e.g. Vault 3..." style="width: 100%; box-sizing: border-box; font-size: 0.85rem; padding: 6px;">
+        <button onclick="saveStoreLocation()" style="width: 100%; background: var(--success); margin-top: 4px; padding: 6px; font-size: 0.8rem;">Save Location</button>
     </div>
 
-    <h4 style="font-size: 0.9rem; margin-top: 12px; margin-bottom: 6px;">Category Display Order</h4>
-    <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0; margin-bottom: 10px;">Reorder how catalog categories are displayed to customers.</p>
+    <h4 style="font-size: 0.85rem; margin-top: 10px; margin-bottom: 4px;">Category Display Order</h4>
+    <p style="font-size: 0.7rem; color: var(--text-dim); margin-top: 0; margin-bottom: 8px;">Reorder categories.</p>
     <div id="category-order-list"></div>
 
-    <button onclick="toggleConfigModal()" style="margin-top: 15px; width: 100%; background: var(--border);">Close</button>
+    <button onclick="toggleConfigModal()" style="margin-top: 10px; width: 100%; background: var(--border); padding: 6px; font-size: 0.8rem;">Close</button>
 </div>
 
 <div class="container">
@@ -618,6 +645,18 @@
     const auth = getAuth(app);
     const db = getDatabase(app);
 
+    // Non-aggressive status feedback banner helper
+    function showBanner(message, type = 'success') {
+        const banner = document.getElementById('status-banner');
+        if (!banner) return;
+        banner.className = '';
+        banner.textContent = message;
+        banner.classList.add('show', type);
+        setTimeout(() => {
+            banner.classList.remove('show');
+        }, 3000);
+    }
+
     window.toggleConfigModal = () => {
         const modal = document.getElementById('config-modal');
         if (modal) modal.classList.toggle('hidden');
@@ -634,6 +673,14 @@
     let batchManifest = [];
     let clientCart = [];
     let customOrders = [];
+
+    // State preservation variables for custom order text fields
+    let customInputState = {
+        name: "",
+        discord: "",
+        message: ""
+    };
+
     window.clientSuppliedQty = {};
     window.satchelPriceOverride = "";
     window.editingIngredientId = null;
@@ -665,9 +712,9 @@
         const locInput = document.getElementById('config-store-location');
         const val = locInput ? locInput.value.trim() : "";
         set(ref(db, 'storeLocation'), val).then(() => {
-            alert("Store order location successfully saved to database!");
+            showBanner("Store order location successfully saved to database!");
         }).catch(err => {
-            alert("Error saving location: " + err.message);
+            showBanner("Error saving location: " + err.message, 'error');
         });
     };
 
@@ -732,7 +779,7 @@
         const threshold = parseInt(document.getElementById('ing-threshold').value) || 0;
 
         if (!name || isNaN(price)) {
-            alert("Please provide a valid name and price for the ingredient.");
+            showBanner("Please provide a valid name and price for the ingredient.", 'error');
             return;
         }
 
@@ -740,7 +787,7 @@
         const existingEntry = Object.values(ingredients).find(i => (i.name || '').toLowerCase() === nameLower);
 
         if (existingEntry) {
-            alert(`An ingredient named "${existingEntry.name}" already exists in your directory! Please update its stock or price instead.`);
+            showBanner(`An ingredient named "${existingEntry.name}" already exists!`, 'error');
             window.startEditIngredient(existingEntry.id);
             return;
         }
@@ -777,14 +824,14 @@
         const threshold = parseInt(thresholdInput.value) || 0;
 
         if (!newName || isNaN(price)) {
-            alert("Name and price cannot be empty.");
+            showBanner("Name and price cannot be empty.", 'error');
             return;
         }
 
         const newNameLower = newName.toLowerCase();
         const duplicate = Object.values(ingredients).find(i => i.id !== id && (i.name || '').toLowerCase() === newNameLower);
         if (duplicate) {
-            alert(`Another ingredient named "${duplicate.name}" already exists!`);
+            showBanner(`Another ingredient named "${duplicate.name}" already exists!`, 'error');
             return;
         }
 
@@ -899,7 +946,7 @@
         const addQty = parseInt(qtyInput ? qtyInput.value : 1) || 0;
 
         if (!id || !ingredients[id] || addQty <= 0) {
-            alert("Please select a valid ingredient from the dropdown and enter a positive quantity to deposit.");
+            showBanner("Please select a valid ingredient and enter a positive quantity.", 'error');
             return;
         }
 
@@ -908,14 +955,14 @@
 
         set(ref(db, `ingredients/${id}/stockQty`), newStock)
             .then(() => {
-                alert(`Successfully added ${addQty} to ${ingredients[id].name}. New stock: ${newStock}`);
+                showBanner(`Successfully added ${addQty} to ${ingredients[id].name}. New stock: ${newStock}`);
                 const input = document.getElementById('quick-deposit-input');
                 if (input) input.value = '';
                 if (qtyInput) qtyInput.value = '1';
                 window.selectedQuickDepositIngredientId = null;
             })
             .catch(err => {
-                alert("Error depositing stock: " + err.message);
+                showBanner("Error depositing stock: " + err.message, 'error');
             });
     };
 
@@ -1013,7 +1060,7 @@
 
             window.cancelEditPotion();
         } else {
-            alert("Please provide a valid potion name and sale price.");
+            showBanner("Please provide a valid potion name and sale price.", 'error');
         }
     };
 
@@ -1370,17 +1417,31 @@
     window.removeCustomOrder = (index) => { customOrders.splice(index, 1); window.renderCustomOrders(); };
     window.clearCustomOrders = () => { customOrders = []; window.renderCustomOrders(); };
 
-    window.sendDiscordWebhookOrder = async () => {
+    // Function to update local custom input state during any render/change
+    window.updateCustomInputState = () => {
         const nameInput = document.getElementById("custom-order-name");
-        const locationInput = document.getElementById("custom-order-location");
+        const discordInput = document.getElementById("custom-order-discord");
         const messageInput = document.getElementById("custom-order-message");
+
+        if (nameInput) customInputState.name = nameInput.value;
+        if (discordInput) customInputState.discord = discordInput.value;
+        if (messageInput) customInputState.message = messageInput.value;
+    };
+
+    window.sendDiscordWebhookOrder = async () => {
+        window.updateCustomInputState();
         
-        const clientName = nameInput ? nameInput.value.trim() : "";
-        const clientLocation = locationInput ? locationInput.value.trim() : "";
-        const clientMessage = messageInput ? messageInput.value.trim() : "";
+        const clientName = customInputState.name.trim();
+        const clientDiscord = customInputState.discord.trim();
+        const clientMessage = customInputState.message.trim();
+
+        if (!clientName) {
+            showBanner("Please enter your name.", 'error');
+            return;
+        }
 
         if (customOrders.length === 0) {
-            alert("Your custom order is empty. Please add items before sending.");
+            showBanner("Your custom order is empty. Please add items before sending.", 'error');
             return;
         }
 
@@ -1399,9 +1460,9 @@
         const reminderText = `⚠️ **Reminder:** Orders will not be received if the note with the order is not left at the proper location (**${activeLocation}**)!`;
 
         let contentParts = [`📦 **New Custom Order!**`];
-        if (clientName) contentParts.push(`**Discord ID:** ${clientName}`);
-        contentParts.push(`**Location:** ${clientLocation || 'Not provided'}`);
-        if (clientMessage) contentParts.push(`**Custom Message:** ${clientMessage}`);
+        contentParts.push(`**Name:** ${clientName}`);
+        if (clientDiscord) contentParts.push(`**Discord ID:** ${clientDiscord}`);
+        if (clientMessage) contentParts.push(`**Delivery Instructions & Inquiries:** ${clientMessage}`);
         contentParts.push(`\n**Items:**\n${orderLines.join('\n')}`);
         contentParts.push(`**Estimated Total Cost:** ${totalCost.toFixed(2)} Gold`);
         contentParts.push(`\n${reminderText}`);
@@ -1423,21 +1484,21 @@
             });
 
             if (response.ok) {
-                alert("Order successfully sent!");
+                showBanner("Order successfully sent!");
                 customOrders = [];
-                if (nameInput) nameInput.value = "";
-                if (locationInput) locationInput.value = "";
-                if (messageInput) messageInput.value = "";
+                customInputState = { name: "", discord: "", message: "" };
                 window.renderCustomOrders();
             } else {
-                alert("Failed to send order! Status: " + response.status);
+                showBanner("Failed to send order! Status: " + response.status, 'error');
             }
         } catch (err) {
-            alert("Error sending order: " + err.message);
+            showBanner("Error sending order: " + err.message, 'error');
         }
     };
 
     window.renderCustomOrders = () => {
+        window.updateCustomInputState();
+
         const listDiv = document.getElementById('custom-items-list');
         const summaryDiv = document.getElementById('custom-summary-area');
         if (!listDiv || !summaryDiv) return;
@@ -1478,11 +1539,11 @@
             <div class="dispatch-box">
                 <p style="color: var(--warning); margin-bottom: 10px;">⚠️ Remember: Orders will not be received if the note with the order is not left at the proper location (<strong>${activeLocation}</strong>).</p>
                 <div class="form-group" style="margin-bottom: 10px;">
-                    <input type="text" id="custom-order-name" placeholder="Discord ID (Optional)" style="flex: 1;">
-                    <input type="text" id="custom-order-location" placeholder="Your Location" style="flex: 1;">
+                    <input type="text" id="custom-order-name" placeholder="Name (Required)" value="${customInputState.name}" style="flex: 1;" oninput="window.updateCustomInputState()">
+                    <input type="text" id="custom-order-discord" placeholder="Discord ID (Optional)" value="${customInputState.discord}" style="flex: 1;" oninput="window.updateCustomInputState()">
                 </div>
                 <div class="form-group" style="margin-bottom: 10px;">
-                    <textarea id="custom-order-message" placeholder="Leave a custom message and stuff..." style="width: 100%;"></textarea>
+                    <textarea id="custom-order-message" placeholder="Delivery instructions and any other inquiries..." style="width: 100%; min-height: 80px;" oninput="window.updateCustomInputState()">${customInputState.message}</textarea>
                 </div>
                 <button onclick="window.sendDiscordWebhookOrder()" style="width: 100%; font-size: 0.9rem; background: var(--custom-order);">Send Complete Order</button>
             </div>
@@ -1578,16 +1639,16 @@
         if (Object.keys(updates).length > 0) {
             update(ref(db), updates)
                 .then(() => {
-                    alert("Batch successfully crafted! Personal inventory stock has been deducted.");
+                    showBanner("Batch successfully crafted! Personal inventory stock has been deducted.");
                     batchManifest = [];
                     window.clientSuppliedQty = {};
                     window.renderBatchCalculator();
                 })
                 .catch(err => {
-                    alert("Error updating inventory: " + err.message);
+                    showBanner("Error updating inventory: " + err.message, 'error');
                 });
         } else {
-            alert("Batch executed! (No personal stock was deducted, either due to full client supply or 0 stock).");
+            showBanner("Batch executed! (No personal stock was deducted).");
             batchManifest = [];
             window.clientSuppliedQty = {};
             window.renderBatchCalculator();
@@ -1918,16 +1979,16 @@
         });
 
         if (categories.length === 0) {
-            container.innerHTML = `<p style="color: var(--text-dim); font-size: 0.85rem; margin: 0;">No categories found.</p>`;
+            container.innerHTML = `<p style="color: var(--text-dim); font-size: 0.8rem; margin: 0;">No categories found.</p>`;
             return;
         }
 
         container.innerHTML = categories.map((cat, index) => `
-            <div class="item-row" style="background: var(--bg-color);">
-                <span><strong>${index + 1}.</strong> ${cat}</span>
-                <div style="display: flex; gap: 6px;">
-                    <button class="order-btn" onclick="window.moveCategoryOrder('${cat.replace(/'/g, "\\'")}', 'up')" ${index === 0 ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>▲ Up</button>
-                    <button class="order-btn" onclick="window.moveCategoryOrder('${cat.replace(/'/g, "\\'")}', 'down')" ${index === categories.length - 1 ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>▼ Down</button>
+            <div class="item-row" style="background: var(--bg-color); padding: 6px 8px; margin-bottom: 6px;">
+                <span style="font-size: 0.8rem;"><strong>${index + 1}.</strong> ${cat}</span>
+                <div style="display: flex; gap: 4px;">
+                    <button class="order-btn" style="padding: 2px 6px; font-size: 0.7rem;" onclick="window.moveCategoryOrder('${cat.replace(/'/g, "\\'")}', 'up')" ${index === 0 ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>▲</button>
+                    <button class="order-btn" style="padding: 2px 6px; font-size: 0.7rem;" onclick="window.moveCategoryOrder('${cat.replace(/'/g, "\\'")}', 'down')" ${index === categories.length - 1 ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>▼</button>
                 </div>
             </div>
         `).join('');
@@ -2050,6 +2111,8 @@
     };
 
     window.render = () => {
+        window.updateCustomInputState();
+
         const ingArray = Object.values(ingredients);
         ingArray.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
 
