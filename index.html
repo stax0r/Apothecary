@@ -21,6 +21,8 @@
             --stock-blue: #4cc9f0;
             --custom-order: #3a86ff;
             --custom-order-hover: #2563eb;
+            --radius: 8px;
+            --transition: 0.2s ease;
         }
 
         body {
@@ -34,7 +36,7 @@
             min-height: 100vh;
         }
 
-        .container { max-width: 900px; margin: 0 auto; flex: 1; width: 100%; }
+        .container { max-width: 900px; margin: 0 auto; flex: 1; width: 100%; box-sizing: border-box; }
 
         header {
             display: flex;
@@ -58,7 +60,7 @@
             border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
-            transition: background 0.2s;
+            transition: background var(--transition);
         }
 
         button:hover { background-color: var(--accent-hover); }
@@ -70,8 +72,9 @@
             background-color: var(--card-bg);
             border: 1px solid var(--border);
             padding: 20px;
-            border-radius: 8px;
+            border-radius: var(--radius);
             margin-bottom: 30px;
+            box-sizing: border-box;
         }
 
         .custom-panel {
@@ -97,6 +100,7 @@
             padding: 8px;
             border-radius: 4px;
             font-family: inherit;
+            box-sizing: border-box;
         }
 
         textarea { width: 100%; resize: vertical; min-height: 60px; }
@@ -151,12 +155,13 @@
         .potion-card {
             background: var(--card-bg);
             border: 1px solid var(--border);
-            border-radius: 8px;
+            border-radius: var(--radius);
             padding: 15px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             position: relative;
+            box-sizing: border-box;
         }
 
         .potion-card.out-of-stock { opacity: 0.85; border-style: dashed; }
@@ -223,6 +228,7 @@
             margin-bottom: 8px;
             flex-wrap: wrap;
             gap: 10px;
+            box-sizing: border-box;
         }
 
         .item-row.low-stock {
@@ -269,7 +275,7 @@
         .custom-order-btn { background: var(--custom-order); color: #fff; }
         .custom-order-btn:hover { background: var(--custom-order-hover); }
         
-        .execute-batch-btn { background: var(--success); width: 100%; padding: 12px; font-size: 1.05rem; margin-top: 15px; }
+        .execute-batch-btn { background: var(--success); width: 100%; padding: 12px; font-size: 1.05rem; margin-top: 15px; box-sizing: border-box; }
         .execute-batch-btn:hover { background: var(--success-hover); }
 
         .badge-out {
@@ -297,6 +303,7 @@
             border-radius: 6px;
             padding: 12px;
             margin-top: 15px;
+            box-sizing: border-box;
         }
 
         .batch-metrics {
@@ -332,6 +339,7 @@
             border: 1px dashed var(--custom-order);
             border-radius: 6px;
             padding: 12px;
+            box-sizing: border-box;
         }
 
         .dispatch-box p {
@@ -339,19 +347,6 @@
             color: var(--text-dim);
             font-style: italic;
             margin: 0 0 10px 0;
-        }
-
-        .copy-text-area {
-            width: 100%;
-            height: 90px;
-            box-sizing: border-box;
-            font-family: monospace;
-            font-size: 0.85rem;
-            background: #120e1a;
-            color: var(--gold);
-            border: 1px solid var(--border);
-            padding: 8px;
-            border-radius: 4px;
         }
         
         .copyable-name {
@@ -365,9 +360,7 @@
             font-family: monospace;
         }
         
-        .copyable-name:hover {
-            opacity: 0.8;
-        }
+        .copyable-name:hover { opacity: 0.8; }
 
         .autocomplete-wrapper {
             position: relative;
@@ -408,7 +401,6 @@
             color: var(--text-dim);
         }
 
-        /* Non-aggressive status feedback banner */
         #status-banner {
             position: fixed;
             top: 20px;
@@ -447,7 +439,7 @@
     <p style="font-size: 0.7rem; color: var(--text-dim); margin-top: 0; margin-bottom: 8px;">Add, choose active, or delete drop-off locations.</p>
     
     <div class="form-group" style="margin-bottom: 10px;">
-        <input type="text" id="config-new-location-name" placeholder="New location name..." style="flex: 1; box-sizing: border-box; font-size: 0.85rem; padding: 6px;">
+        <input type="text" id="config-new-location-name" placeholder="New location name..." style="flex: 1; font-size: 0.85rem; padding: 6px;">
         <button onclick="addNewLocation()" style="background: var(--success); padding: 6px 10px; font-size: 0.8rem;">Add</button>
     </div>
 
@@ -465,7 +457,7 @@
 
     <h4 style="font-size: 0.85rem; margin-top: 15px; margin-bottom: 4px;">Global Profit Margin (%)</h4>
     <p style="font-size: 0.7rem; color: var(--text-dim); margin-top: 0; margin-bottom: 8px;">Default markup percentage for potions.</p>
-    <input type="number" id="config-global-margin" value="50" step="1" style="width: 100%; box-sizing: border-box; font-size: 0.85rem; padding: 6px;" onchange="window.updateGlobalMargin(this.value)">
+    <input type="number" id="config-global-margin" value="50" step="1" style="width: 100%; font-size: 0.85rem; padding: 6px;" onchange="window.updateGlobalMargin(this.value)">
 
     <button onclick="toggleConfigModal()" style="margin-top: 10px; width: 100%; background: var(--border); padding: 6px; font-size: 0.8rem;">Close</button>
 </div>
@@ -500,7 +492,7 @@
                 <h4 style="margin-bottom: 8px; font-size: 0.9rem; color: var(--stock-blue);">Quick Stock Deposit</h4>
                 <div class="form-group" style="margin-bottom: 0; position: relative;">
                     <div class="autocomplete-wrapper">
-                        <input type="text" id="quick-deposit-input" placeholder="Type ingredient to deposit stock..." style="width: 100%; box-sizing: border-box;" oninput="handleQuickDepositInput(this.value)" autocomplete="off">
+                        <input type="text" id="quick-deposit-input" placeholder="Type ingredient to deposit stock..." style="width: 100%;" oninput="handleQuickDepositInput(this.value)" autocomplete="off">
                         <div id="quick-deposit-dropdown" class="autocomplete-dropdown hidden"></div>
                     </div>
                     <input type="number" id="quick-deposit-qty" placeholder="Qty to Add" value="1" min="1" style="width: 90px;">
@@ -550,7 +542,7 @@
                 <div class="form-group">
                     <input type="text" id="potion-name" placeholder="Potion Name" style="flex: 2;">
                     <input type="text" id="potion-category" placeholder="Category (e.g. Restoration)" style="flex: 1;">
-                    <input type="number" id="potion-sale-price" placeholder="Sale Price" step="0.01" style="flex: 1;">
+                    <input type="number" id="potion-sale-price" placeholder="Sale Price (Full #)" step="1" style="flex: 1;">
                     <input type="number" id="potion-stock-qty" placeholder="Stock Qty" min="0" value="1" style="flex: 1;">
                 </div>
                 <div class="form-group">
@@ -574,7 +566,7 @@
                 <ul id="recipe-preview-list"></ul>
                 <p>Calculated Base Cost: <strong id="calculated-cost">0</strong> gold</p>
                 <div style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 15px; display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 4px; border: 1px solid var(--border);">
-                    <span>Suggested Price (<span id="suggested-margin-label">50</span>% margin): <strong id="suggested-price-display" style="color: var(--gold);">0.00</strong> gold</span>
+                    <span>Suggested Price (<span id="suggested-margin-label">50</span>% margin, rounded up): <strong id="suggested-price-display" style="color: var(--gold);">0</strong> gold</span>
                     <button type="button" onclick="window.applySuggestedPrice()" style="padding: 3px 8px; font-size: 0.75rem; background: var(--success);">Apply</button>
                 </div>
 
@@ -662,7 +654,6 @@
     const auth = getAuth(app);
     const db = getDatabase(app);
 
-    // Non-aggressive status feedback banner helper
     function showBanner(message, type = 'success') {
         const banner = document.getElementById('status-banner');
         if (!banner) return;
@@ -694,7 +685,6 @@
     let globalProfitMargin = 50;
     let currentCalculatedSuggestedPrice = 0;
 
-    // State preservation variables for custom order text fields & confirmation checkbox
     let customInputState = {
         name: "",
         discord: "",
@@ -773,7 +763,6 @@
         const updates = {};
         updates[`locations/${id}`] = { id, name };
         
-        // If this is the first location added, make it active automatically
         if (locArray.length === 0 || !activeLocationId) {
             updates[`activeLocationId`] = id;
         }
@@ -808,7 +797,6 @@
             const updates = {};
             updates[`locations/${idToDelete}`] = null;
 
-            // If deleting the active location, clear or pick another one
             if (activeLocationId === idToDelete) {
                 const remaining = Object.keys(locations).filter(id => id !== idToDelete);
                 updates[`activeLocationId`] = remaining.length > 0 ? remaining[0] : "";
@@ -835,7 +823,7 @@
     window.applySuggestedPrice = () => {
         const priceInput = document.getElementById('potion-sale-price');
         if (priceInput && currentCalculatedSuggestedPrice > 0) {
-            priceInput.value = currentCalculatedSuggestedPrice.toFixed(2);
+            priceInput.value = currentCalculatedSuggestedPrice;
             showBanner("Suggested price applied!");
         } else {
             showBanner("No valid suggested price available.", 'error');
@@ -1130,12 +1118,12 @@
         const calcCost = document.getElementById('calculated-cost');
         if (calcCost) calcCost.textContent = totalCost.toFixed(2);
 
-        // Compute Suggested Price based on Global Margin %
-        currentCalculatedSuggestedPrice = totalCost * (1 + (globalProfitMargin / 100));
+        // Global default margin always rounds up to full number
+        currentCalculatedSuggestedPrice = Math.ceil(totalCost * (1 + (globalProfitMargin / 100)));
         
         const suggestedDisplay = document.getElementById('suggested-price-display');
         const marginLabel = document.getElementById('suggested-margin-label');
-        if (suggestedDisplay) suggestedDisplay.textContent = currentCalculatedSuggestedPrice.toFixed(2);
+        if (suggestedDisplay) suggestedDisplay.textContent = currentCalculatedSuggestedPrice;
         if (marginLabel) marginLabel.textContent = globalProfitMargin;
     };
 
@@ -1148,7 +1136,8 @@
         const name = document.getElementById('potion-name').value.trim();
         const category = document.getElementById('potion-category').value.trim() || 'General';
         const desc = document.getElementById('potion-desc').value.trim();
-        const price = parseFloat(document.getElementById('potion-sale-price').value);
+        // Potion prices should always be a full number (integer)
+        const price = Math.round(parseFloat(document.getElementById('potion-sale-price').value));
         const stockQty = parseInt(document.getElementById('potion-stock-qty').value) || 0;
         const bulkOnly = document.getElementById('potion-bulk-only').checked;
         const editingId = document.getElementById('editing-potion-id').value;
@@ -1192,7 +1181,7 @@
 
             window.cancelEditPotion();
         } else {
-            showBanner("Please provide a valid potion name and sale price.", 'error');
+            showBanner("Please provide a valid potion name and full sale price.", 'error');
         }
     };
 
@@ -1204,7 +1193,7 @@
         document.getElementById('potion-name').value = p.name;
         document.getElementById('potion-category').value = p.category || '';
         document.getElementById('potion-desc').value = p.description || '';
-        document.getElementById('potion-sale-price').value = p.salePrice;
+        document.getElementById('potion-sale-price').value = Math.round(p.salePrice);
         document.getElementById('potion-stock-qty').value = p.stockQty !== undefined ? p.stockQty : 1;
         document.getElementById('potion-bulk-only').checked = p.bulkOnly === true;
         
@@ -1369,7 +1358,7 @@
                     <span><strong>${p.name}</strong> (${p.salePrice}g each) ${p.bulkOnly ? '<span style="color:var(--custom-order); font-size:0.75rem;">(10x Bulk)</span>' : ''}</span>
                     <div>
                         <input type="number" value="${item.qty}" min="${p.bulkOnly ? 10 : 1}" step="${p.bulkOnly ? 10 : 1}" max="${maxQty}" style="width: 70px;" onchange="window.updateCartQty(${index}, this.value)">
-                        <span style="color: var(--gold); font-weight: bold; margin: 0 8px;">${lineTotal.toFixed(2)}g</span>
+                        <span style="color: var(--gold); font-weight: bold; margin: 0 8px;">${lineTotal}g</span>
                         <button class="delete-btn" onclick="window.removeFromCart(${index})">X</button>
                     </div>
                 </div>
@@ -1379,7 +1368,7 @@
         summaryDiv.innerHTML = `
             <div class="cart-summary">
                 <span>Total Items: <strong>${totalItems}</strong></span>
-                <span style="font-size: 1.1rem;">Total Price: <strong style="color: var(--gold);">${totalCost.toFixed(2)} Gold</strong></span>
+                <span style="font-size: 1.1rem;">Total Price: <strong style="color: var(--gold);">${totalCost} Gold</strong></span>
             </div>
         `;
         window.renderAdminSalesHelper();
@@ -1404,7 +1393,7 @@
             <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; border: 1px solid var(--border); display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                 <div style="flex: 1; min-width: 225px;">
                     <label style="font-size: 0.75rem; color: var(--text-dim); display: block; margin-bottom: 4px;">Deal Discount Override (Final Sale Price)</label>
-                    <input type="number" id="satchel-price-override-input" value="${window.satchelPriceOverride}" placeholder="Default: ${totalSatchelDefaultPrice.toFixed(2)}g" step="0.01" style="width: 100%; box-sizing: border-box;" oninput="window.updateSatchelPriceOverride(this.value)">
+                    <input type="number" id="satchel-price-override-input" value="${window.satchelPriceOverride}" placeholder="Default: ${totalSatchelDefaultPrice}g" step="1" style="width: 100%;" oninput="window.updateSatchelPriceOverride(this.value)">
                 </div>
                 ${window.satchelPriceOverride !== "" ? `<button onclick="window.updateSatchelPriceOverride('')" style="background: var(--border); font-size: 0.8rem; padding: 6px 10px; margin-top: 18px;">Reset Default</button>` : ''}
             </div>
@@ -1478,11 +1467,11 @@
                 <div class="batch-metrics" style="margin-top: 0; padding-top: 0; border-top: none;">
                     <div class="metric-box">
                         <span>Default Satchel Price</span>
-                        <span>${totalSatchelDefaultPrice.toFixed(2)}g</span>
+                        <span>${totalSatchelDefaultPrice}g</span>
                     </div>
                     <div class="metric-box">
                         <span>Final Sale Revenue</span>
-                        <strong style="color: var(--gold);">${finalRevenue.toFixed(2)}g</strong>
+                        <strong style="color: var(--gold);">${finalRevenue}g</strong>
                     </div>
                     <div class="metric-box">
                         <span>Satchel Craft Cost</span>
@@ -1549,7 +1538,6 @@
     window.removeCustomOrder = (index) => { customOrders.splice(index, 1); window.renderCustomOrders(); };
     window.clearCustomOrders = () => { customOrders = []; window.renderCustomOrders(); };
 
-    // Function to update local custom input state during any render/change
     window.updateCustomInputState = () => {
         const nameInput = document.getElementById("custom-order-name");
         const discordInput = document.getElementById("custom-order-discord");
@@ -1593,7 +1581,7 @@
             if (!p) return;
             const lineTotal = (p.salePrice || 0) * item.qty;
             totalCost += lineTotal;
-            orderLines.push(`• ${item.qty}x ${p.name} (${lineTotal.toFixed(2)}g)`);
+            orderLines.push(`• ${item.qty}x ${p.name} (${lineTotal}g)`);
         });
 
         const activeLocObj = locations[activeLocationId];
@@ -1605,21 +1593,18 @@
         contentParts.push(`**Active Location:** ${activeLocationName}`);
         if (clientMessage) contentParts.push(`**Delivery Instructions & Inquiries:** ${clientMessage}`);
         contentParts.push(`\n**Items:**\n${orderLines.join('\n')}`);
-        contentParts.push(`**Estimated Total Cost:** ${totalCost.toFixed(2)} Gold`);
+        contentParts.push(`**Estimated Total Cost:** ${totalCost} Gold`);
 
         const payload = {
             content: contentParts.join('\n')
         };
 
-        //WEBHOOK URL
         const webhookUrl = "https://discord.com/api/webhooks/1545635810873708594/py7qvIEJKnaeOAIlEOCGgeCrDD3yw0Tcg_sFKUwCPnDtwOftCkg7b1TcXYOTyKO_0Qz4";
 
         try {
             const response = await fetch(webhookUrl, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)
             });
 
@@ -1662,7 +1647,7 @@
                     <span><strong>${p.name}</strong> ${p.bulkOnly ? '<span style="color:var(--custom-order); font-size:0.75rem;">(10x Bulk)</span>' : ''}</span>
                     <div>
                         <input type="number" value="${item.qty}" min="${p.bulkOnly ? 10 : 1}" step="${p.bulkOnly ? 10 : 1}" style="width: 70px;" onchange="window.updateCustomQty(${index}, this.value)">
-                        <span style="color: var(--gold); font-weight: bold; margin: 0 8px;">${lineTotal.toFixed(2)}g</span>
+                        <span style="color: var(--gold); font-weight: bold; margin: 0 8px;">${lineTotal}g</span>
                         <button class="delete-btn" onclick="window.removeCustomOrder(${index})">X</button>
                     </div>
                 </div>
@@ -1675,7 +1660,7 @@
         summaryDiv.innerHTML = `
             <div class="cart-summary">
                 <span>Total Custom Requests: <strong>${totalItems}</strong></span>
-                <span style="font-size: 1.1rem;">Estimated Cost: <strong style="color: var(--gold);">${totalCost.toFixed(2)} Gold</strong></span>
+                <span style="font-size: 1.1rem;">Estimated Cost: <strong style="color: var(--gold);">${totalCost} Gold</strong></span>
             </div>
             <div class="dispatch-box">
                 <p style="color: var(--warning); margin-bottom: 10px;">⚠️ OOC: You should keep proof of being at <strong>${activeLocationName}</strong> before creating an order to avoid being banned for metagaming.⚠️</p>
@@ -1941,7 +1926,7 @@
                     </div>
                     <div class="metric-box">
                         <span>Default Sale Revenue</span>
-                        <strong style="color: var(--gold);">${defaultSalePrice.toFixed(2)}g</strong>
+                        <strong style="color: var(--gold);">${defaultSalePrice}g</strong>
                     </div>
                     <div class="metric-box">
                         <span>True Net Profit</span>
@@ -2070,19 +2055,19 @@
                 <div class="${rowClass}" style="border-color: var(--accent);">
                     <div style="flex: 2; display: flex; flex-direction: column; gap: 4px;">
                         <label style="font-size: 0.7rem; color: var(--text-dim);">Name:</label>
-                        <input type="text" id="edit-ing-name-${i.id}" value="${i.name}" style="width: 100%; box-sizing: border-box;">
+                        <input type="text" id="edit-ing-name-${i.id}" value="${i.name}" style="width: 100%;">
                     </div>
                     <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
                         <label style="font-size: 0.7rem; color: var(--text-dim);">Price (g):</label>
-                        <input type="number" id="edit-ing-price-${i.id}" value="${i.price}" step="0.01" style="width: 100%; box-sizing: border-box;">
+                        <input type="number" id="edit-ing-price-${i.id}" value="${i.price}" step="0.01" style="width: 100%;">
                     </div>
                     <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
                         <label style="font-size: 0.7rem; color: var(--text-dim);">Stock:</label>
-                        <input type="number" id="edit-ing-stock-${i.id}" value="${stockQty}" min="0" style="width: 100%; box-sizing: border-box;">
+                        <input type="number" id="edit-ing-stock-${i.id}" value="${stockQty}" min="0" style="width: 100%;">
                     </div>
                     <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
                         <label style="font-size: 0.7rem; color: var(--text-dim);">Threshold:</label>
-                        <input type="number" id="edit-ing-threshold-${i.id}" value="${threshold}" min="0" style="width: 100%; box-sizing: border-box;">
+                        <input type="number" id="edit-ing-threshold-${i.id}" value="${threshold}" min="0" style="width: 100%;">
                     </div>
                     <div style="display: flex; gap: 6px; align-items: flex-end; margin-top: 14px;">
                         <button class="save-btn" onclick="window.saveIngredientEdit(${i.id})">Save</button>
@@ -2182,6 +2167,7 @@
             } else {
                 catalog.innerHTML = visiblePotions.map(p => {
                     const cost = calculatePotionCost(p.recipe);
+                    const suggestedCatalogPrice = Math.ceil(cost * (1 + (globalProfitMargin / 100)));
                     const profit = p.salePrice - cost;
                     const margin = p.salePrice > 0 ? ((profit / p.salePrice) * 100).toFixed(0) : 0;
                     const stockQty = p.stockQty !== undefined ? p.stockQty : 0;
@@ -2234,6 +2220,7 @@
                                 ${currentUser ? `
                                     <div class="cost-badge">
                                         <div>Craft Cost: ${cost.toFixed(2)}g</div>
+                                        <div>Suggested Price: <strong style="color: var(--gold);">${suggestedCatalogPrice}g</strong></div>
                                         <div>Profit Margin: <span class="${profit >= 0 ? 'profit-text' : 'loss-text'}">${profit.toFixed(2)}g (${margin}%)</span></div>
                                         <div style="display: flex; gap: 5px; align-items: center; margin-top: 6px; flex-wrap: wrap;">
                                             <label style="font-size: 0.75rem;">Qty:</label>
