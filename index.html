@@ -34,7 +34,12 @@
             min-height: 100vh;
         }
 
-        .container { max-width: 900px; margin: 0 auto; flex: 1; width: 100%; }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            flex: 1;
+            width: 100%;
+        }
 
         header {
             display: flex;
@@ -45,10 +50,22 @@
             margin-bottom: 25px;
         }
 
-        header .titles { display: flex; flex-direction: column; }
-        header .subtitle { font-size: 0.85rem; color: var(--text-dim); font-style: italic; margin-top: 4px; }
+        header .titles {
+            display: flex;
+            flex-direction: column;
+        }
 
-        h1, h2, h3, h4 { margin: 0; color: #fff; }
+        header .subtitle {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            font-style: italic;
+            margin-top: 4px;
+        }
+
+        h1, h2, h3, h4 {
+            margin: 0;
+            color: #fff;
+        }
 
         button {
             background-color: var(--accent);
@@ -61,10 +78,20 @@
             transition: background 0.2s;
         }
 
-        button:hover { background-color: var(--accent-hover); }
+        button:hover {
+            background-color: var(--accent-hover);
+        }
 
-        .admin-toggle { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
-        .admin-toggle:hover { background: var(--accent); color: #fff; }
+        .admin-toggle {
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+        }
+
+        .admin-toggle:hover {
+            background: var(--accent);
+            color: #fff;
+        }
 
         .admin-panel, .login-modal, .cart-panel, .custom-panel, .potion-creator-panel {
             background-color: var(--card-bg);
@@ -86,9 +113,16 @@
             padding: 15px;
         }
 
-        .hidden { display: none !important; }
+        .hidden {
+            display: none !important;
+        }
 
-        .form-group { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+        .form-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
 
         input, select, textarea {
             background: var(--bg-color);
@@ -99,7 +133,11 @@
             font-family: inherit;
         }
 
-        textarea { width: 100%; resize: vertical; min-height: 60px; }
+        textarea {
+            width: 100%;
+            resize: vertical;
+            min-height: 60px;
+        }
 
         .collapse-header {
             display: flex;
@@ -109,7 +147,9 @@
             user-select: none;
         }
 
-        .collapse-header:hover { opacity: 0.85; }
+        .collapse-header:hover {
+            opacity: 0.85;
+        }
 
         .collapse-btn {
             background: transparent;
@@ -159,7 +199,10 @@
             position: relative;
         }
 
-        .potion-card.out-of-stock { opacity: 0.85; border-style: dashed; }
+        .potion-card.out-of-stock {
+            opacity: 0.85;
+            border-style: dashed;
+        }
 
         .card-top-actions {
             display: flex;
@@ -185,8 +228,19 @@
             margin-top: 4px;
         }
 
-        .potion-desc { font-size: 0.85rem; color: var(--text-dim); font-style: italic; margin: 6px 0 10px 0; }
-        .potion-price { font-size: 1.25rem; color: var(--gold); font-weight: bold; margin: 6px 0; }
+        .potion-desc {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            font-style: italic;
+            margin: 6px 0 10px 0;
+        }
+
+        .potion-price {
+            font-size: 1.25rem;
+            color: var(--gold);
+            font-weight: bold;
+            margin: 6px 0;
+        }
 
         .ingredient-list {
             list-style: none;
@@ -196,7 +250,9 @@
             color: var(--text-dim);
         }
 
-        .ingredient-list li { padding: 3px 0; }
+        .ingredient-list li {
+            padding: 3px 0;
+        }
 
         .cost-badge {
             font-size: 0.8rem;
@@ -209,8 +265,15 @@
             gap: 4px;
         }
 
-        .profit-text { color: var(--success); font-weight: bold; }
-        .loss-text { color: var(--danger); font-weight: bold; }
+        .profit-text {
+            color: var(--success);
+            font-weight: bold;
+        }
+
+        .loss-text {
+            color: var(--danger);
+            font-weight: bold;
+        }
 
         .item-row {
             display: flex;
@@ -239,15 +302,58 @@
             opacity: 0.6;
         }
 
-        .delete-btn { background: var(--danger); padding: 3px 8px; font-size: 0.75rem; border-radius: 4px; }
-        .edit-btn { background: #3a86ff; padding: 3px 8px; font-size: 0.75rem; border-radius: 4px; }
-        .save-btn { background: var(--success); padding: 3px 8px; font-size: 0.75rem; border-radius: 4px; }
-        .stock-btn { background: var(--success); padding: 4px 8px; font-size: 0.75rem; }
-        .stock-btn.off { background: var(--danger); }
-        .visible-btn { background: var(--success); padding: 4px 8px; font-size: 0.75rem; }
-        .visible-btn.off { background: #555; }
-        .order-btn { background: var(--border); padding: 3px 8px; font-size: 0.75rem; border-radius: 4px; color: #fff; }
-        .order-btn:hover { background: var(--accent); }
+        .delete-btn {
+            background: var(--danger);
+            padding: 3px 8px;
+            font-size: 0.75rem;
+            border-radius: 4px;
+        }
+
+        .edit-btn {
+            background: #3a86ff;
+            padding: 3px 8px;
+            font-size: 0.75rem;
+            border-radius: 4px;
+        }
+
+        .save-btn {
+            background: var(--success);
+            padding: 3px 8px;
+            font-size: 0.75rem;
+            border-radius: 4px;
+        }
+
+        .stock-btn {
+            background: var(--success);
+            padding: 4px 8px;
+            font-size: 0.75rem;
+        }
+
+        .stock-btn.off {
+            background: var(--danger);
+        }
+
+        .visible-btn {
+            background: var(--success);
+            padding: 4px 8px;
+            font-size: 0.75rem;
+        }
+
+        .visible-btn.off {
+            background: #555;
+        }
+
+        .order-btn {
+            background: var(--border);
+            padding: 3px 8px;
+            font-size: 0.75rem;
+            border-radius: 4px;
+            color: #fff;
+        }
+
+        .order-btn:hover {
+            background: var(--accent);
+        }
 
         .action-btn-group {
             display: flex;
@@ -263,14 +369,35 @@
             white-space: nowrap;
         }
 
-        .add-cart-btn { background: var(--gold); color: #000; }
-        .add-cart-btn:hover { background: #e0a100; }
+        .add-cart-btn {
+            background: var(--gold);
+            color: #000;
+        }
 
-        .custom-order-btn { background: var(--custom-order); color: #fff; }
-        .custom-order-btn:hover { background: var(--custom-order-hover); }
+        .add-cart-btn:hover {
+            background: #e0a100;
+        }
+
+        .custom-order-btn {
+            background: var(--custom-order);
+            color: #fff;
+        }
+
+        .custom-order-btn:hover {
+            background: var(--custom-order-hover);
+        }
         
-        .execute-batch-btn { background: var(--success); width: 100%; padding: 12px; font-size: 1.05rem; margin-top: 15px; }
-        .execute-batch-btn:hover { background: var(--success-hover); }
+        .execute-batch-btn {
+            background: var(--success);
+            width: 100%;
+            padding: 12px;
+            font-size: 1.05rem;
+            margin-top: 15px;
+        }
+
+        .execute-batch-btn:hover {
+            background: var(--success-hover);
+        }
 
         .badge-out {
             background: var(--danger);
@@ -289,7 +416,10 @@
             color: var(--text-dim);
             cursor: not-allowed;
         }
-        .btn-disabled:hover { background: var(--border); }
+
+        .btn-disabled:hover {
+            background: var(--border);
+        }
 
         .batch-summary {
             background: var(--bg-color);
@@ -314,8 +444,14 @@
             font-size: 0.85rem;
         }
 
-        .metric-box span { color: var(--text-dim); font-size: 0.75rem; }
-        .metric-box strong { font-size: 1rem; }
+        .metric-box span {
+            color: var(--text-dim);
+            font-size: 0.75rem;
+        }
+
+        .metric-box strong {
+            font-size: 1rem;
+        }
 
         .cart-summary {
             display: flex;
@@ -408,7 +544,6 @@
             color: var(--text-dim);
         }
 
-        /* Non-aggressive status feedback banner */
         #status-banner {
             position: fixed;
             top: 20px;
@@ -426,12 +561,21 @@
             transition: opacity 0.3s ease, transform 0.3s ease;
             pointer-events: none;
         }
+
         #status-banner.show {
             opacity: 1;
             transform: translateY(0);
         }
-        #status-banner.success { border-color: var(--success); color: var(--success); }
-        #status-banner.error { border-color: var(--danger); color: var(--danger); }
+
+        #status-banner.success {
+            border-color: var(--success);
+            color: var(--success);
+        }
+
+        #status-banner.error {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
     </style>
 </head>
 <body>
@@ -631,7 +775,7 @@
 </div>
 
 <footer>
-    <span><strong>OOC:</strong> Whether you have questions, feedback, or just need to get in touch, please feel free to drop me a message on Discord at <code class="copyable-name" title="Click to copy">stax0r</code>. Always happy to help!</span>
+    <span><strong>OOC:</strong> Whether you have questions, feedback, or just need to get in touch, please feel free to drop me a message on Discord at <code class="copyable-name" title="Click to copy">stax0r</code>. Always happy to help![cite: 3]</span>
 </footer>
 
 <script type="module">
@@ -654,7 +798,6 @@
     const auth = getAuth(app);
     const db = getDatabase(app);
 
-    // Non-aggressive status feedback banner helper
     function showBanner(message, type = 'success') {
         const banner = document.getElementById('status-banner');
         if (!banner) return;
@@ -684,7 +827,6 @@
     let clientCart = [];
     let customOrders = [];
 
-    // State preservation variables for custom order text fields & confirmation checkbox
     let customInputState = {
         name: "",
         discord: "",
@@ -756,7 +898,6 @@
         const updates = {};
         updates[`locations/${id}`] = { id, name };
         
-        // If this is the first location added, make it active automatically
         if (locArray.length === 0 || !activeLocationId) {
             updates[`activeLocationId`] = id;
         }
@@ -791,7 +932,6 @@
             const updates = {};
             updates[`locations/${idToDelete}`] = null;
 
-            // If deleting the active location, clear or pick another one
             if (activeLocationId === idToDelete) {
                 const remaining = Object.keys(locations).filter(id => id !== idToDelete);
                 updates[`activeLocationId`] = remaining.length > 0 ? remaining[0] : "";
@@ -1291,7 +1431,11 @@
         window.renderCart();
     };
 
-    window.removeFromCart = (index) => { clientCart.splice(index, 1); window.renderCart(); };
+    window.removeFromCart = (index) => {
+        clientCart.splice(index, 1);
+        window.renderCart();
+    };
+
     window.clearCart = () => { 
         clientCart = []; 
         window.satchelPriceOverride = "";
@@ -1501,10 +1645,16 @@
         window.renderCustomOrders();
     };
 
-    window.removeCustomOrder = (index) => { customOrders.splice(index, 1); window.renderCustomOrders(); };
-    window.clearCustomOrders = () => { customOrders = []; window.renderCustomOrders(); };
+    window.removeCustomOrder = (index) => {
+        customOrders.splice(index, 1);
+        window.renderCustomOrders();
+    };
 
-    // Function to update local custom input state during any render/change
+    window.clearCustomOrders = () => {
+        customOrders = [];
+        window.renderCustomOrders();
+    };
+
     window.updateCustomInputState = () => {
         const nameInput = document.getElementById("custom-order-name");
         const discordInput = document.getElementById("custom-order-discord");
@@ -1566,7 +1716,6 @@
             content: contentParts.join('\n')
         };
 
-        //WEBHOOK URL
         const webhookUrl = "https://discord.com/api/webhooks/1545635810873708594/py7qvIEJKnaeOAIlEOCGgeCrDD3yw0Tcg_sFKUwCPnDtwOftCkg7b1TcXYOTyKO_0Qz4";
 
         try {
