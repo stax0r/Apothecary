@@ -17,6 +17,16 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
+const storeThemes = ['noble', 'parchment', 'dark', 'herbal'];
+const savedTheme = localStorage.getItem('silas-brews-theme');
+document.body.dataset.theme = storeThemes.includes(savedTheme) ? savedTheme : 'noble';
+
+window.setStoreTheme = (theme) => {
+    if (!storeThemes.includes(theme)) return;
+    document.body.dataset.theme = theme;
+    localStorage.setItem('silas-brews-theme', theme);
+};
+
 function showBanner(message, type = 'success') {
     const banner = document.getElementById('status-banner');
     if (!banner) return;

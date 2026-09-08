@@ -8,7 +8,7 @@ exports.handler = async function(event, context) {
         const orderData = JSON.parse(event.body);
 
         // Uses your webhook URL securely from Netlify's environment variables
-        const webhookUrl = process.env.WEBHOOK_URL || "https://discord.com/api/webhooks/1546720342381297687/-kyrZQTSQpZp5QUaDZyUly-QCK2dOw2ekeae_hn_Zj8miJ-imljKfvFcY9WTQ9JSzd2h";
+        const webhookUrl = process.env.WEBHOOK_URL;
 
         // Format the data into a valid Discord Webhook embed payload
         const discordPayload = {
