@@ -1297,6 +1297,7 @@ function getUsedIngredientIds() {
     const usedIds = new Set();
     if (potions) {
         Object.values(potions).forEach(p => {
+            if (p.inShop === false) return;
             if (p.recipe && Array.isArray(p.recipe)) {
                 p.recipe.forEach(r => {
                     if (r.ingredientId) usedIds.add(String(r.ingredientId));
