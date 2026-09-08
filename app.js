@@ -42,8 +42,6 @@ window.toggleConfigModal = () => {
     const modal = document.getElementById('config-modal');
     if (!modal) return;
     modal.classList.toggle('hidden');
-    const themeSelect = document.getElementById('theme-select');
-    if (themeSelect) themeSelect.value = document.body.dataset.theme;
 };
 
 let ingredients = {};

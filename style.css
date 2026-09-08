@@ -557,7 +557,7 @@ footer {
     color: var(--danger);
 }
 
-/* Warm parchment apothecary presentation */
+/* Shared presentation foundation */
 :root {
     --bg-color: #efe4cf;
     --card-bg: #fffaf0;
@@ -1033,107 +1033,10 @@ footer {
     }
 }
 
-/* Theme variations */
-body[data-theme="parchment"] {
-    --bg-color: #ead8b8;
-    --card-bg: #fff8e8;
-    --accent: #8a5a2b;
-    --accent-hover: #6c421e;
-    --text: #3d2c1f;
-    --text-dim: #806b55;
-    --border: #d2b98e;
-    --gold: #b8791d;
-    --custom-order: #7f6640;
-    --custom-order-hover: #624b2c;
-}
-
-body[data-theme="dark"] {
-    --bg-color: #171715;
-    --card-bg: #24231f;
-    --accent: #c39a5a;
-    --accent-hover: #e0b66f;
-    --text: #f4ead8;
-    --text-dim: #b9aa92;
-    --border: #514936;
-    --gold: #e0ad55;
-    --success: #73a47f;
-    --success-hover: #598265;
-    --danger: #df8175;
-    --warning: #e2b261;
-    --stock-blue: #83b1bd;
-    --custom-order: #a68ac9;
-    --custom-order-hover: #8669ac;
-}
-
-body[data-theme="dark"] {
-    background:
-        radial-gradient(circle at 15% 0%, rgba(103, 79, 42, 0.25), transparent 34rem),
-        linear-gradient(135deg, #171715 0%, #29261f 100%);
-}
-
-body[data-theme="dark"] .potion-card,
-body[data-theme="dark"] .admin-panel,
-body[data-theme="dark"] .login-dialog,
-body[data-theme="dark"] .cart-panel,
-body[data-theme="dark"] .custom-panel {
-    background: rgba(36, 35, 31, 0.96);
-}
-
-body[data-theme="dark"] input,
-body[data-theme="dark"] select,
-body[data-theme="dark"] textarea {
-    background: #171715;
-}
-
-body[data-theme="herbal"] {
-    --bg-color: #dce5d2;
-    --card-bg: #f7f8ef;
-    --accent: #3f654a;
-    --accent-hover: #2d4c37;
-    --text: #26372b;
-    --text-dim: #637565;
-    --border: #b7c8b1;
-    --gold: #a47728;
-    --success: #397453;
-    --success-hover: #2c5a40;
-    --danger: #a64d45;
-    --warning: #a46e23;
-    --custom-order: #57748a;
-    --custom-order-hover: #405a6d;
-}
-
-body[data-theme="herbal"] {
-    background:
-        radial-gradient(circle at 10% 0%, rgba(247, 248, 239, 0.9), transparent 35rem),
-        linear-gradient(135deg, #dce5d2 0%, #cbdac5 100%);
-}
-
 #config-modal {
     background: var(--card-bg);
     border: 1px solid var(--border);
     color: var(--text);
-}
-
-.theme-picker {
-    border-top: 1px solid var(--border);
-    margin-top: 16px;
-    padding-top: 14px;
-}
-
-.theme-picker h4 {
-    font-size: 0.85rem;
-    margin: 0 0 4px;
-}
-
-.theme-picker p {
-    color: var(--text-dim);
-    font-size: 0.7rem;
-    margin: 0 0 8px;
-}
-
-.theme-picker select {
-    min-height: 34px;
-    width: 100%;
 }
 
 #login-modal:not(.hidden) {
@@ -1230,17 +1133,271 @@ body[data-theme="herbal"] {
     transform: none;
 }
 
-body[data-theme="dark"] .login-dialog {
-    background: linear-gradient(145deg, #2e2b24, #211f1b);
-    border-color: #8f7042;
-}
-
-body[data-theme="dark"] #login-modal:not(.hidden) {
-    background: rgba(0, 0, 0, 0.72);
-}
-
 @media (max-width: 640px) {
     .login-dialog {
         padding: 30px 22px 24px;
     }
+}
+
+/* Midnight Cellar: the single store presentation */
+:root {
+    --bg-color: #171715;
+    --card-bg: #24231f;
+    --accent: #d2a45f;
+    --accent-hover: #edc47d;
+    --text: #f4ead8;
+    --text-dim: #c2b59e;
+    --border: #5b513f;
+    --gold: #e2b45e;
+    --success: #7fb08a;
+    --success-hover: #62906d;
+    --danger: #e58a7e;
+    --warning: #e4b866;
+    --stock-blue: #8bb9c3;
+    --custom-order: #b395d6;
+    --custom-order-hover: #9272b9;
+}
+
+body {
+    background:
+        radial-gradient(circle at 15% 0%, rgba(103, 79, 42, 0.25), transparent 34rem),
+        linear-gradient(135deg, #171715 0%, #29261f 100%);
+    color: var(--text);
+}
+
+h1, h2, h3, h4 {
+    color: var(--text);
+}
+
+header h1,
+.login-dialog h2 {
+    color: var(--accent);
+}
+
+button {
+    color: #171715;
+}
+
+button:hover {
+    color: #171715;
+}
+
+input,
+select,
+textarea {
+    background: #191916 !important;
+    border-color: var(--border);
+    color: var(--text);
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: #a89b85;
+}
+
+.admin-panel,
+.potion-creator-panel,
+.cart-panel,
+.custom-panel {
+    background: rgba(36, 35, 31, 0.96) !important;
+    border-color: var(--border);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24);
+}
+
+.admin-panel {
+    padding: clamp(18px, 3vw, 28px);
+}
+
+.admin-panel > .collapse-header,
+.admin-panel > hr,
+.admin-panel > .potion-creator-panel {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+#admin-panel h2,
+#admin-panel h3,
+#admin-panel h4,
+#admin-panel summary {
+    color: var(--text);
+}
+
+#admin-panel p,
+#admin-panel label {
+    color: var(--text-dim);
+}
+
+#admin-panel > #ing-collapsible-wrapper,
+#admin-panel details,
+#admin-panel #ingredients-list,
+#admin-panel #unused-ingredients-container,
+#admin-panel #potion-creator-container {
+    background: #2c2a25 !important;
+    border-color: var(--border) !important;
+    border-radius: 9px;
+}
+
+#admin-panel > #ing-collapsible-wrapper {
+    margin-top: 18px !important;
+    padding: 14px;
+}
+
+#admin-panel details {
+    padding: 14px !important;
+}
+
+#admin-panel #ingredients-list,
+#admin-panel #unused-ingredients-container {
+    padding: 14px !important;
+}
+
+#admin-panel #ingredients-list,
+#admin-panel #unused-collapsible-wrapper {
+    max-height: 300px;
+}
+
+#admin-panel .form-group {
+    align-items: stretch;
+    margin-bottom: 14px;
+}
+
+#admin-panel .item-row {
+    background: #22211e !important;
+    border-color: #5b513f;
+}
+
+#admin-panel .item-row strong,
+#admin-panel .item-row span {
+    color: var(--text);
+}
+
+#admin-panel .collapse-btn {
+    background: transparent;
+    color: var(--text-dim);
+}
+
+#admin-panel .collapse-btn:hover {
+    background: rgba(210, 164, 95, 0.14);
+    color: var(--accent);
+}
+
+#admin-panel hr {
+    border-color: var(--border) !important;
+}
+
+.filter-bar {
+    align-items: center;
+}
+
+.filter-btn {
+    background: #2c2a25;
+    border-color: #625640;
+    color: #eee1ca;
+    font-weight: 600;
+}
+
+.filter-btn:hover,
+.filter-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #171715;
+}
+
+.potion-card {
+    background: #24231f;
+    border-color: #5b513f;
+}
+
+.potion-card:hover {
+    border-color: var(--accent);
+}
+
+.category-tag {
+    color: #e3b86f;
+}
+
+.cart-panel {
+    --tray-color: #d2a45f;
+    --tray-wash: rgba(210, 164, 95, 0.1);
+    background: linear-gradient(135deg, #29261f, #24231f) !important;
+    border-color: rgba(210, 164, 95, 0.55);
+}
+
+.custom-panel {
+    --tray-color: #b395d6;
+    --tray-wash: rgba(179, 149, 214, 0.1);
+    background: linear-gradient(135deg, #29252f, #24231f) !important;
+    border-color: rgba(179, 149, 214, 0.55);
+}
+
+.cart-panel #satchel-collapsible-wrapper,
+.custom-panel #custom-collapsible-wrapper {
+    background: rgba(20, 20, 18, 0.38);
+    border-color: var(--border);
+}
+
+.cart-panel .collapse-btn,
+#cart-panel button[onclick="clearCart()"],
+.custom-panel .collapse-btn,
+#custom-panel button[onclick="clearCustomOrders()"] {
+    background: transparent !important;
+    color: var(--text-dim);
+    border-color: var(--border);
+}
+
+.cart-panel .item-row,
+.custom-panel .item-row {
+    background: var(--tray-wash) !important;
+    border-color: rgba(255, 255, 255, 0.14);
+}
+
+.cart-panel .dispatch-box,
+.custom-panel .dispatch-box,
+.batch-summary {
+    background: rgba(20, 20, 18, 0.45);
+    border-color: var(--border);
+}
+
+#config-modal {
+    background: #24231f !important;
+    border-color: var(--border);
+    color: var(--text);
+}
+
+#config-modal h3,
+#config-modal h4 {
+    color: var(--text);
+}
+
+#config-modal p,
+#config-modal label {
+    color: var(--text-dim) !important;
+}
+
+#config-modal .form-group,
+#config-modal > div {
+    margin-bottom: 14px;
+}
+
+#config-modal button[onclick="toggleConfigModal()"] {
+    background: #3a372f !important;
+    color: var(--text);
+}
+
+.login-dialog {
+    background: linear-gradient(145deg, #2e2b24, #211f1b);
+    border-color: #8f7042;
+}
+
+#login-modal:not(.hidden) {
+    background: rgba(0, 0, 0, 0.74);
+}
+
+.login-dialog::before {
+    border-color: rgba(210, 164, 95, 0.3);
+}
+
+.modal-close-btn:hover {
+    background: rgba(210, 164, 95, 0.12);
+    color: var(--accent);
 }
