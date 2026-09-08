@@ -1703,11 +1703,11 @@
             content: contentParts.join('\n')
         };
 
-        // FormInit Proxy endpoint securely handling server-side delivery
-        const formInitUrl = "https://forminit.com/f/8tw19vmv1ez";
+        // Discord webhook URL lives server-side only; this endpoint forwards the message
+        const webhookEndpoint = "/.netlify/functions/discord-order-webhook";
 
         try {
-            const response = await fetch(formInitUrl, {
+            const response = await fetch(webhookEndpoint, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
