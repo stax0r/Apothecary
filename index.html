@@ -1691,19 +1691,16 @@
         const activeLocObj = locations[activeLocationId];
         const activeLocationName = activeLocObj ? activeLocObj.name : "Not specified";
 
-        let contentParts = [`📦 **New Custom Order!**`];
-        contentParts.push(`**Name:** ${clientName}`);
-        if (clientDiscord) contentParts.push(`**Discord ID:** ${clientDiscord}`);
-        contentParts.push(`**Active Location:** ${activeLocationName}`);
-        if (clientMessage) contentParts.push(`**Delivery Instructions & Inquiries:** ${clientMessage}`);
-        contentParts.push(`\n**Items:**\n${orderLines.join('\n')}`);
-        contentParts.push(`**Estimated Total Cost:** ${totalCost.toFixed(2)} Gold`);
-
-        const payload = {
-            content: contentParts.join('\n')
+        // Structured payload mapping fields for Forminit (formId: 8tw19vmv1ez)
+        const formData = {
+            name: clientName,
+            discordId: clientDiscord || "N/A",
+            activeLocation: activeLocationName,
+            deliveryInstructions: clientMessage || "None",
+            orderItems: orderLines.join('\n'),
+            estimatedTotal: `${totalCost.toFixed(2)} Gold`
         };
 
-        // FormInit Proxy endpoint securely handling server-side delivery
         const formInitUrl = "https://forminit.com/f/8tw19vmv1ez";
 
         try {
@@ -1713,7 +1710,7 @@
                     "Content-Type": "application/json",
                     "Accept": "application/json"
                 },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(formData)
             });
 
             if (response.ok) {
@@ -2219,164 +2216,32 @@
         });
 
         if (categories.length === 0) {
-            container.innerHTML = `<p style="color: var(--text-dim); font-size: 0.8rem; margin: 0;">No categories found.</p>`;
+            container.innerHTML = `<p style="color: var(--text-dim); font-size: 0.8rem; margin: 0;">No categories available.</p>`;
             return;
         }
 
-        container.innerHTML = categories.map((cat, index) => `
-            <div class="item-row" style="background: var(--bg-color); padding: 6px 8px; margin-bottom: 6px;">
-                <span style="font-size: 0.8rem;"><strong>${index + 1}.</strong> ${cat}</span>
+        container.innerHTML = categories.map((cat, idx) => `
+            <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-color); border: 1px solid var(--border); padding: 6px 10px; border-radius: 4px; margin-bottom: 6px;">
+                <span style="font-size: 0.85rem; font-weight: bold;">${cat}</span>
                 <div style="display: flex; gap: 4px;">
-                    <button class="order-btn" style="padding: 2px 6px; font-size: 0.7rem;" onclick="window.moveCategoryOrder('${cat.replace(/'/g, "\\'")}', 'up')" ${index === 0 ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>▲</button>
-                    <button class="order-btn" style="padding: 2px 6px; font-size: 0.7rem;" onclick="window.moveCategoryOrder('${cat.replace(/'/g, "\\'")}', 'down')" ${index === categories.length - 1 ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>▼</button>
+                    <button onclick="window.moveCategoryOrder('${cat}', 'up')" ${idx === 0 ? 'disabled class="btn-disabled"' : ''} style="padding: 2px 6px; font-size: 0.7rem;">▲</button>
+                    <button onclick="window.moveCategoryOrder('${cat}', 'down')" ${idx === categories.length - 1 ? 'disabled class="btn-disabled"' : ''} style="padding: 2px 6px; font-size: 0.7rem;">▼</button>
                 </div>
             </div>
         `).join('');
     };
 
     window.renderCatalogOnly = () => {
-        let potionArray = Object.values(potions);
-        
-        potionArray.sort((a, b) => {
-            const aStock = a.stockQty !== undefined ? a.stockQty : 0;
-            const aForceOut = a.forceOut === true;
-            const aIsOut = aForceOut || (aStock <= 0);
-
-            const bStock = b.stockQty !== undefined ? b.stockQty : 0;
-            const bForceOut = b.forceOut === true;
-            const bIsOut = bForceOut || (bStock <= 0);
-
-            if (!aIsOut && bIsOut) return -1;
-            if (aIsOut && !bIsOut) return 1;
-
-            return (a.salePrice || 0) - (b.salePrice || 0);
-        });
-
         const catalog = document.getElementById('catalog');
-        if (catalog) {
-            let visiblePotions = potionArray;
-            if (!currentUser) {
-                visiblePotions = visiblePotions.filter(p => p.inShop !== false);
-            }
-            if (selectedCategory !== 'All') {
-                visiblePotions = visiblePotions.filter(p => (p.category || 'General') === selectedCategory);
-            }
-            if (catalogSearchQuery) {
-                visiblePotions = visiblePotions.filter(p => {
-                    const matchName = (p.name || '').toLowerCase().includes(catalogSearchQuery);
-                    const matchDesc = (p.description || '').toLowerCase().includes(catalogSearchQuery);
-                    const matchCat = (p.category || '').toLowerCase().includes(catalogSearchQuery);
-                    return matchName || matchDesc || matchCat;
-                });
-            }
-
-            if (visiblePotions.length === 0) {
-                catalog.innerHTML = `<p style="color: var(--text-dim); grid-column: 1/-1;">No items available matching your criteria.</p>`;
-            } else {
-                catalog.innerHTML = visiblePotions.map(p => {
-                    const cost = calculatePotionCost(p.recipe);
-                    const profit = p.salePrice - cost;
-                    const margin = p.salePrice > 0 ? ((profit / p.salePrice) * 100).toFixed(0) : 0;
-                    const stockQty = p.stockQty !== undefined ? p.stockQty : 0;
-                    const forceOut = p.forceOut === true;
-                    const isOutOfStock = forceOut || (stockQty <= 0);
-                    const isInShop = p.inShop !== false;
-
-                    const sortedRecipe = p.recipe ? [...p.recipe].sort((a, b) => 
-                        (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
-                    ) : [];
-
-                    return `
-                        <div class="potion-card ${isOutOfStock ? 'out-of-stock' : ''} ${!isInShop && currentUser ? 'hidden-admin-card' : ''}" style="${!isInShop && currentUser ? 'border-style: dotted; opacity: 0.6;' : ''}">
-                            <div>
-                                ${currentUser ? `
-                                    <div class="card-top-actions">
-                                        <span style="font-size: 0.75rem; color: var(--text-dim);">ID: ${p.id.toString().slice(-4)}</span>
-                                        <div style="display: flex; gap: 5px;">
-                                            <button class="edit-btn" onclick="window.editPotion(${p.id})">Edit</button>
-                                            <button class="delete-btn" onclick="window.deletePotion(${p.id})">Delete</button>
-                                        </div>
-                                    </div>
-                                ` : ''}
-
-                                ${isOutOfStock ? `<span class="badge-out">Out of Stock</span>` : ''}
-                                ${p.bulkOnly ? `<span class="badge-out" style="background: var(--custom-order); color: #fff;">Bulk 10x Only</span>` : ''}
-                                ${!isInShop && currentUser ? `<span class="badge-out" style="background: var(--border); color: var(--text);">Hidden from Shop</span>` : ''}
-                                <div class="category-tag">${p.category || 'General'}</div>
-                                <h3 style="margin-top: 4px;">${p.name}</h3>
-                                ${!isOutOfStock ? `<div class="stock-tag">In Stock: ${stockQty}</div>` : `<div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 4px;">Stock: ${stockQty}</div>`}
-                                ${p.description ? `<div class="potion-desc">${p.description}</div>` : ''}
-                                <div class="potion-price">${p.salePrice} Gold</div>
-                                
-                                ${currentUser && sortedRecipe.length > 0 ? `
-                                    <ul class="ingredient-list">
-                                        ${sortedRecipe.map(r => `<li>- ${r.qty}x ${r.name}</li>`).join('')}
-                                    </ul>
-                                ` : ''}
-                            </div>
-                            <div>
-                                <div class="action-btn-group">
-                                    ${!isOutOfStock ? `
-                                        <button class="add-cart-btn" onclick="window.addToCart(${p.id})">+ Satchel</button>
-                                    ` : `
-                                        <button class="btn-disabled" disabled>Out of Stock</button>
-                                    `}
-                                    <button class="custom-order-btn" onclick="window.addCustomOrder(${p.id})">+ Order</button>
-                                </div>
-                                
-                                ${currentUser ? `
-                                    <div class="cost-badge">
-                                        <div>Craft Cost: ${cost.toFixed(2)}g</div>
-                                        <div>Profit Margin: <span class="${profit >= 0 ? 'profit-text' : 'loss-text'}">${profit.toFixed(2)}g (${margin}%)</span></div>
-                                        <div style="display: flex; gap: 5px; align-items: center; margin-top: 6px; flex-wrap: wrap;">
-                                            <label style="font-size: 0.75rem;">Qty:</label>
-                                            <input type="number" value="${stockQty}" min="0" style="width: 45px; padding: 2px 4px;" onchange="window.updatePotionStockQty(${p.id}, this.value)">
-                                            
-                                            <button class="stock-btn ${forceOut ? 'off' : ''}" onclick="window.toggleForceOutStock(${p.id}, ${forceOut})" title="Toggle Force Out of Stock (Reserve for Custom Orders)">
-                                                ${forceOut ? 'Force Out' : 'Available'}
-                                            </button>
-                                            
-                                            <button class="visible-btn ${!isInShop ? 'off' : ''}" onclick="window.toggleShopVisibility(${p.id}, ${isInShop})" title="Toggle Visibility in Shop">
-                                                ${isInShop ? 'Visible' : 'Hidden'}
-                                            </button>
-                                        </div>
-                                    </div>
-                                ` : ''}
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            }
-        }
-    };
-
-    window.render = () => {
-        window.updateCustomInputState();
-
-        const ingArray = Object.values(ingredients);
-        ingArray.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
-
-        let potionArray = Object.values(potions);
-
-        const select = document.getElementById('recipe-ing-select');
-        if (select) {
-            select.innerHTML = ingArray.map(i => `<option value="${i.id}">${i.name} (${i.price}g)</option>`).join('');
-        }
-
+        const filterBar = document.getElementById('filter-bar');
         const batchSelect = document.getElementById('batch-potion-select');
-        if (batchSelect) {
-            const sortedBatchPotions = [...potionArray].sort((a, b) => 
-                (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
-            );
-            batchSelect.innerHTML = sortedBatchPotions.map(p => `<option value="${p.id}">${p.name} (${p.salePrice}g)</option>`).join('');
-        }
+        const recipeSelect = document.getElementById('recipe-ing-select');
 
-        window.renderIngredientsList();
-        window.renderCategoryOrderList();
-        window.renderLocationsConfig();
-        window.renderAdminSalesHelper();
+        if (!catalog || !filterBar) return;
 
+        const potionArray = Object.values(potions);
         let categories = [...new Set(potionArray.map(p => p.category || 'General'))];
+
         categories.sort((a, b) => {
             const orderA = categoryOrders[a] !== undefined ? categoryOrders[a] : 999;
             const orderB = categoryOrders[b] !== undefined ? categoryOrders[b] : 999;
@@ -2384,23 +2249,130 @@
             return a.localeCompare(b);
         });
 
-        const filterCategories = ['All', ...categories];
-        const filterBar = document.getElementById('filter-bar');
-        if (filterBar) {
-            filterBar.innerHTML = filterCategories.map(cat => `
-                <button class="filter-btn ${selectedCategory === cat ? 'active' : ''}" onclick="window.setCategoryFilter('${cat}')">${cat}</button>
-            `).join('') + `
-                <input type="text" id="catalog-search-input" value="${catalogSearchQuery}" placeholder="Search catalog..." style="margin-left: auto; width: 180px; padding: 5px 10px; font-size: 0.85rem;" oninput="window.handleCatalogSearch(this.value)">
-            `;
+        let filterHtml = `<button class="filter-btn ${selectedCategory === 'All' ? 'active' : ''}" onclick="window.setCategoryFilter('All')">All</button>`;
+        categories.forEach(cat => {
+            filterHtml += `<button class="filter-btn ${selectedCategory === cat ? 'active' : ''}" onclick="window.setCategoryFilter('${cat.replace(/'/g, "\\'")}')">${cat}</button>`;
+        });
+        filterHtml += `<input type="text" id="catalog-search-input" placeholder="Search catalog..." value="${catalogSearchQuery}" style="margin-left: auto; width: 180px; padding: 5px 8px; font-size: 0.85rem;" oninput="window.handleCatalogSearch(this.value)">`;
+        filterBar.innerHTML = filterHtml;
+
+        let filtered = potionArray;
+        if (selectedCategory !== 'All') {
+            filtered = filtered.filter(p => (p.category || 'General') === selectedCategory);
         }
 
-        window.renderCatalogOnly();
-        window.renderBatchCalculator();
-        window.renderCart();
-        window.renderCustomOrders();
+        if (catalogSearchQuery) {
+            filtered = filtered.filter(p => 
+                (p.name || '').toLowerCase().includes(catalogSearchQuery) || 
+                (p.description || '').toLowerCase().includes(catalogSearchQuery)
+            );
+        }
+
+        filtered.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
+
+        if (filtered.length === 0) {
+            catalog.innerHTML = `<p style="color: var(--text-dim); grid-column: 1 / -1;">No potions found matching current filters.</p>`;
+        } else {
+            catalog.innerHTML = filtered.map(p => {
+                const stockQty = p.stockQty !== undefined ? p.stockQty : 0;
+                const inShop = p.inShop !== false;
+                const forceOut = p.forceOut === true;
+                const isOutOfStock = stockQty <= 0 || forceOut;
+                const baseCost = calculatePotionCost(p.recipe);
+
+                let recipeItemsHtml = '';
+                if (p.recipe && Array.isArray(p.recipe) && p.recipe.length > 0) {
+                    recipeItemsHtml = `<ul class="ingredient-list">` + 
+                        p.recipe.map(r => `<li>• ${r.qty}x ${r.name}</li>`).join('') + 
+                    `</ul>`;
+                } else {
+                    recipeItemsHtml = `<div class="potion-desc">Found Potion (No Recipe Required)</div>`;
+                }
+
+                let adminControls = '';
+                if (currentUser) {
+                    adminControls = `
+                        <div style="margin-top: 10px; border-top: 1px dashed var(--border); padding-top: 8px; display: flex; flex-direction: column; gap: 6px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px;">
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                    <label style="font-size: 0.7rem; color: var(--text-dim);">Stock:</label>
+                                    <input type="number" value="${stockQty}" min="0" style="width: 55px; padding: 2px 4px; font-size: 0.8rem;" onchange="window.updatePotionStockQty(${p.id}, this.value)">
+                                </div>
+                                <div style="display: flex; gap: 4px;">
+                                    <button class="visible-btn ${inShop ? '' : 'off'}" onclick="window.toggleShopVisibility(${p.id}, ${inShop})" title="Toggle Catalog Visibility">${inShop ? 'Visible' : 'Hidden'}</button>
+                                    <button class="stock-btn ${forceOut ? 'off' : ''}" onclick="window.toggleForceOutStock(${p.id}, ${forceOut})" title="Toggle Force Out of Stock">${forceOut ? 'Forced Out' : 'In Stock'}</button>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 4px;">
+                                <button class="edit-btn" style="flex: 1;" onclick="window.editPotion(${p.id})">Edit</button>
+                                <button class="delete-btn" style="flex: 1;" onclick="window.deletePotion(${p.id})">Delete</button>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                let clientCardAction = '';
+                if (inShop || currentUser) {
+                    clientCardAction = `
+                        <div class="action-btn-group">
+                            <button class="add-cart-btn ${isOutOfStock ? 'btn-disabled' : ''}" ${isOutOfStock ? 'disabled' : ''} onclick="window.addToCart(${p.id})">Add to Satchel</button>
+                            <button class="custom-order-btn" onclick="window.addCustomOrder(${p.id})">Custom Order</button>
+                        </div>
+                    `;
+                } else {
+                    clientCardAction = `<div style="text-align: center; font-size: 0.8rem; color: var(--text-dim); font-style: italic; margin-top: 8px;">Currently Not in Shop</div>`;
+                }
+
+                return `
+                    <div class="potion-card ${isOutOfStock ? 'out-of-stock' : ''}">
+                        <div>
+                            <div class="card-top-actions">
+                                <span class="category-tag">${p.category || 'General'}</span>
+                                ${isOutOfStock ? `<span class="badge-out">Out of Stock</span>` : `<span class="stock-tag">In Stock: ${stockQty}</span>`}
+                            </div>
+                            <h3>${p.name}</h3>
+                            ${p.bulkOnly ? '<span style="color:var(--custom-order); font-size:0.75rem; font-weight:bold;">(Sold in 10x Bulk Packs)</span>' : ''}
+                            <div class="potion-price">${p.salePrice.toFixed(2)} Gold</div>
+                            <div class="potion-desc">${p.description || ''}</div>
+                            ${recipeItemsHtml}
+                        </div>
+                        <div>
+                            ${currentUser ? `
+                                <div class="cost-badge">
+                                    <span>Base Cost: ${baseCost.toFixed(2)}g</span>
+                                    <span class="${(p.salePrice - baseCost) >= 0 ? 'profit-text' : 'loss-text'}">Profit: ${(p.salePrice - baseCost).toFixed(2)}g</span>
+                                </div>
+                            ` : ''}
+                            ${clientCardAction}
+                            ${adminControls}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        if (batchSelect) {
+            const allPotionsList = Object.values(potions);
+            allPotionsList.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
+            batchSelect.innerHTML = allPotionsList.map(p => `<option value="${p.id}">${p.name} (${p.salePrice}g)</option>`).join('');
+        }
+
+        if (recipeSelect) {
+            const allIngList = Object.values(ingredients);
+            allIngList.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
+            recipeSelect.innerHTML = allIngList.map(i => `<option value="${i.id}">${i.name} (${i.price}g/ea)</option>`).join('');
+        }
     };
 
-    window.render();
+    window.render = () => {
+        window.renderCatalogOnly();
+        window.renderIngredientsList();
+        window.renderCategoryOrderList();
+        window.renderCart();
+        window.renderCustomOrders();
+        window.renderBatchCalculator();
+    };
 </script>
+
 </body>
 </html>
