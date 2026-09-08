@@ -35,6 +35,17 @@
     <p style="font-size: 0.7rem; color: var(--text-dim); margin-top: 0; margin-bottom: 8px;">Reorder categories.</p>
     <div id="category-order-list"></div>
 
+    <div class="theme-picker">
+        <h4>Store Theme</h4>
+        <p>Choose the atmosphere for your apothecary.</p>
+        <select id="theme-select" onchange="setStoreTheme(this.value)">
+            <option value="noble">Noble Apothecary</option>
+            <option value="parchment">Classic Parchment</option>
+            <option value="dark">Midnight Cellar</option>
+            <option value="herbal">Herbal Conservatory</option>
+        </select>
+    </div>
+
     <button onclick="toggleConfigModal()" style="margin-top: 10px; width: 100%; background: var(--border); padding: 6px; font-size: 0.8rem;">Close</button>
 </div>
 
@@ -47,14 +58,19 @@
         <button id="auth-btn" class="admin-toggle" onclick="toggleAuthModal()">Alchemist Login</button>
     </header>
 
-    <div id="login-modal" class="login-modal hidden">
-        <h2>Brew Master Login</h2>
-        <div class="form-group" style="margin-top: 10px;">
-            <input type="email" id="login-email" placeholder="Email">
-            <input type="password" id="login-password" placeholder="Password">
-            <button onclick="login()">Login</button>
+    <div id="login-modal" class="login-modal hidden" role="dialog" aria-modal="true" aria-labelledby="login-title">
+        <div class="login-dialog">
+            <button class="modal-close-btn" type="button" onclick="toggleAuthModal()" aria-label="Close login">×</button>
+            <span class="login-kicker">Private cellar access</span>
+            <h2 id="login-title">Brew Master Login</h2>
+            <p class="login-intro">Enter your credentials to tend the apothecary.</p>
+            <div class="form-group" style="margin-top: 18px;">
+                <input type="email" id="login-email" placeholder="Email">
+                <input type="password" id="login-password" placeholder="Password">
+                <button onclick="login()">Enter the cellar</button>
+            </div>
+            <p id="login-error" style="color: var(--danger); margin: 0; font-size: 0.85rem;"></p>
         </div>
-        <p id="login-error" style="color: var(--danger); margin: 0; font-size: 0.85rem;"></p>
     </div>
 
     <div id="admin-panel" class="admin-panel hidden">
