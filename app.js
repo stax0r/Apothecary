@@ -17,6 +17,16 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
+const storeThemes = ['noble', 'parchment', 'dark', 'herbal'];
+const savedTheme = localStorage.getItem('silas-brews-theme');
+document.body.dataset.theme = storeThemes.includes(savedTheme) ? savedTheme : 'noble';
+
+window.setStoreTheme = (theme) => {
+    if (!storeThemes.includes(theme)) return;
+    document.body.dataset.theme = theme;
+    localStorage.setItem('silas-brews-theme', theme);
+};
+
 function showBanner(message, type = 'success') {
     const banner = document.getElementById('status-banner');
     if (!banner) return;
@@ -30,7 +40,10 @@ function showBanner(message, type = 'success') {
 
 window.toggleConfigModal = () => {
     const modal = document.getElementById('config-modal');
-    if (modal) modal.classList.toggle('hidden');
+    if (!modal) return;
+    modal.classList.toggle('hidden');
+    const themeSelect = document.getElementById('theme-select');
+    if (themeSelect) themeSelect.value = document.body.dataset.theme;
 };
 
 let ingredients = {};
@@ -197,6 +210,14 @@ window.toggleAuthModal = () => {
         if (loginModal) loginModal.classList.toggle('hidden');
     }
 };
+
+document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    const loginModal = document.getElementById('login-modal');
+    if (loginModal && !loginModal.classList.contains('hidden')) {
+        loginModal.classList.add('hidden');
+    }
+});
 
 window.toggleSection = (wrapperId, btnId) => {
     const wrapper = document.getElementById(wrapperId);
