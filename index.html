@@ -1691,7 +1691,6 @@
         const activeLocObj = locations[activeLocationId];
         const activeLocationName = activeLocObj ? activeLocObj.name : "Not specified";
 
-        // Structured payload mapping fields for Forminit (formId: 8tw19vmv1ez)
         const formData = {
             name: clientName,
             discordId: clientDiscord || "N/A",
@@ -1701,25 +1700,25 @@
             estimatedTotal: `${totalCost.toFixed(2)} Gold`
         };
 
-        const formInitUrl = "https://forminit.com/f/8tw19vmv1ez";
-
         try {
-            const response = await fetch(formInitUrl, {
+            // Calls your Netlify serverless function safely
+            const response = await fetch("/.netlify/functions/send-order", {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json"
+                    "Content-Type": "application/json"
                 },
                 body: JSON.stringify(formData)
             });
 
-            if (response.ok) {
+            const result = await response.json();
+
+            if (response.ok && result.success) {
                 showBanner("Order successfully sent!");
                 customOrders = [];
                 customInputState = { name: "", discord: "", message: "", atLocationChecked: false };
                 window.renderCustomOrders();
             } else {
-                showBanner("Failed to send order! Status: " + response.status, 'error');
+                showBanner("Failed to send order! " + (result.error || ""), 'error');
             }
         } catch (err) {
             showBanner("Error sending order: " + err.message, 'error');
