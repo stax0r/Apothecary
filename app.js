@@ -17,16 +17,6 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
-const storeThemes = ['noble', 'parchment', 'dark', 'herbal'];
-const savedTheme = localStorage.getItem('silas-brews-theme');
-document.body.dataset.theme = storeThemes.includes(savedTheme) ? savedTheme : 'noble';
-
-window.setStoreTheme = (theme) => {
-    if (!storeThemes.includes(theme)) return;
-    document.body.dataset.theme = theme;
-    localStorage.setItem('silas-brews-theme', theme);
-};
-
 function showBanner(message, type = 'success') {
     const banner = document.getElementById('status-banner');
     if (!banner) return;
@@ -42,8 +32,6 @@ window.toggleConfigModal = () => {
     const modal = document.getElementById('config-modal');
     if (!modal) return;
     modal.classList.toggle('hidden');
-    const themeSelect = document.getElementById('theme-select');
-    if (themeSelect) themeSelect.value = document.body.dataset.theme;
 };
 
 let ingredients = {};
