@@ -1487,6 +1487,11 @@ window.renderCatalogOnly = () => {
     filterBar.innerHTML = filterHtml;
 
     let filtered = potionArray;
+
+    if (!currentUser) {
+        filtered = filtered.filter(p => p.inShop !== false);
+    }
+
     if (selectedCategory !== 'All') {
         filtered = filtered.filter(p => (p.category || 'General') === selectedCategory);
     }
@@ -1498,7 +1503,7 @@ window.renderCatalogOnly = () => {
         );
     }
 
-    filtered.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
+    filtered.sort((a, b) => (a.salePrice || 0) - (b.salePrice || 0));
 
     if (filtered.length === 0) {
         catalog.innerHTML = `<p style="color: var(--text-dim); grid-column: 1 / -1;">No potions found matching current filters.</p>`;
@@ -1509,6 +1514,7 @@ window.renderCatalogOnly = () => {
             const forceOut = p.forceOut === true;
             const isOutOfStock = stockQty <= 0 || forceOut;
             const baseCost = calculatePotionCost(p.recipe);
+            const displayPrice = Math.round(p.salePrice || 0);
 
             let recipeItemsHtml = '';
             if (p.recipe && Array.isArray(p.recipe) && p.recipe.length > 0) {
@@ -1562,7 +1568,7 @@ window.renderCatalogOnly = () => {
                         </div>
                         <h3>${p.name}</h3>
                         ${p.bulkOnly ? '<span style="color:var(--custom-order); font-size:0.75rem; font-weight:bold;">(Sold in 10x Bulk Packs)</span>' : ''}
-                        <div class="potion-price">${p.salePrice.toFixed(2)} Gold</div>
+                        <div class="potion-price">${displayPrice} Gold</div>
                         <div class="potion-desc">${p.description || ''}</div>
                         ${recipeItemsHtml}
                     </div>
@@ -1583,8 +1589,8 @@ window.renderCatalogOnly = () => {
 
     if (batchSelect) {
         const allPotionsList = Object.values(potions);
-        allPotionsList.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
-        batchSelect.innerHTML = allPotionsList.map(p => `<option value="${p.id}">${p.name} (${p.salePrice}g)</option>`).join('');
+        allPotionsList.sort((a, b) => (a.salePrice || 0) - (b.salePrice || 0));
+        batchSelect.innerHTML = allPotionsList.map(p => `<option value="${p.id}">${p.name} (${Math.round(p.salePrice || 0)}g)</option>`).join('');
     }
 
     if (recipeSelect) {
