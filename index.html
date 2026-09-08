@@ -476,19 +476,6 @@
             font-style: italic;
             margin: 0 0 10px 0;
         }
-
-        .copy-text-area {
-            width: 100%;
-            height: 90px;
-            box-sizing: border-box;
-            font-family: monospace;
-            font-size: 0.85rem;
-            background: #120e1a;
-            color: var(--gold);
-            border: 1px solid var(--border);
-            padding: 8px;
-            border-radius: 4px;
-        }
         
         .copyable-name {
             background: var(--card-bg);
@@ -775,7 +762,7 @@
 </div>
 
 <footer>
-    <span><strong>OOC:</strong> Whether you have questions, feedback, or just need to get in touch, please feel free to drop me a message on Discord at <code class="copyable-name" title="Click to copy">stax0r</code>. Always happy to help![cite: 3]</span>
+    <span><strong>OOC:</strong> Whether you have questions, feedback, or just need to get in touch, please feel free to drop me a message on Discord at <code class="copyable-name" title="Click to copy">stax0r</code>. Always happy to help!</span>
 </footer>
 
 <script type="module">
@@ -1716,13 +1703,15 @@
             content: contentParts.join('\n')
         };
 
-        const webhookUrl = "https://discord.com/api/webhooks/1545635810873708594/py7qvIEJKnaeOAIlEOCGgeCrDD3yw0Tcg_sFKUwCPnDtwOftCkg7b1TcXYOTyKO_0Qz4";
+        // FormInit Proxy endpoint securely handling server-side delivery
+        const formInitUrl = "https://forminit.com/api/v1/webhook/8tw19vmv1ez";
 
         try {
-            const response = await fetch(webhookUrl, {
+            const response = await fetch(formInitUrl, {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
                 },
                 body: JSON.stringify(payload)
             });
