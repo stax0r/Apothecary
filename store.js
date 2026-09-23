@@ -66,6 +66,13 @@ onValue(ref(db, 'activeLocationId'), (snapshot) => {
     window.renderCustomOrders();
 });
 
+window.toggleModal = (modalId) => {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.toggle('hidden');
+    }
+};
+
 window.toggleSection = (wrapperId, btnId) => {
     const wrapper = document.getElementById(wrapperId);
     const btn = document.getElementById(btnId);
@@ -138,6 +145,25 @@ window.clearCart = () => {
 window.renderCart = () => {
     const listDiv = document.getElementById('cart-items-list');
     const summaryDiv = document.getElementById('cart-summary-area');
+    const triggerBtn = document.getElementById('satchel-trigger-btn');
+    const countSpan = document.getElementById('satchel-count');
+    
+    let totalItems = 0;
+    clientCart.forEach(item => totalItems += item.qty);
+
+    if (countSpan) countSpan.innerText = totalItems;
+
+    if (triggerBtn) {
+        if (clientCart.length > 0) {
+            triggerBtn.classList.remove('hidden');
+        } else {
+            triggerBtn.classList.add('hidden');
+            // Auto close modal if emptied
+            const modal = document.getElementById('cart-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+    }
+
     if (!listDiv || !summaryDiv) return;
 
     if (clientCart.length === 0) {
@@ -146,14 +172,13 @@ window.renderCart = () => {
         return;
     }
 
-    let totalCost = 0, totalItems = 0;
+    let totalCost = 0;
     listDiv.innerHTML = clientCart.map((item, index) => {
         const p = potions[item.potionId];
         if (!p) return '';
         const maxQty = p.stockQty !== undefined ? p.stockQty : 0;
         const lineTotal = (p.salePrice || 0) * item.qty;
         totalCost += lineTotal;
-        totalItems += item.qty;
 
         return `
             <div class="item-row">
@@ -312,6 +337,24 @@ window.renderCustomOrders = () => {
 
     const listDiv = document.getElementById('custom-items-list');
     const summaryDiv = document.getElementById('custom-summary-area');
+    const triggerBtn = document.getElementById('custom-trigger-btn');
+    const countSpan = document.getElementById('custom-count');
+
+    let totalItems = 0;
+    customOrders.forEach(item => totalItems += item.qty);
+
+    if (countSpan) countSpan.innerText = totalItems;
+
+    if (triggerBtn) {
+        if (customOrders.length > 0) {
+            triggerBtn.classList.remove('hidden');
+        } else {
+            triggerBtn.classList.add('hidden');
+            const modal = document.getElementById('custom-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+    }
+
     if (!listDiv || !summaryDiv) return;
 
     if (customOrders.length === 0) {
@@ -320,13 +363,12 @@ window.renderCustomOrders = () => {
         return;
     }
 
-    let totalCost = 0, totalItems = 0;
+    let totalCost = 0;
     listDiv.innerHTML = customOrders.map((item, index) => {
         const p = potions[item.potionId];
         if (!p) return '';
         const lineTotal = (p.salePrice || 0) * item.qty;
         totalCost += lineTotal;
-        totalItems += item.qty;
 
         return `
             <div class="item-row">

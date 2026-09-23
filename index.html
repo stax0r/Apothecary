@@ -21,33 +21,49 @@
         </div>
     </header>
 
-    <!-- Customer Satchel Panel -->
-    <div id="cart-panel" class="cart-panel">
-        <div class="collapse-header" onclick="toggleSection('satchel-collapsible-wrapper', 'satchel-collapse-btn')">
-            <h2>Satchel</h2>
-            <div style="display: flex; gap: 8px; align-items: center;" onclick="event.stopPropagation();">
-                <button onclick="clearCart()" style="background: var(--border); font-size: 0.8rem; padding: 4px 10px;">Empty Satchel</button>
-                <button class="collapse-btn" id="satchel-collapse-btn" onclick="toggleSection('satchel-collapsible-wrapper', 'satchel-collapse-btn'); event.stopPropagation();">Hide ▲</button>
+    <!-- Floating Action Buttons (Hidden by default until items are added) -->
+    <div id="floating-triggers" class="floating-triggers">
+        <button id="satchel-trigger-btn" class="floating-btn satchel-trigger hidden" onclick="toggleModal('cart-modal')">
+            🎒 Satchel (<span id="satchel-count">0</span>)
+        </button>
+        <button id="custom-trigger-btn" class="floating-btn custom-trigger hidden" onclick="toggleModal('custom-modal')">
+            📜 Custom Order (<span id="custom-count">0</span>)
+        </button>
+    </div>
+
+    <!-- Satchel Pop-up Modal -->
+    <div id="cart-modal" class="shop-modal hidden">
+        <div class="shop-modal-dialog">
+            <button class="modal-close-btn" type="button" onclick="toggleModal('cart-modal')">×</button>
+            <div id="cart-panel" class="cart-panel" style="margin-bottom: 0; border: none; background: transparent !important; padding: 0;">
+                <h2>Satchel</h2>
+                <div style="margin-top: 15px;">
+                    <div id="cart-items-list"></div>
+                    <div id="cart-summary-area"></div>
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button onclick="clearCart()" style="background: var(--border); flex: 1; font-size: 0.85rem;">Empty Satchel</button>
+                        <button onclick="toggleModal('cart-modal')" style="background: var(--accent); flex: 1; font-size: 0.85rem;">Continue Browsing</button>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div id="satchel-collapsible-wrapper" style="margin-top: 15px;">
-            <div id="cart-items-list"></div>
-            <div id="cart-summary-area"></div>
         </div>
     </div>
 
-    <!-- Custom Order Panel -->
-    <div id="custom-panel" class="custom-panel">
-        <div class="collapse-header" onclick="toggleSection('custom-collapsible-wrapper', 'custom-collapse-btn')">
-            <h2 style="color: var(--custom-order);">Custom Order</h2>
-            <div style="display: flex; gap: 8px; align-items: center;" onclick="event.stopPropagation();">
-                <button onclick="clearCustomOrders()" style="background: var(--border); font-size: 0.8rem; padding: 4px 10px;">Empty Custom Orders</button>
-                <button class="collapse-btn" id="custom-collapse-btn" onclick="toggleSection('custom-collapsible-wrapper', 'custom-collapse-btn'); event.stopPropagation();">Hide ▲</button>
+    <!-- Custom Order Pop-up Modal -->
+    <div id="custom-modal" class="shop-modal hidden">
+        <div class="shop-modal-dialog">
+            <button class="modal-close-btn" type="button" onclick="toggleModal('custom-modal')">×</button>
+            <div id="custom-panel" class="custom-panel" style="margin-bottom: 0; border: none; background: transparent !important; padding: 0;">
+                <h2 style="color: var(--custom-order);">Custom Order</h2>
+                <div style="margin-top: 15px;">
+                    <div id="custom-items-list"></div>
+                    <div id="custom-summary-area"></div>
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button onclick="clearCustomOrders()" style="background: var(--border); flex: 1; font-size: 0.85rem;">Empty Custom Orders</button>
+                        <button onclick="toggleModal('custom-modal')" style="background: var(--accent); flex: 1; font-size: 0.85rem;">Continue Browsing</button>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div id="custom-collapsible-wrapper" style="margin-top: 15px;">
-            <div id="custom-items-list"></div>
-            <div id="custom-summary-area"></div>
         </div>
     </div>
 
@@ -60,7 +76,6 @@
     <span><strong>OOC:</strong> Whether you have questions, feedback, or just need to get in touch, please feel free to drop me a message on Discord at <code class="copyable-name" title="Click to copy">stax0r</code>. Always happy to help![cite: 1]</span>
 </footer>
 
-<!-- JavaScript Entry Point for Customers -->
 <script type="module" src="store.js"></script>
 
 </body>

@@ -576,3 +576,68 @@ footer {
     margin-top: 4px;
     padding: 11px 16px;
 }
+
+.floating-triggers {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9998;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-end;
+}
+
+.floating-btn {
+    padding: 10px 16px;
+    border-radius: 30px;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    cursor: pointer;
+    font-weight: bold;
+    border: 1px solid rgba(255,255,255,0.2);
+    transition: transform 0.2s, background 0.2s;
+}
+
+.floating-btn:hover {
+    transform: scale(1.05);
+}
+
+.satchel-trigger {
+    background: var(--gold);
+    color: #171715;
+}
+
+.custom-trigger {
+    background: var(--custom-order);
+    color: #fff;
+}
+
+.shop-modal {
+    align-items: center;
+    background: rgba(0, 0, 0, 0.75);
+    display: flex;
+    inset: 0;
+    justify-content: center;
+    padding: 20px;
+    position: fixed;
+    z-index: 10000;
+}
+
+.shop-modal.hidden {
+    display: none !important;
+}
+
+.shop-modal-dialog {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    box-sizing: border-box;
+    max-width: 550px;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 28px;
+    position: relative;
+    width: 100%;
+}
