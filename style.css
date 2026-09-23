@@ -641,3 +641,23 @@ footer {
     position: relative;
     width: 100%;
 }
+
+/* Two-Column Grid Layout for Admin Panel */
+.admin-grid-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+@media (max-width: 900px) {
+    .admin-grid-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+.admin-column {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}

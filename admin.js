@@ -23,6 +23,7 @@ let batchManifest = [];
 
 window.clientSuppliedQty = {};
 window.editingIngredientId = null;
+window.editingPotionStockId = null;
 window.selectedQuickDepositIngredientId = null;
 
 onValue(ref(db, 'ingredients'), (snapshot) => {
@@ -136,13 +137,6 @@ window.saveIngredientEdit = (id) => {
         return;
     }
 
-    const newNameLower = newName.toLowerCase();
-    const duplicate = Object.values(ingredients).find(i => i.id !== id && (i.name || '').toLowerCase() === newNameLower);
-    if (duplicate) {
-        showBanner(`Another ingredient named "${duplicate.name}" already exists!`, 'error');
-        return;
-    }
-
     const oldName = ingredients[id] ? ingredients[id].name : '';
 
     update(ref(db, `ingredients/${id}`), {
@@ -185,29 +179,9 @@ window.saveIngredientEdit = (id) => {
 };
 
 window.deleteIngredient = (id) => {
-    if (window.confirm("Are you sure you want to delete this ingredient? It will also be automatically removed from any potion recipes.")) {
+    if (window.confirm("Are you sure you want to delete this ingredient?")) {
         if (window.editingIngredientId === id) window.editingIngredientId = null;
-
-        remove(ref(db, `ingredients/${id}`)).then(() => {
-            if (potions) {
-                const potionUpdates = {};
-                let updated = false;
-
-                Object.values(potions).forEach(p => {
-                    if (p.recipe && Array.isArray(p.recipe)) {
-                        const filteredRecipe = p.recipe.filter(r => r.ingredientId != id);
-                        if (filteredRecipe.length !== p.recipe.length) {
-                            updated = true;
-                            potionUpdates[`potions/${p.id}/recipe`] = filteredRecipe;
-                        }
-                    }
-                });
-
-                if (updated) {
-                    update(ref(db), potionUpdates);
-                }
-            }
-        });
+        remove(ref(db, `ingredients/${id}`));
     }
 };
 
@@ -226,7 +200,7 @@ window.handleQuickDepositInput = (query) => {
     const matches = ingArray.filter(i => (i.name || '').toLowerCase().includes(q));
 
     if (matches.length === 0) {
-        dropdown.innerHTML = `<div class="autocomplete-item" style="color: var(--text-dim); cursor: default;">No matching ingredients</div>`;
+        dropdown.innerHTML = `<div class="autocomplete-item" style="color: var(--text-dim); cursor: default;">No matches</div>`;
         dropdown.classList.remove('hidden');
         window.selectedQuickDepositIngredientId = null;
         return;
@@ -234,7 +208,7 @@ window.handleQuickDepositInput = (query) => {
 
     dropdown.innerHTML = matches.map(i => `
         <div class="autocomplete-item" onclick="window.selectQuickDepositIngredient('${i.id}', '${i.name.replace(/'/g, "\\'")} ')">
-            ${i.name} <span style="color: var(--stock-blue); font-size: 0.75rem;">(Stock: ${i.stockQty || 0})</span>
+            ${i.name} <span style="color: var(--stock-blue); font-size: 0.75rem;">(${i.stockQty || 0})</span>
         </div>
     `).join('');
     dropdown.classList.remove('hidden');
@@ -254,24 +228,18 @@ window.executeQuickDeposit = () => {
     const addQty = parseInt(qtyInput ? qtyInput.value : 1) || 0;
 
     if (!id || !ingredients[id] || addQty <= 0) {
-        showBanner("Please select a valid ingredient and enter a positive quantity.", 'error');
+        showBanner("Select a valid ingredient and positive quantity.", 'error');
         return;
     }
 
-    const currentStock = ingredients[id].stockQty || 0;
-    const newStock = currentStock + addQty;
-
-    set(ref(db, `ingredients/${id}/stockQty`), newStock)
-        .then(() => {
-            showBanner(`Successfully added ${addQty} to ${ingredients[id].name}. New stock: ${newStock}`);
-            const input = document.getElementById('quick-deposit-input');
-            if (input) input.value = '';
-            if (qtyInput) qtyInput.value = '1';
-            window.selectedQuickDepositIngredientId = null;
-        })
-        .catch(err => {
-            showBanner("Error depositing stock: " + err.message, 'error');
-        });
+    const newStock = (ingredients[id].stockQty || 0) + addQty;
+    set(ref(db, `ingredients/${id}/stockQty`), newStock).then(() => {
+        showBanner(`Added ${addQty} to ${ingredients[id].name}.`);
+        const input = document.getElementById('quick-deposit-input');
+        if (input) input.value = '';
+        if (qtyInput) qtyInput.value = '1';
+        window.selectedQuickDepositIngredientId = null;
+    });
 };
 
 window.addIngredientToRecipe = () => {
@@ -307,7 +275,7 @@ window.renderRecipePreview = () => {
         totalCost += cost;
 
         const li = document.createElement('li');
-        li.innerHTML = `${item.qty}x ${item.name} (${cost.toFixed(2)} gold) <button type="button" style="padding:2px 6px; font-size:0.7rem; background:var(--danger); margin-left:8px;" onclick="window.removeRecipeItem(${index})">X</button>`;
+        li.innerHTML = `${item.qty}x ${item.name} (${cost.toFixed(2)}g) <button type="button" style="padding:1px 4px; font-size:0.65rem; background:var(--danger); margin-left:6px;" onclick="window.removeRecipeItem(${index})">X</button>`;
         list.appendChild(li);
     });
 
@@ -332,9 +300,7 @@ window.savePotion = () => {
     if (name && !isNaN(price)) {
         const id = editingId ? parseInt(editingId) : Date.now();
         const existingPotion = (editingId && potions[editingId]) ? potions[editingId] : {};
-        const existingInShop = existingPotion.inShop !== undefined ? existingPotion.inShop : true;
-        const existingForceOut = existingPotion.forceOut !== undefined ? existingPotion.forceOut : false;
-
+        
         currentRecipe.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
 
         set(ref(db, `potions/${id}`), {
@@ -344,32 +310,16 @@ window.savePotion = () => {
             description: desc,
             salePrice: price,
             stockQty: stockQty,
-            inShop: existingInShop,
-            forceOut: existingForceOut,
+            inShop: existingPotion.inShop !== undefined ? existingPotion.inShop : true,
+            forceOut: existingPotion.forceOut !== undefined ? existingPotion.forceOut : false,
             bulkOnly: bulkOnly,
             recipe: currentRecipe
         });
 
-        const allCats = [...new Set([...Object.values(potions).map(p => p.category || 'General'), category])];
-        const updates = {};
-        let maxOrder = 0;
-        Object.values(categoryOrders).forEach(o => { if (o > maxOrder) maxOrder = o; });
-
-        allCats.forEach(cat => {
-            if (categoryOrders[cat] === undefined) {
-                maxOrder++;
-                updates[`categoryOrders/${cat}`] = maxOrder;
-            }
-        });
-
-        if (Object.keys(updates).length > 0) {
-            update(ref(db), updates);
-        }
-
         window.cancelEditPotion();
         showBanner("Potion saved successfully!");
     } else {
-        showBanner("Please provide a valid potion name and sale price.", 'error');
+        showBanner("Provide a valid potion name and sale price.", 'error');
     }
 };
 
@@ -388,11 +338,9 @@ window.editPotion = (id) => {
     currentRecipe = p.recipe ? [...p.recipe] : [];
     window.renderRecipePreview();
 
-    const titleElem = document.getElementById('potion-form-title');
-    if (titleElem) titleElem.innerText = "Edit Potion";
+    document.getElementById('potion-form-title').innerText = "Full Edit Potion Recipe";
     document.getElementById('save-potion-btn').innerText = "Update Potion";
     document.getElementById('cancel-edit-btn').classList.remove('hidden');
-
     document.getElementById('potion-creator-container').scrollIntoView({ behavior: 'smooth' });
 };
 
@@ -407,20 +355,15 @@ window.cancelEditPotion = () => {
     currentRecipe = [];
     window.renderRecipePreview();
 
-    const titleElem = document.getElementById('potion-form-title');
-    if (titleElem) titleElem.innerText = "Add New Potion to the Catalog";
+    document.getElementById('potion-form-title').innerText = "Create / Full Edit Potion";
     document.getElementById('save-potion-btn').innerText = "Create Potion";
     document.getElementById('cancel-edit-btn').classList.add('hidden');
 };
 
 window.deletePotion = (id) => {
-    if (window.confirm("Are you sure you want to delete this potion from the catalog?")) {
-        if (document.getElementById('editing-potion-id').value == id) {
-            window.cancelEditPotion();
-        }
-        remove(ref(db, `potions/${id}`)).then(() => {
-            showBanner("Potion deleted successfully.");
-        });
+    if (window.confirm("Delete this potion from catalog?")) {
+        if (document.getElementById('editing-potion-id').value == id) window.cancelEditPotion();
+        remove(ref(db, `potions/${id}`));
     }
 };
 
@@ -432,10 +375,21 @@ window.togglePotionForceOut = (id, currentForceOut) => {
     update(ref(db, `potions/${id}`), { forceOut: !currentForceOut });
 };
 
-window.updatePotionStock = (id, newStockVal) => {
-    const newStock = parseInt(newStockVal);
+window.startEditPotionStock = (id) => {
+    window.editingPotionStockId = id;
+    window.renderPotionsList();
+};
+
+window.savePotionStockQuick = (id) => {
+    const input = document.getElementById(`quick-stock-input-${id}`);
+    if (!input) return;
+    const newStock = parseInt(input.value);
     if (isNaN(newStock) || newStock < 0) return;
-    update(ref(db, `potions/${id}`), { stockQty: newStock });
+
+    update(ref(db, `potions/${id}`), { stockQty: newStock }).then(() => {
+        window.editingPotionStockId = null;
+        window.renderPotionsList();
+    });
 };
 
 window.renderPotionsList = () => {
@@ -464,29 +418,30 @@ window.renderPotionsList = () => {
         const inShop = p.inShop !== false;
         const forceOut = p.forceOut === true;
         const stockQty = p.stockQty !== undefined ? p.stockQty : 0;
+        const isEditingStock = window.editingPotionStockId === p.id;
 
         return `
-            <div class="item-row" style="align-items: center;">
-                <div style="flex: 2; min-width: 160px;">
+            <div class="item-row" style="align-items: center; gap: 8px;">
+                <div style="flex: 2; min-width: 140px;">
                     <strong>${p.name}</strong> 
-                    <span style="font-size: 0.75rem; color: var(--accent);">(${p.category || 'General'})</span>
-                    <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 2px;">
-                        Price: ${Math.round(p.salePrice || 0)}g ${p.bulkOnly ? '| Bulk (10x)' : ''}
+                    <span style="font-size: 0.7rem; color: var(--accent);">(${p.category || 'General'})</span>
+                    <div style="font-size: 0.75rem; color: var(--text-dim);">
+                        Price: ${Math.round(p.salePrice || 0)}g
                     </div>
                 </div>
-                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                    <div style="display: flex; align-items: center; gap: 4px;">
-                        <label style="font-size: 0.75rem; color: var(--text-dim);">Stock:</label>
-                        <input type="number" value="${stockQty}" min="0" style="width: 65px;" onchange="window.updatePotionStock(${p.id}, this.value)">
-                    </div>
-                    <button onclick="window.togglePotionShopStatus(${p.id}, ${inShop})" style="background: ${inShop ? 'var(--success)' : 'var(--border)'}; padding: 3px 8px; font-size: 0.75rem;" title="Toggle visibility in customer shop">
-                        ${inShop ? 'In Shop' : 'Hidden'}
-                    </button>
-                    <button onclick="window.togglePotionForceOut(${p.id}, ${forceOut})" style="background: ${forceOut ? 'var(--danger)' : 'var(--border)'}; padding: 3px 8px; font-size: 0.75rem;" title="Force out of stock">
-                        ${forceOut ? 'Forced Out' : 'Normal Stock'}
-                    </button>
-                    <button class="edit-btn" onclick="window.editPotion(${p.id})">Edit</button>
-                    <button class="delete-btn" onclick="window.deletePotion(${p.id})">Delete</button>
+                <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                    ${isEditingStock ? `
+                        <div style="display: flex; gap: 4px; align-items: center;">
+                            <input type="number" id="quick-stock-input-${p.id}" value="${stockQty}" min="0" style="width: 55px; padding: 2px;">
+                            <button onclick="window.savePotionStockQuick(${p.id})" style="padding: 2px 6px; font-size: 0.7rem; background: var(--success);">Save</button>
+                        </div>
+                    ` : `
+                        <span style="font-size: 0.8rem; color: var(--stock-blue); cursor: pointer;" onclick="window.startEditPotionStock(${p.id})" title="Click to quick-edit stock">
+                            Stock: <strong>${stockQty}</strong> ✎
+                        </span>
+                    `}
+                    <button class="edit-btn" onclick="window.editPotion(${p.id})" style="font-size: 0.7rem; padding: 2px 6px;" title="Full edit (recipe/name)">Recipe</button>
+                    <button class="delete-btn" onclick="window.deletePotion(${p.id})" style="font-size: 0.7rem; padding: 2px 6px;">X</button>
                 </div>
             </div>
         `;
@@ -540,73 +495,52 @@ window.updateClientSupply = (ingId, val) => {
 
 window.executeBatchCraft = () => {
     if (batchManifest.length === 0) return;
-
-    const confirmMsg = "Are you sure you want to execute this batch? This will automatically deduct the required ingredients from your personal stock based on what the client is NOT providing.";
-    if (!window.confirm(confirmMsg)) return;
+    if (!window.confirm("Execute batch? This will deduct used ingredients from personal stock.")) return;
 
     const updates = {};
     const aggregatedIngredients = {};
 
     batchManifest.forEach(item => {
         const p = potions[item.potionId];
-        if (!p) return;
+        if (!p || !p.recipe) return;
 
-        if (p.recipe) {
-            p.recipe.forEach(r => {
-                const ing = ingredients[r.ingredientId];
-                if (!ing) return;
-                
-                const totalNeeded = r.qty * item.qty;
-                if (!aggregatedIngredients[r.ingredientId]) {
-                    aggregatedIngredients[r.ingredientId] = {
-                        stockQty: ing.stockQty || 0,
-                        qtyRequired: 0
-                    };
-                }
-                aggregatedIngredients[r.ingredientId].qtyRequired += totalNeeded;
-            });
-        }
+        p.recipe.forEach(r => {
+            const ing = ingredients[r.ingredientId];
+            if (!ing) return;
+            const totalNeeded = r.qty * item.qty;
+            if (!aggregatedIngredients[r.ingredientId]) {
+                aggregatedIngredients[r.ingredientId] = { stockQty: ing.stockQty || 0, qtyRequired: 0 };
+            }
+            aggregatedIngredients[r.ingredientId].qtyRequired += totalNeeded;
+        });
     });
 
     Object.keys(aggregatedIngredients).forEach(ingId => {
         const ing = aggregatedIngredients[ingId];
         const clientQty = Math.min(ing.qtyRequired, parseFloat(window.clientSuppliedQty[ingId]) || 0);
-        const remainingAfterClient = Math.max(0, ing.qtyRequired - clientQty);
-        const stockUsed = Math.min(remainingAfterClient, ing.stockQty);
+        const stockUsed = Math.min(Math.max(0, ing.qtyRequired - clientQty), ing.stockQty);
 
         if (stockUsed > 0) {
             updates[`ingredients/${ingId}/stockQty`] = ing.stockQty - stockUsed;
         }
     });
 
-    if (Object.keys(updates).length > 0) {
-        update(ref(db), updates)
-            .then(() => {
-                showBanner("Batch successfully crafted! Personal inventory stock has been deducted.");
-                batchManifest = [];
-                window.clientSuppliedQty = {};
-                window.renderBatchCalculator();
-            })
-            .catch(err => {
-                showBanner("Error updating inventory: " + err.message, 'error');
-            });
-    } else {
-        showBanner("Batch executed! (No personal stock was deducted).");
+    update(ref(db), updates).then(() => {
+        showBanner("Batch executed and stock deducted.");
         batchManifest = [];
         window.clientSuppliedQty = {};
         window.renderBatchCalculator();
-    }
+    });
 };
 
 window.renderBatchCalculator = () => {
     const listDiv = document.getElementById('batch-manifest-list');
     const resultsDiv = document.getElementById('batch-results');
-
     if (!listDiv || !resultsDiv) return;
 
     if (batchManifest.length === 0) {
         listDiv.innerHTML = '';
-        resultsDiv.innerHTML = `<p style="color: var(--text-dim); font-size: 0.85rem;">Add potions above to calculate total requirements, costs, and profit.</p>`;
+        resultsDiv.innerHTML = `<p style="color: var(--text-dim); font-size: 0.85rem;">Add items above to calculate costs.</p>`;
         return;
     }
 
@@ -615,10 +549,10 @@ window.renderBatchCalculator = () => {
         if (!p) return '';
         return `
             <div class="item-row">
-                <span>${p.name} (${p.salePrice}g) ${p.bulkOnly ? '<span style="color:var(--custom-order); font-size:0.75rem;">(10x Bulk)</span>' : ''}</span>
+                <span>${p.name} (${p.salePrice}g)</span>
                 <div>
-                    <input type="number" value="${item.qty}" min="${p.bulkOnly ? 10 : 1}" step="${p.bulkOnly ? 10 : 1}" style="width: 70px;" onchange="window.updateBatchQty(${index}, this.value)"> units
-                    <button class="delete-btn" onclick="window.removeBatchRow(${index})">X</button>
+                    <input type="number" value="${item.qty}" min="${p.bulkOnly ? 10 : 1}" style="width: 60px;" onchange="window.updateBatchQty(${index}, this.value)">
+                    <button class="delete-btn" onclick="window.removeBatchRow(${index})" style="padding: 1px 5px;">X</button>
                 </div>
             </div>
         `;
@@ -630,7 +564,6 @@ window.renderBatchCalculator = () => {
     batchManifest.forEach(item => {
         const p = potions[item.potionId];
         if (!p) return;
-
         totalUnits += item.qty;
         defaultSalePrice += (p.salePrice || 0) * item.qty;
 
@@ -638,133 +571,56 @@ window.renderBatchCalculator = () => {
             p.recipe.forEach(r => {
                 const ing = ingredients[r.ingredientId];
                 const unitPrice = ing ? ing.price : 0;
-                const stockQty = ing ? (ing.stockQty || 0) : 0;
                 const totalNeeded = r.qty * item.qty;
-                const cost = unitPrice * totalNeeded;
-
-                fullGrossCraftCost += cost;
+                fullGrossCraftCost += unitPrice * totalNeeded;
 
                 if (!aggregatedIngredients[r.ingredientId]) {
                     aggregatedIngredients[r.ingredientId] = {
-                        id: r.ingredientId,
-                        name: r.name,
-                        qtyRequired: 0,
-                        unitPrice: unitPrice,
-                        stockQty: stockQty,
-                        grossCost: 0
+                        id: r.ingredientId, name: r.name, qtyRequired: 0, unitPrice, stockQty: ing ? (ing.stockQty || 0) : 0
                     };
                 }
                 aggregatedIngredients[r.ingredientId].qtyRequired += totalNeeded;
-                aggregatedIngredients[r.ingredientId].grossCost += cost;
             });
         }
     });
 
-    let totalClientCredit = 0, netCraftCost = 0, totalStockValueUsed = 0;
-    const sortedAggregated = Object.values(aggregatedIngredients).sort((a, b) => 
-        (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
-    );
+    let netCraftCost = 0, totalStockValueUsed = 0;
+    let html = `<div class="batch-summary"><h4>Sourcing Breakdown</h4><div style="margin-top: 8px; display: flex; flex-direction: column; gap: 6px;">`;
 
-    let html = `
-        <div class="batch-summary">
-            <h4>Ingredient Breakdown & Sourcing</h4>
-            <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
-    `;
-
-    sortedAggregated.forEach(ing => {
+    Object.values(aggregatedIngredients).forEach(ing => {
         const clientQty = Math.min(ing.qtyRequired, parseFloat(window.clientSuppliedQty[ing.id]) || 0);
-        const remainingAfterClient = Math.max(0, ing.qtyRequired - clientQty);
-        const stockUsed = Math.min(remainingAfterClient, ing.stockQty);
-        const toOrder = Math.max(0, remainingAfterClient - ing.stockQty);
+        const stockUsed = Math.min(Math.max(0, ing.qtyRequired - clientQty), ing.stockQty);
+        const toOrder = Math.max(0, ing.qtyRequired - clientQty - stockUsed);
 
-        const ingredientNetCost = toOrder * ing.unitPrice; 
-        const ingredientStockValue = stockUsed * ing.unitPrice; 
-        const ingredientClientCredit = clientQty * ing.unitPrice;
-
-        totalClientCredit += ingredientClientCredit;
-        netCraftCost += ingredientNetCost;
-        totalStockValueUsed += ingredientStockValue;
+        netCraftCost += toOrder * ing.unitPrice;
+        totalStockValueUsed += stockUsed * ing.unitPrice;
 
         html += `
-            <div class="item-row" style="background: rgba(0,0,0,0.15); padding: 8px; border-radius: 4px; border-left: 3px solid ${toOrder > 0 ? 'var(--danger)' : 'var(--success)'};">
-                <div style="flex: 1; min-width: 180px;">
-                    <strong>${ing.name}</strong> 
-                    <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 2px;">
-                        Req: ${ing.qtyRequired}x | Cost: ${ing.unitPrice}g/ea | 
-                        <span style="color: var(--stock-blue);">Stock: ${ing.stockQty}x</span>
-                    </div>
-                </div>
-                <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <label style="font-size: 0.75rem; color: var(--text-dim);">Client Provides:</label>
-                        <input type="number" value="${window.clientSuppliedQty[ing.id] || 0}" min="0" max="${ing.qtyRequired}" style="width: 55px;" 
-                            oninput="window.updateClientSupply('${ing.id}', this.value)">
-                    </div>
-                    <span style="font-size: 0.8rem; color: ${toOrder > 0 ? 'var(--danger)' : 'var(--success)'}; min-width: 130px; text-align: right; font-weight: bold;">
-                        ${toOrder > 0 ? `Order ${toOrder}x (${ingredientNetCost.toFixed(2)}g)` : 'Covered'}
-                    </span>
+            <div class="item-row" style="background: rgba(0,0,0,0.15); padding: 6px; font-size: 0.8rem;">
+                <span><strong>${ing.name}</strong> (Req: ${ing.qtyRequired})</span>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    Client: <input type="number" value="${window.clientSuppliedQty[ing.id] || 0}" min="0" style="width: 45px;" oninput="window.updateClientSupply('${ing.id}', this.value)">
+                    <span style="color: ${toOrder > 0 ? 'var(--danger)' : 'var(--success)'}; font-weight: bold;">${toOrder > 0 ? `Order ${toOrder}` : 'Covered'}</span>
                 </div>
             </div>
         `;
     });
 
     html += `</div>`;
-
     const netProfit = defaultSalePrice - netCraftCost - totalStockValueUsed;
-    const profitMargin = defaultSalePrice > 0 ? ((netProfit / defaultSalePrice) * 100).toFixed(0) : 0;
 
     html += `
-            <div class="batch-metrics">
-                <div class="metric-box">
-                    <span>Total Potions</span>
-                    <strong>${totalUnits} Units</strong>
-                </div>
-                <div class="metric-box">
-                    <span>Gross Craft Value</span>
-                    <span>${fullGrossCraftCost.toFixed(2)}g</span>
-                </div>
-                <div class="metric-box">
-                    <span>Client Savings</span>
-                    <strong style="color: var(--custom-order);">${totalClientCredit.toFixed(2)}g</strong>
-                </div>
-                <div class="metric-box">
-                    <span>Stock Value Used</span>
-                    <strong style="color: var(--stock-blue);">${totalStockValueUsed.toFixed(2)}g</strong>
-                </div>
-                <div class="metric-box">
-                    <span>Immediate Cost (To Order)</span>
-                    <strong style="color: var(--danger);">${netCraftCost.toFixed(2)}g</strong>
-                </div>
-                <div class="metric-box">
-                    <span>Default Sale Revenue</span>
-                    <strong style="color: var(--gold);">${defaultSalePrice.toFixed(2)}g</strong>
-                </div>
-                <div class="metric-box">
-                    <span>True Net Profit</span>
-                    <strong class="${netProfit >= 0 ? 'profit-text' : 'loss-text'}">${netProfit.toFixed(2)}g (${profitMargin}%)</strong>
-                </div>
+            <div class="batch-metrics" style="margin-top: 10px;">
+                <div class="metric-box"><span>Units</span><strong>${totalUnits}</strong></div>
+                <div class="metric-box"><span>Revenue</span><strong style="color: var(--gold);">${defaultSalePrice.toFixed(1)}g</strong></div>
+                <div class="metric-box"><span>Net Profit</span><strong class="${netProfit >= 0 ? 'profit-text' : 'loss-text'}">${netProfit.toFixed(1)}g</strong></div>
             </div>
-            
-            <button class="execute-batch-btn" onclick="window.executeBatchCraft()">Execute Batch & Deduct Stock</button>
+            <button class="execute-batch-btn" onclick="window.executeBatchCraft()" style="margin-top: 10px;">Execute Batch & Deduct Stock</button>
         </div>
     `;
 
     resultsDiv.innerHTML = html;
 };
-
-function getUsedIngredientIds() {
-    const usedIds = new Set();
-    if (potions) {
-        Object.values(potions).forEach(p => {
-            if (p.recipe && Array.isArray(p.recipe)) {
-                p.recipe.forEach(r => {
-                    if (r.ingredientId) usedIds.add(String(r.ingredientId));
-                });
-            }
-        });
-    }
-    return usedIds;
-}
 
 window.renderIngredientsList = () => {
     const ingList = document.getElementById('ingredients-list');
@@ -772,44 +628,21 @@ window.renderIngredientsList = () => {
     const unusedContainer = document.getElementById('unused-ingredients-container');
     const unusedCountSpan = document.getElementById('unused-count');
     const searchInput = document.getElementById('ingredient-search-filter');
-    
     if (!ingList || !unusedList) return;
 
-    const usedIds = getUsedIngredientIds();
-    let ingArray = Object.values(ingredients);
-
-    let activeArray = [];
-    let unusedArray = [];
-
-    ingArray.forEach(i => {
-        if (usedIds.has(String(i.id))) {
-            activeArray.push(i);
-        } else {
-            unusedArray.push(i);
-        }
+    const usedIds = new Set();
+    Object.values(potions).forEach(p => {
+        if (p.recipe) p.recipe.forEach(r => usedIds.add(String(r.ingredientId)));
     });
 
-    activeArray.sort((a, b) => {
-        const aStock = a.stockQty || 0;
-        const aThreshold = a.threshold || 0;
-        const aIsLow = aStock <= aThreshold;
-        const aIsUnpriced = (a.price === 0 || a.price === '' || isNaN(a.price));
-
-        const bStock = b.stockQty || 0;
-        const bThreshold = b.threshold || 0;
-        const bIsLow = bStock <= bThreshold;
-        const bIsUnpriced = (b.price === 0 || b.price === '' || isNaN(b.price));
-
-        if (aIsLow && !bIsLow) return -1;
-        if (!aIsLow && bIsLow) return 1;
-
-        if (!aIsUnpriced && bIsUnpriced) return -1;
-        if (aIsUnpriced && !bIsUnpriced) return 1;
-
-        return (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' });
+    let activeArray = [], unusedArray = [];
+    Object.values(ingredients).forEach(i => {
+        if (usedIds.has(String(i.id))) activeArray.push(i);
+        else unusedArray.push(i);
     });
 
-    unusedArray.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
+    activeArray.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    unusedArray.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
     if (unusedArray.length > 0) {
         unusedContainer.classList.remove('hidden');
@@ -819,100 +652,50 @@ window.renderIngredientsList = () => {
     }
 
     const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
-    let filteredActive = activeArray;
-    if (query) {
-        filteredActive = activeArray.filter(i => (i.name || '').toLowerCase().includes(query));
-    }
+    let filtered = query ? activeArray.filter(i => (i.name || '').toLowerCase().includes(query)) : activeArray;
 
-    if (filteredActive.length === 0) {
-        ingList.innerHTML = `<p style="color: var(--text-dim); font-size: 0.85rem; margin: 0; padding: 6px;">No active ingredients found.</p>`;
-    } else {
-        ingList.innerHTML = filteredActive.map(i => generateIngredientRowHTML(i, false)).join('');
-    }
-
-    if (unusedArray.length === 0) {
-        unusedList.innerHTML = `<p style="color: var(--text-dim); font-size: 0.85rem; margin: 0; padding: 6px;">No unused ingredients.</p>`;
-    } else {
-        unusedList.innerHTML = unusedArray.map(i => generateIngredientRowHTML(i, true)).join('');
-    }
+    ingList.innerHTML = filtered.length ? filtered.map(i => generateIngredientRowHTML(i, false)).join('') : '<p style="color:var(--text-dim);font-size:0.8rem;">No ingredients found.</p>';
+    unusedList.innerHTML = unusedArray.length ? unusedArray.map(i => generateIngredientRowHTML(i, true)).join('') : '';
 };
 
 function generateIngredientRowHTML(i, isUnused) {
     const isEditing = window.editingIngredientId === i.id;
-    const stockQty = i.stockQty || 0;
-    const threshold = i.threshold || 0;
-    const isLowStock = stockQty <= threshold;
-    const isUnpriced = (i.price === 0 || i.price === '' || isNaN(i.price));
-
-    let rowClass = 'item-row';
-    if (isUnused) {
-        rowClass += ' unused';
-    } else if (isLowStock) {
-        rowClass += ' low-stock';
-    } else if (isUnpriced) {
-        rowClass += ' unpriced';
-    }
-
     if (isEditing) {
         return `
-            <div class="${rowClass}" style="border-color: var(--accent);">
-                <div style="flex: 2; display: flex; flex-direction: column; gap: 4px;">
-                    <label style="font-size: 0.7rem; color: var(--text-dim);">Name:</label>
-                    <input type="text" id="edit-ing-name-${i.id}" value="${i.name}" style="width: 100%; box-sizing: border-box;">
+            <div class="item-row" style="flex-direction: column; gap: 4px; border-color: var(--accent);">
+                <input type="text" id="edit-ing-name-${i.id}" value="${i.name}" style="width: 100%;">
+                <div style="display: flex; gap: 4px; width: 100%;">
+                    <input type="number" id="edit-ing-price-${i.id}" value="${i.price}" step="0.01" placeholder="Price" style="flex: 1;">
+                    <input type="number" id="edit-ing-stock-${i.id}" value="${i.stockQty || 0}" placeholder="Stock" style="flex: 1;">
+                    <input type="number" id="edit-ing-threshold-${i.id}" value="${i.threshold || 0}" placeholder="Min" style="flex: 1;">
                 </div>
-                <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-                    <label style="font-size: 0.7rem; color: var(--text-dim);">Price (g):</label>
-                    <input type="number" id="edit-ing-price-${i.id}" value="${i.price}" step="0.01" style="width: 100%; box-sizing: border-box;">
-                </div>
-                <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-                    <label style="font-size: 0.7rem; color: var(--text-dim);">Stock:</label>
-                    <input type="number" id="edit-ing-stock-${i.id}" value="${stockQty}" min="0" style="width: 100%; box-sizing: border-box;">
-                </div>
-                <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-                    <label style="font-size: 0.7rem; color: var(--text-dim);">Threshold:</label>
-                    <input type="number" id="edit-ing-threshold-${i.id}" value="${threshold}" min="0" style="width: 100%; box-sizing: border-box;">
-                </div>
-                <div style="display: flex; gap: 6px; align-items: flex-end; margin-top: 14px;">
-                    <button class="save-btn" onclick="window.saveIngredientEdit(${i.id})">Save</button>
-                    <button onclick="window.cancelEditIngredient()" style="background: var(--border); padding: 3px 8px; font-size: 0.75rem; border-radius: 4px;">Cancel</button>
-                </div>
-            </div>
-        `;
-    } else {
-        return `
-            <div class="${rowClass}">
-                <div style="flex: 2; display: flex; align-items: center; gap: 8px;">
-                    <strong>${i.name}</strong>
-                    ${isLowStock ? `<span style="font-size: 0.65rem; background: var(--danger); color: #fff; padding: 1px 5px; border-radius: 3px; font-weight: bold;">Needs Order</span>` : ''}
-                    ${isUnpriced ? `<span style="font-size: 0.65rem; background: var(--warning); color: #000; padding: 1px 5px; border-radius: 3px; font-weight: bold;">Check Price</span>` : ''}
-                </div>
-                <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; flex: 2; justify-content: flex-end;">
-                    <span style="font-size: 0.85rem; color: var(--gold);">Price: <strong>${i.price}g</strong></span>
-                    <span style="font-size: 0.85rem; color: var(--stock-blue);">Stock: <strong>${stockQty}</strong> <span style="font-size: 0.7rem; color: var(--text-dim);">(Min: ${threshold})</span></span>
-                    <div style="display: flex; gap: 5px;">
-                        <button class="edit-btn" onclick="window.startEditIngredient(${i.id})">Edit</button>
-                        <button class="delete-btn" onclick="window.deleteIngredient(${i.id})">Delete</button>
-                    </div>
+                <div style="display: flex; gap: 4px; justify-content: flex-end; width: 100%;">
+                    <button onclick="window.saveIngredientEdit(${i.id})" style="padding: 2px 8px; background: var(--success); font-size: 0.75rem;">Save</button>
+                    <button onclick="window.cancelEditIngredient()" style="padding: 2px 8px; background: var(--border); font-size: 0.75rem;">Cancel</button>
                 </div>
             </div>
         `;
     }
+    return `
+        <div class="item-row">
+            <span style="font-size: 0.85rem;"><strong>${i.name}</strong> (${i.price}g)</span>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <span style="font-size: 0.8rem; color: var(--stock-blue);">Stock: ${i.stockQty || 0}</span>
+                <button class="edit-btn" onclick="window.startEditIngredient(${i.id})" style="padding: 1px 5px; font-size: 0.7rem;">Edit</button>
+                <button class="delete-btn" onclick="window.deleteIngredient(${i.id})" style="padding: 1px 5px; font-size: 0.7rem;">X</button>
+            </div>
+        </div>
+    `;
 }
 
 window.renderAdminSelects = () => {
     const batchSelect = document.getElementById('batch-potion-select');
     const recipeSelect = document.getElementById('recipe-ing-select');
-
     if (batchSelect) {
-        const allPotionsList = Object.values(potions);
-        allPotionsList.sort((a, b) => (a.salePrice || 0) - (b.salePrice || 0));
-        batchSelect.innerHTML = allPotionsList.map(p => `<option value="${p.id}">${p.name} (${Math.round(p.salePrice || 0)}g)</option>`).join('');
+        batchSelect.innerHTML = Object.values(potions).map(p => `<option value="${p.id}">${p.name} (${Math.round(p.salePrice || 0)}g)</option>`).join('');
     }
-
     if (recipeSelect) {
-        const allIngList = Object.values(ingredients);
-        allIngList.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
-        recipeSelect.innerHTML = allIngList.map(i => `<option value="${i.id}">${i.name} (${i.price}g/ea)</option>`).join('');
+        recipeSelect.innerHTML = Object.values(ingredients).map(i => `<option value="${i.id}">${i.name} (${i.price}g)</option>`).join('');
     }
 };
 
