@@ -432,6 +432,12 @@ window.togglePotionForceOut = (id, currentForceOut) => {
     update(ref(db, `potions/${id}`), { forceOut: !currentForceOut });
 };
 
+window.updatePotionStock = (id, newStockVal) => {
+    const newStock = parseInt(newStockVal);
+    if (isNaN(newStock) || newStock < 0) return;
+    update(ref(db, `potions/${id}`), { stockQty: newStock });
+};
+
 window.renderPotionsList = () => {
     const listDiv = document.getElementById('admin-potions-list');
     const searchInput = document.getElementById('potion-search-filter');
@@ -465,10 +471,14 @@ window.renderPotionsList = () => {
                     <strong>${p.name}</strong> 
                     <span style="font-size: 0.75rem; color: var(--accent);">(${p.category || 'General'})</span>
                     <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 2px;">
-                        Price: ${Math.round(p.salePrice || 0)}g | Stock: ${stockQty} ${p.bulkOnly ? '| Bulk (10x)' : ''}
+                        Price: ${Math.round(p.salePrice || 0)}g ${p.bulkOnly ? '| Bulk (10x)' : ''}
                     </div>
                 </div>
-                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                        <label style="font-size: 0.75rem; color: var(--text-dim);">Stock:</label>
+                        <input type="number" value="${stockQty}" min="0" style="width: 65px;" onchange="window.updatePotionStock(${p.id}, this.value)">
+                    </div>
                     <button onclick="window.togglePotionShopStatus(${p.id}, ${inShop})" style="background: ${inShop ? 'var(--success)' : 'var(--border)'}; padding: 3px 8px; font-size: 0.75rem;" title="Toggle visibility in customer shop">
                         ${inShop ? 'In Shop' : 'Hidden'}
                     </button>
