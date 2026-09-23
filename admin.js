@@ -367,6 +367,7 @@ window.savePotion = () => {
         }
 
         window.cancelEditPotion();
+        showBanner("Potion saved successfully!");
     } else {
         showBanner("Please provide a valid potion name and sale price.", 'error');
     }
@@ -410,6 +411,76 @@ window.cancelEditPotion = () => {
     if (titleElem) titleElem.innerText = "Add New Potion to the Catalog";
     document.getElementById('save-potion-btn').innerText = "Create Potion";
     document.getElementById('cancel-edit-btn').classList.add('hidden');
+};
+
+window.deletePotion = (id) => {
+    if (window.confirm("Are you sure you want to delete this potion from the catalog?")) {
+        if (document.getElementById('editing-potion-id').value == id) {
+            window.cancelEditPotion();
+        }
+        remove(ref(db, `potions/${id}`)).then(() => {
+            showBanner("Potion deleted successfully.");
+        });
+    }
+};
+
+window.togglePotionShopStatus = (id, currentInShop) => {
+    update(ref(db, `potions/${id}`), { inShop: !currentInShop });
+};
+
+window.togglePotionForceOut = (id, currentForceOut) => {
+    update(ref(db, `potions/${id}`), { forceOut: !currentForceOut });
+};
+
+window.renderPotionsList = () => {
+    const listDiv = document.getElementById('admin-potions-list');
+    const searchInput = document.getElementById('potion-search-filter');
+    if (!listDiv) return;
+
+    const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+    let potionArray = Object.values(potions);
+
+    if (query) {
+        potionArray = potionArray.filter(p => 
+            (p.name || '').toLowerCase().includes(query) || 
+            (p.category || '').toLowerCase().includes(query)
+        );
+    }
+
+    potionArray.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
+
+    if (potionArray.length === 0) {
+        listDiv.innerHTML = `<p style="color: var(--text-dim); font-size: 0.85rem; margin: 0; padding: 6px;">No potions found.</p>`;
+        return;
+    }
+
+    listDiv.innerHTML = potionArray.map(p => {
+        const inShop = p.inShop !== false;
+        const forceOut = p.forceOut === true;
+        const stockQty = p.stockQty !== undefined ? p.stockQty : 0;
+
+        return `
+            <div class="item-row" style="align-items: center;">
+                <div style="flex: 2; min-width: 160px;">
+                    <strong>${p.name}</strong> 
+                    <span style="font-size: 0.75rem; color: var(--accent);">(${p.category || 'General'})</span>
+                    <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 2px;">
+                        Price: ${Math.round(p.salePrice || 0)}g | Stock: ${stockQty} ${p.bulkOnly ? '| Bulk (10x)' : ''}
+                    </div>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <button onclick="window.togglePotionShopStatus(${p.id}, ${inShop})" style="background: ${inShop ? 'var(--success)' : 'var(--border)'}; padding: 3px 8px; font-size: 0.75rem;" title="Toggle visibility in customer shop">
+                        ${inShop ? 'In Shop' : 'Hidden'}
+                    </button>
+                    <button onclick="window.togglePotionForceOut(${p.id}, ${forceOut})" style="background: ${forceOut ? 'var(--danger)' : 'var(--border)'}; padding: 3px 8px; font-size: 0.75rem;" title="Force out of stock">
+                        ${forceOut ? 'Forced Out' : 'Normal Stock'}
+                    </button>
+                    <button class="edit-btn" onclick="window.editPotion(${p.id})">Edit</button>
+                    <button class="delete-btn" onclick="window.deletePotion(${p.id})">Delete</button>
+                </div>
+            </div>
+        `;
+    }).join('');
 };
 
 window.addBatchRow = () => {
@@ -838,6 +909,7 @@ window.renderAdminSelects = () => {
 window.renderAdmin = () => {
     if (!currentUser) return;
     window.renderIngredientsList();
+    window.renderPotionsList();
     window.renderBatchCalculator();
     window.renderAdminSelects();
 };
