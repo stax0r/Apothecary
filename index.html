@@ -3,51 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Silas' Brews</title>
+    <title>Silas' Brews - Apothecary Storefront</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div id="status-banner"></div>
-
-<button id="config-btn" class="admin-toggle hidden" onclick="toggleConfigModal()" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); background: var(--card-bg); padding: 6px 12px; font-size: 0.8rem;">⚙️ Config</button>
-
-<div id="config-modal" class="login-modal hidden" style="position: fixed; bottom: 65px; right: 20px; z-index: 10000; width: 310px; max-height: 75vh; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.6); padding: 15px;">
-    <h3 style="font-size: 1rem;">Store config</h3>
-    
-    <h4 style="font-size: 0.85rem; margin-top: 10px; margin-bottom: 4px;">Order Receiving Locations</h4>
-    <p style="font-size: 0.7rem; color: var(--text-dim); margin-top: 0; margin-bottom: 8px;">Add, choose active, or delete drop-off locations.</p>
-    
-    <div class="form-group" style="margin-bottom: 10px;">
-        <input type="text" id="config-new-location-name" placeholder="New location name..." style="flex: 1; box-sizing: border-box; font-size: 0.85rem; padding: 6px;">
-        <button onclick="addNewLocation()" style="background: var(--success); padding: 6px 10px; font-size: 0.8rem;">Add</button>
-    </div>
-
-    <div style="margin-bottom: 12px;">
-        <label style="font-size: 0.75rem; color: var(--text-dim); display: block; margin-bottom: 4px;">Active Location Selection</label>
-        <div style="display: flex; gap: 6px;">
-            <select id="config-location-select" style="flex: 1; font-size: 0.85rem; padding: 6px;" onchange="setActiveLocation(this.value)"></select>
-            <button onclick="deleteActiveLocation()" class="delete-btn" style="padding: 6px 10px; font-size: 0.75rem;" title="Delete selected location">Delete</button>
-        </div>
-    </div>
-
-    <h4 style="font-size: 0.85rem; margin-top: 15px; margin-bottom: 4px;">Category Display Order</h4>
-    <p style="font-size: 0.7rem; color: var(--text-dim); margin-top: 0; margin-bottom: 8px;">Reorder categories.</p>
-    <div id="category-order-list"></div>
-
-    <div class="theme-picker">
-        <h4>Store Theme</h4>
-        <p>Choose the atmosphere for your apothecary.</p>
-        <select id="theme-select" onchange="setStoreTheme(this.value)">
-            <option value="noble">Noble Apothecary</option>
-            <option value="parchment">Classic Parchment</option>
-            <option value="dark">Midnight Cellar</option>
-            <option value="herbal">Herbal Conservatory</option>
-        </select>
-    </div>
-
-    <button onclick="toggleConfigModal()" style="margin-top: 10px; width: 100%; background: var(--border); padding: 6px; font-size: 0.8rem;">Close</button>
-</div>
 
 <div class="container">
     <header>
@@ -55,117 +16,12 @@
             <h1>Silas' Brews</h1>
             <span class="subtitle">Proprietor: Silas Montclair</span>
         </div>
-        <button id="auth-btn" class="admin-toggle" onclick="toggleAuthModal()">Alchemist Login</button>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <a href="admin.html" class="admin-toggle" style="padding: 6px 14px; text-decoration: none; font-size: 0.85rem; display: inline-block;">Alchemist Login</a>
+        </div>
     </header>
 
-    <div id="login-modal" class="login-modal hidden" role="dialog" aria-modal="true" aria-labelledby="login-title">
-        <div class="login-dialog">
-            <button class="modal-close-btn" type="button" onclick="toggleAuthModal()" aria-label="Close login">×</button>
-            <span class="login-kicker">Private cellar access</span>
-            <h2 id="login-title">Brew Master Login</h2>
-            <p class="login-intro">Enter your credentials to tend the apothecary.</p>
-            <div class="form-group" style="margin-top: 18px;">
-                <input type="email" id="login-email" placeholder="Email">
-                <input type="password" id="login-password" placeholder="Password">
-                <button onclick="login()">Enter the cellar</button>
-            </div>
-            <p id="login-error" style="color: var(--danger); margin: 0; font-size: 0.85rem;"></p>
-        </div>
-    </div>
-
-    <div id="admin-panel" class="admin-panel hidden">
-        <div class="collapse-header" onclick="toggleSection('ing-collapsible-wrapper', 'ing-collapse-btn')">
-            <h2>Manage Ingredients & Stock</h2>
-            <button class="collapse-btn" id="ing-collapse-btn">Hide ▲</button>
-        </div>
-        
-        <div id="ing-collapsible-wrapper" style="margin-top: 15px;">
-            <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 15px;">
-                <h4 style="margin-bottom: 8px; font-size: 0.9rem; color: var(--stock-blue);">Quick Stock Deposit</h4>
-                <div class="form-group" style="margin-bottom: 0; position: relative;">
-                    <div class="autocomplete-wrapper">
-                        <input type="text" id="quick-deposit-input" placeholder="Type ingredient to deposit stock..." style="width: 100%; box-sizing: border-box;" oninput="handleQuickDepositInput(this.value)" autocomplete="off">
-                        <div id="quick-deposit-dropdown" class="autocomplete-dropdown hidden"></div>
-                    </div>
-                    <input type="number" id="quick-deposit-qty" placeholder="Qty to Add" value="1" min="1" style="width: 90px;">
-                    <button onclick="executeQuickDeposit()" style="background: var(--success);">Deposit</button>
-                </div>
-            </div>
-
-            <details style="margin-bottom: 15px; background: rgba(0,0,0,0.1); padding: 10px; border-radius: 6px; border: 1px dashed var(--border);">
-                <summary style="cursor: pointer; font-weight: bold; color: var(--accent); font-size: 0.9rem;">+ Register New Ingredient</summary>
-                <div class="form-group" style="margin-top: 10px; margin-bottom: 0;">
-                    <input type="text" id="ing-name" placeholder="Ingredient Name" style="flex: 2;">
-                    <input type="number" id="ing-price" placeholder="Price/Unit" step="0.01" style="flex: 1;">
-                    <input type="number" id="ing-stock" placeholder="Initial Stock" min="0" value="0" style="flex: 1;">
-                    <input type="number" id="ing-threshold" placeholder="Order Threshold" min="0" value="0" style="flex: 1;" title="Stock limit that triggers low stock warning">
-                    <button onclick="addIngredient()">Add</button>
-                </div>
-            </details>
-
-            <div style="background: var(--bg-color); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 15px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px; flex-wrap: wrap;">
-                    <h4 style="font-size: 0.95rem;">Active Ingredient Directory</h4>
-                    <input type="text" id="ingredient-search-filter" placeholder="Search active ingredients..." style="width: 220px;" oninput="renderIngredientsList()">
-                </div>
-                <div id="ingredients-list" style="max-height: 280px; overflow-y: auto; padding-right: 4px;"></div>
-            </div>
-
-            <div id="unused-ingredients-container" style="background: var(--bg-color); border: 1px dashed var(--border); border-radius: 6px; padding: 12px;" class="hidden">
-                <div class="collapse-header" onclick="toggleSection('unused-collapsible-wrapper', 'unused-collapse-btn')">
-                    <h4 style="font-size: 0.95rem; color: var(--text-dim);">Unused Ingredients (<span id="unused-count">0</span>)</h4>
-                    <button class="collapse-btn" id="unused-collapse-btn" style="font-size: 0.75rem;">Show ▼</button>
-                </div>
-                <div id="unused-collapsible-wrapper" class="hidden" style="margin-top: 10px; max-height: 200px; overflow-y: auto; padding-right: 4px;">
-                    <div id="unused-ingredients-list"></div>
-                </div>
-            </div>
-        </div>
-
-        <hr style="border-color: var(--border); margin: 20px 0;">
-
-        <div class="collapse-header" onclick="toggleSection('potion-creator-container', 'brew-collapse-btn')">
-            <h2>Add New Potion to Catalog</h2>
-            <button class="collapse-btn" id="brew-collapse-btn">Hide ▲</button>
-        </div>
-        <div id="potion-creator-container" class="potion-creator-panel">
-            <div id="brew-collapsible-wrapper" style="margin-top: 15px;">
-                <input type="hidden" id="editing-potion-id" value="">
-                <div class="form-group">
-                    <input type="text" id="potion-name" placeholder="Potion Name" style="flex: 2;">
-                    <input type="text" id="potion-category" placeholder="Category (e.g. Restoration)" style="flex: 1;">
-                    <input type="number" id="potion-sale-price" placeholder="Sale Price" step="0.01" style="flex: 1;">
-                    <input type="number" id="potion-stock-qty" placeholder="Stock Qty" min="0" value="1" style="flex: 1;">
-                </div>
-                <div class="form-group">
-                    <textarea id="potion-desc" placeholder="Potion Description or Magical Effects..."></textarea>
-                </div>
-                
-                <div class="form-group" style="align-items: center;">
-                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                        <input type="checkbox" id="potion-bulk-only" style="width: 18px; height: 18px;">
-                        <span style="font-size: 0.9rem; color: var(--gold);">Require Bulk Order (Sold in 10x minimum/multiples)</span>
-                    </label>
-                </div>
-
-                <h4>Recipe Ingredients (Optional for Found Potions)</h4>
-                <div class="form-group">
-                    <select id="recipe-ing-select"></select>
-                    <input type="number" id="recipe-ing-qty" placeholder="Qty" value="1" min="1">
-                    <button onclick="addIngredientToRecipe()">+ Add to Recipe</button>
-                </div>
-
-                <ul id="recipe-preview-list"></ul>
-                <p>Calculated Base Cost: <strong id="calculated-cost">0</strong> gold</p>
-
-                <div style="display: flex; gap: 10px; margin-top: 10px;">
-                    <button id="save-potion-btn" onclick="savePotion()" style="flex: 1;">Create Potion</button>
-                    <button id="cancel-edit-btn" onclick="cancelEditPotion()" class="hidden" style="background: #555;">Cancel Edit</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
+    <!-- Customer Satchel Panel -->
     <div id="cart-panel" class="cart-panel">
         <div class="collapse-header" onclick="toggleSection('satchel-collapsible-wrapper', 'satchel-collapse-btn')">
             <h2>Satchel</h2>
@@ -177,14 +33,10 @@
         <div id="satchel-collapsible-wrapper" style="margin-top: 15px;">
             <div id="cart-items-list"></div>
             <div id="cart-summary-area"></div>
-            <div id="admin-sales-helper-container" style="margin-top: 20px; border-top: 1px dashed var(--border); padding-top: 15px;" class="hidden">
-                <h3 style="font-size: 1rem; margin-bottom: 10px; color: var(--accent);">Satchel Sales Calculator (Admin View)</h3>
-                <div id="satchel-override-control-area"></div>
-                <div id="admin-sales-helper-content"></div>
-            </div>
         </div>
     </div>
 
+    <!-- Custom Order Panel -->
     <div id="custom-panel" class="custom-panel">
         <div class="collapse-header" onclick="toggleSection('custom-collapsible-wrapper', 'custom-collapse-btn')">
             <h2 style="color: var(--custom-order);">Custom Order</h2>
@@ -196,20 +48,6 @@
         <div id="custom-collapsible-wrapper" style="margin-top: 15px;">
             <div id="custom-items-list"></div>
             <div id="custom-summary-area"></div>
-            
-            <div id="bulk-batch-section" class="hidden">
-                <hr style="border-color: var(--border); margin: 20px 0;">
-
-                <h2>Bulk Batch</h2>
-                <div class="form-group" style="margin-top: 10px;">
-                    <select id="batch-potion-select" style="flex: 2;"></select>
-                    <input type="number" id="batch-qty" placeholder="Qty" value="1" min="1" style="flex: 1;">
-                    <button onclick="addBatchRow()">+ Add Potion to Order</button>
-                </div>
-
-                <div id="batch-manifest-list"></div>
-                <div id="batch-results"></div>
-            </div>
         </div>
     </div>
 
@@ -219,10 +57,11 @@
 </div>
 
 <footer>
-    <span><strong>OOC:</strong> Whether you have questions, feedback, or just need to get in touch, please feel free to drop me a message on Discord at <code class="copyable-name" title="Click to copy">stax0r</code>. Always happy to help!</span>
+    <span><strong>OOC:</strong> Whether you have questions, feedback, or just need to get in touch, please feel free to drop me a message on Discord at <code class="copyable-name" title="Click to copy">stax0r</code>. Always happy to help![cite: 1]</span>
 </footer>
 
-<script type="module" src="app.js"></script>
+<!-- JavaScript Entry Point for Customers -->
+<script type="module" src="store.js"></script>
 
 </body>
 </html>
