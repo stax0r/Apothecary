@@ -199,12 +199,9 @@
                     <!-- Batch Queue List -->
                     <div id="batch-queue-container" style="margin-bottom: 0.85rem;"></div>
 
-                    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.85rem;">
-                        <button class="btn-accent" style="flex: 1;" onclick="window.calculateBatch()">Evaluate Costs</button>
-                        <button class="btn-accent" style="flex: 1.2; background: var(--success); border-color: var(--success); color: #000;" onclick="window.craftAndDeductStock()">&gt; CRAFT and DEDUCT stock</button>
-                    </div>
+                    <button class="btn-accent" style="width: 100%; margin-bottom: 0.85rem; background: var(--success); border-color: var(--success); color: #000;" onclick="window.craftAndDeductStock()">&gt; CRAFT and DEDUCT stock</button>
 
-                    <div id="batch-results" style="font-family: var(--font-mono); font-size: 0.825rem; background: var(--bg); padding: 0.85rem; border: 1px solid var(--border); border-radius: 6px; white-space: pre-wrap;">Add potions to the batch list above to evaluate costs or craft.</div>
+                    <div id="batch-results" style="font-family: var(--font-mono); font-size: 0.825rem; background: var(--bg); padding: 0.85rem; border: 1px solid var(--border); border-radius: 6px; white-space: pre-wrap; user-select: all;">Add potions to the batch list above to evaluate costs and required ingredients.</div>
                 </div>
 
                 <div class="panel">

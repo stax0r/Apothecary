@@ -6,7 +6,7 @@ let ingredients = {};
 let potions = {};
 let currentRecipe = [];
 let editRecipeArray = [];
-let batchQueue = []; // Holds multi-potion batch items: [{ potionId, name, qty }]
+let batchQueue = [];
 let toastDismissed = false;
 
 onAuthStateChanged(auth, (user) => {
@@ -26,6 +26,7 @@ onValue(ref(db, 'ingredients'), (snapshot) => {
     window.renderIngredients();
     renderRecipeSelectOptions();
     checkIngredientsAttention();
+    window.calculateBatch();
 });
 
 onValue(ref(db, 'potions'), (snapshot) => {
@@ -33,6 +34,7 @@ onValue(ref(db, 'potions'), (snapshot) => {
     window.renderPotions();
     renderBatchPotionSelectOptions();
     checkIngredientsAttention();
+    window.calculateBatch();
 });
 
 window.login = () => {
@@ -206,7 +208,7 @@ window.renderIngredients = () => {
     }).join('');
 };
 
-// --- MULTI-POTION BATCH QUEUE LOGIC ---
+// --- MULTI-POTION BATCH QUEUE & AUTOMATIC EVALUATION ---
 function renderBatchPotionSelectOptions() {
     const select = document.getElementById('batch-potion-select');
     if (select) {
@@ -234,11 +236,13 @@ window.addPotionToBatch = () => {
     }
 
     renderBatchQueue();
+    window.calculateBatch();
 };
 
 window.removeBatchItem = (index) => {
     batchQueue.splice(index, 1);
     renderBatchQueue();
+    window.calculateBatch();
 };
 
 function renderBatchQueue() {
@@ -262,50 +266,74 @@ function renderBatchQueue() {
     `;
 }
 
-// --- EVALUATE MULTI-POTION BATCH COSTS ---
+// --- AUTOMATIC RE-CALCULATION & FORMATTED TEXT GENERATION ---
 window.calculateBatch = () => {
     const resultsDiv = document.getElementById('batch-results');
+    if (!resultsDiv) return;
+
     if (batchQueue.length === 0) {
-        resultsDiv.innerText = "Please add at least one potion to the batch queue.";
+        resultsDiv.innerText = "Add potions to the batch list above to evaluate costs and required ingredients.";
         return;
     }
 
-    let totalCraftCost = 0;
+    let totalMaterialCost = 0;
+    let totalGrossRevenue = 0;
     const aggregatedIngredients = {};
 
     batchQueue.forEach(batchItem => {
         const p = potions[batchItem.potionId];
-        if (p && p.recipe && Array.isArray(p.recipe)) {
-            p.recipe.forEach(r => {
-                const needed = (r.qty || 1) * batchItem.qty;
-                if (!aggregatedIngredients[r.ingredientId]) {
-                    aggregatedIngredients[r.ingredientId] = {
-                        name: r.name,
-                        needed: 0
-                    };
-                }
-                aggregatedIngredients[r.ingredientId].needed += needed;
-            });
+        if (p) {
+            totalGrossRevenue += (p.salePrice || 0) * batchItem.qty;
+            if (p.recipe && Array.isArray(p.recipe)) {
+                p.recipe.forEach(r => {
+                    const needed = (r.qty || 1) * batchItem.qty;
+                    if (!aggregatedIngredients[r.ingredientId]) {
+                        aggregatedIngredients[r.ingredientId] = {
+                            name: r.name,
+                            needed: 0
+                        };
+                    }
+                    aggregatedIngredients[r.ingredientId].needed += needed;
+                });
+            }
         }
     });
 
-    let report = `BATCH RUN EVALUATION (${batchQueue.length} Potion Type(s))\n==============================\n`;
-    
+    let ingredientLines = [];
+    let warnings = [];
+
     Object.keys(aggregatedIngredients).forEach(ingId => {
         const item = aggregatedIngredients[ingId];
         const ing = ingredients[ingId];
         const unitPrice = ing ? (ing.price || 0) : 0;
         const lineCost = item.needed * unitPrice;
-        totalCraftCost += lineCost;
+        totalMaterialCost += lineCost;
 
-        report += `• ${item.name}: ${item.needed} required (${unitPrice}g/unit) = ${lineCost.toFixed(2)}g\n`;
-        if (!ing || !ing.price) report += `   [!] WARNING: Unregistered price for ${item.name}!\n`;
+        ingredientLines.push(`• ${item.name} x${item.needed}`);
+
+        if (!ing || !ing.price) {
+            warnings.push(`⚠️ ${item.name}: Missing registered price`);
+        }
         if (ing && (ing.stockQty || 0) < item.needed) {
-            report += `   [!] WARNING: Insufficient Stock! Needed: ${item.needed}, Available: ${ing.stockQty || 0}\n`;
+            warnings.push(`⚠️ ${item.name}: Insufficient stock (Need ${item.needed}, Available: ${ing.stockQty || 0})`);
         }
     });
 
-    report += `==============================\nTotal Material Cost: ${totalCraftCost.toFixed(2)} Gold`;
+    const netProfit = totalGrossRevenue - totalMaterialCost;
+    const margin = totalGrossRevenue > 0 ? ((netProfit / totalGrossRevenue) * 100).toFixed(1) : "0.0";
+
+    let report = `--- NEEDED INGREDIENTS LIST ---\n`;
+    report += ingredientLines.length > 0 ? ingredientLines.join('\n') : "No ingredients required.";
+
+    if (warnings.length > 0) {
+        report += `\n\n--- INVENTORY ALERTS ---\n` + warnings.join('\n');
+    }
+
+    report += `\n\n--- FINANCIAL SUMMARY ---\n`;
+    report += `Production Cost : ${totalMaterialCost.toFixed(2)} Gold\n`;
+    report += `Gross Revenue   : ${totalGrossRevenue.toFixed(2)} Gold\n`;
+    report += `Net Profit      : ${netProfit.toFixed(2)} Gold (${margin}% margin)`;
+
     resultsDiv.innerText = report;
 };
 
@@ -367,7 +395,7 @@ window.craftAndDeductStock = async () => {
         alert("Batch successfully crafted! Material stock has been deducted.");
         batchQueue = [];
         renderBatchQueue();
-        document.getElementById('batch-results').innerText = "Crafting completed. Cellar stock updated in database.";
+        window.calculateBatch();
     } catch (err) {
         alert("Error deducting stock: " + err.message);
     }
