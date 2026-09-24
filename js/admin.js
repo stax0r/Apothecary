@@ -9,6 +9,25 @@ let editRecipeArray = [];
 let batchQueue = [];
 let toastDismissed = false;
 
+window.showToast = (message, type = 'info') => {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
+    const toast = document.createElement('div');
+    toast.className = `general-toast ${type}`;
+    toast.innerText = message;
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'fadeOut 0.3s ease forwards';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+};
+
 onAuthStateChanged(auth, (user) => {
     const modal = document.getElementById('login-modal');
     const dashboard = document.getElementById('admin-dashboard');
@@ -40,7 +59,7 @@ onValue(ref(db, 'potions'), (snapshot) => {
 window.login = () => {
     const email = document.getElementById('login-email').value;
     const pass = document.getElementById('login-password').value;
-    signInWithEmailAndPassword(auth, email, pass).catch(err => alert(err.message));
+    signInWithEmailAndPassword(auth, email, pass).catch(err => window.showToast(err.message, "error"));
 };
 
 window.logout = () => signOut(auth);
@@ -57,7 +76,7 @@ window.addIngredient = () => {
     const stock = parseInt(stockInput.value) || 0;
     const threshold = parseInt(alertInput.value) || 0;
 
-    if (!name) return alert("Ingredient name is required.");
+    if (!name) return window.showToast("Ingredient name is required.", "error");
 
     const id = Date.now();
     set(ref(db, `ingredients/${id}`), { id, name, price, stockQty: stock, threshold })
@@ -68,7 +87,7 @@ window.addIngredient = () => {
             alertInput.value = '';
             document.getElementById('create-ing-modal').close();
         })
-        .catch(err => alert("Error registering ingredient: " + err.message));
+        .catch(err => window.showToast("Error registering ingredient: " + err.message, "error"));
 };
 
 // --- EDIT INGREDIENT MODAL ---
@@ -92,13 +111,13 @@ window.saveIngredientEdit = () => {
     const stockQty = parseInt(document.getElementById('edit-ing-stock').value) || 0;
     const threshold = parseInt(document.getElementById('edit-ing-alert').value) || 0;
 
-    if (!name) return alert("Name cannot be empty.");
+    if (!name) return window.showToast("Name cannot be empty.", "error");
 
     update(ref(db, `ingredients/${id}`), { name, price, stockQty, threshold })
         .then(() => {
             document.getElementById('edit-ing-modal').close();
         })
-        .catch(err => alert("Error updating ingredient: " + err.message));
+        .catch(err => window.showToast("Error updating ingredient: " + err.message, "error"));
 };
 
 // --- DELETE INGREDIENT ---
@@ -340,7 +359,7 @@ window.calculateBatch = () => {
 // --- CRAFT & DEDUCT STOCK DIRECTLY FROM FIREBASE ---
 window.craftAndDeductStock = async () => {
     if (batchQueue.length === 0) {
-        return alert("Please add at least one potion to the batch queue before crafting.");
+        return window.showToast("Please add at least one potion to the batch queue before crafting.", "error");
     }
 
     const aggregatedIngredients = {};
@@ -392,12 +411,12 @@ window.craftAndDeductStock = async () => {
 
     try {
         await Promise.all(updatePromises);
-        alert("Batch successfully crafted! Material stock has been deducted.");
+        window.showToast("Batch successfully crafted! Material stock has been deducted.", "success");
         batchQueue = [];
         renderBatchQueue();
         window.calculateBatch();
     } catch (err) {
-        alert("Error deducting stock: " + err.message);
+        window.showToast("Error deducting stock: " + err.message, "error");
     }
 };
 
@@ -445,7 +464,7 @@ window.savePotion = () => {
     const price = parseFloat(document.getElementById('potion-price').value) || 0;
     const desc = document.getElementById('potion-desc').value.trim();
 
-    if (!name) return alert("Potion name required.");
+    if (!name) return window.showToast("Potion name required.", "error");
 
     const id = Date.now();
     set(ref(db, `potions/${id}`), {
@@ -464,7 +483,7 @@ window.savePotion = () => {
         currentRecipe = [];
         renderRecipePreview();
         document.getElementById('create-potion-modal').close();
-    }).catch(err => alert("Error saving potion: " + err.message));
+    }).catch(err => window.showToast("Error saving potion: " + err.message, "error"));
 };
 
 // --- EDIT POTION MODAL ---
@@ -516,7 +535,7 @@ window.savePotionEdit = () => {
     const price = parseFloat(document.getElementById('edit-potion-price').value) || 0;
     const desc = document.getElementById('edit-potion-desc').value.trim();
 
-    if (!name) return alert("Potion name required.");
+    if (!name) return window.showToast("Potion name required.", "error");
 
     update(ref(db, `potions/${id}`), {
         name,
@@ -526,7 +545,7 @@ window.savePotionEdit = () => {
         recipe: editRecipeArray
     }).then(() => {
         document.getElementById('edit-potion-modal').close();
-    }).catch(err => alert("Error updating potion: " + err.message));
+    }).catch(err => window.showToast("Error updating potion: " + err.message, "error"));
 };
 
 // --- DELETE POTION ---

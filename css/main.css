@@ -50,8 +50,8 @@ body {
 /* STOREFRONT CATALOG: 4 COLUMNS HORIZONTALLY */
 .catalog-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
 }
 
 @media (max-width: 1024px) {
@@ -77,8 +77,13 @@ body {
     justify-content: flex-end;
 }
 
-.gap-sm { gap: 0.5rem; }
-.gap-md { gap: 0.75rem; }
+.gap-sm {
+    gap: 0.5rem;
+}
+
+.gap-md {
+    gap: 0.75rem;
+}
 
 /* PANELS & CARDS */
 .panel {
@@ -147,7 +152,9 @@ body {
     gap: 0.75rem;
 }
 
-input, select, textarea {
+input,
+select,
+textarea {
     background: var(--bg);
     border: 1px solid var(--border);
     color: var(--text);
@@ -159,7 +166,9 @@ input, select, textarea {
     transition: border-color 0.15s ease;
 }
 
-input:focus, select:focus, textarea:focus {
+input:focus,
+select:focus,
+textarea:focus {
     border-color: var(--accent);
 }
 
@@ -173,7 +182,8 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* BUTTONS */
-button, .btn {
+button,
+.btn {
     background: var(--card-bg);
     border: 1px solid var(--border);
     color: var(--text);
@@ -189,7 +199,8 @@ button, .btn {
     transition: all 0.15s ease;
 }
 
-button:hover, .btn:hover {
+button:hover,
+.btn:hover {
     border-color: var(--border-hover);
     background: var(--border);
 }
@@ -270,9 +281,17 @@ button:hover, .btn:hover {
 }
 
 @keyframes satchelPop {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.12); }
-    100% { transform: scale(1); }
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.12);
+    }
+
+    100% {
+        transform: scale(1);
+    }
 }
 
 .satchel-bump {
@@ -357,7 +376,7 @@ dialog::backdrop {
     border: 1px solid var(--warning);
     border-radius: var(--radius-sm);
     padding: 0.75rem 1rem;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
     max-width: 320px;
 }
 
@@ -372,4 +391,48 @@ dialog::backdrop {
 .attention-item {
     font-size: 0.775rem;
     color: var(--text-dim);
+}
+
+.general-toast {
+    background: var(--panel-bg);
+    border-left: 4px solid var(--accent);
+    color: var(--text);
+    padding: 0.85rem 1.25rem;
+    border-radius: var(--radius-sm);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+    margin-top: 0.6rem;
+    animation: slideInRight 0.3s ease forwards;
+    font-size: 0.9rem;
+    max-width: 350px;
+    font-weight: 500;
+}
+
+.general-toast.error {
+    border-left-color: var(--danger);
+}
+
+.general-toast.success {
+    border-left-color: var(--success);
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
 }

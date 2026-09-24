@@ -8,6 +8,25 @@ let searchQuery = '';
 
 const DISCORD_WEBHOOK_URL = "__DISCORD_WEBHOOK_URL__";
 
+window.showToast = (message, type = 'info') => {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
+    const toast = document.createElement('div');
+    toast.className = `general-toast ${type}`;
+    toast.innerText = message;
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'fadeOut 0.3s ease forwards';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+};
+
 onValue(ref(db, 'potions'), (snapshot) => {
     potions = snapshot.val() || {};
     renderCategoryChips();
@@ -67,8 +86,8 @@ function renderCatalog() {
                     <span style="font-size: 0.7rem; color: var(--accent); font-weight: bold; text-transform: uppercase;">${p.category || 'General'}</span>
                     <span style="font-family: var(--font-mono); font-weight: bold; color: var(--accent);">${Math.round(p.salePrice || 0)} Gold</span>
                 </div>
-                <h3 style="margin: 0.2rem 0; font-size: 0.95rem;">${p.name}</h3>
-                <p style="color: var(--text-dim); font-size: 0.8rem; margin-bottom: 0.85rem;">${p.description || 'Custom potion formula.'}</p>
+                <h3 style="margin: 0.5rem 0; font-size: 1.25rem; color: #ffffff;">${p.name}</h3>
+                <p style="color: #e6e2f2; font-size: 0.95rem; margin-bottom: 1rem; line-height: 1.4;">${p.description || 'Custom potion formula.'}</p>
             </div>
             <button class="btn-accent" style="width: 100%; margin-top: auto;" onclick="window.addToSatchel('${p.id}')">+ Add to Satchel</button>
         </div>
@@ -82,11 +101,10 @@ window.addToSatchel = (potionId) => {
 
     renderSatchel();
 
-    // Trigger bump animation on floating toast button
     const floatBtn = document.getElementById('floating-satchel');
     if (floatBtn) {
         floatBtn.classList.remove('satchel-bump');
-        void floatBtn.offsetWidth; // Force reflow to restart animation
+        void floatBtn.offsetWidth; 
         floatBtn.classList.add('satchel-bump');
     }
 };
@@ -112,7 +130,6 @@ function renderSatchel() {
     const totalItems = satchel.reduce((sum, i) => sum + i.qty, 0);
     if (countSpan) countSpan.innerText = totalItems;
 
-    // Toggle Floating Button Visibility
     if (floatBtn) {
         if (totalItems > 0) {
             floatBtn.classList.remove('hidden');
@@ -160,9 +177,9 @@ window.submitSatchelOrder = async () => {
     const notes = document.getElementById('order-notes').value.trim();
     const confirmed = document.getElementById('order-location-confirm').checked;
 
-    if (!clientName) return alert("Character name required.");
-    if (!confirmed) return alert("Confirm you are currently at the location.");
-    if (satchel.length === 0) return alert("Satchel is empty.");
+    if (!clientName) return window.showToast("Character name required.", "error");
+    if (!confirmed) return window.showToast("Confirm you are currently at the location.", "error");
+    if (satchel.length === 0) return window.showToast("Satchel is empty.", "error");
 
     let totalCost = 0;
     let orderLines = [];
@@ -176,7 +193,7 @@ window.submitSatchelOrder = async () => {
     });
 
     if (orderLines.length === 0) {
-        return alert("Could not construct order details from satchel items.");
+        return window.showToast("Could not construct order details from satchel items.", "error");
     }
 
     const payload = {
@@ -202,7 +219,7 @@ window.submitSatchelOrder = async () => {
         });
 
         if (res.ok || res.status === 204) {
-            alert("Order dispatched successfully!");
+            window.showToast("Order dispatched successfully!", "success");
             satchel = [];
             document.getElementById('order-client-name').value = '';
             document.getElementById('order-client-discord').value = '';
@@ -212,9 +229,9 @@ window.submitSatchelOrder = async () => {
             document.getElementById('satchel-modal').close();
         } else {
             const errorDetails = await res.text();
-            alert(`Discord API Error (${res.status}): ${errorDetails || 'Invalid Webhook URL or Payload'}`);
+            window.showToast(`Discord API Error (${res.status}): ${errorDetails || 'Invalid Webhook URL'}`, "error");
         }
     } catch (e) {
-        alert("Network Error: " + e.message);
+        window.showToast("Network Error: " + e.message, "error");
     }
 };
