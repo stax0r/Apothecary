@@ -6,6 +6,7 @@ let ingredients = {};
 let potions = {};
 let currentRecipe = [];
 let editRecipeArray = [];
+let batchQueue = []; // Holds multi-potion batch items: [{ potionId, name, qty }]
 let toastDismissed = false;
 
 onAuthStateChanged(auth, (user) => {
@@ -42,7 +43,7 @@ window.login = () => {
 
 window.logout = () => signOut(auth);
 
-// --- REGISTER NEW INGREDIENT (VIA POP-UP MODAL) ---
+// --- REGISTER INGREDIENT ---
 window.addIngredient = () => {
     const nameInput = document.getElementById('ing-name');
     const priceInput = document.getElementById('ing-price');
@@ -205,42 +206,171 @@ window.renderIngredients = () => {
     }).join('');
 };
 
-// --- BATCH CALCULATOR ---
+// --- MULTI-POTION BATCH QUEUE LOGIC ---
 function renderBatchPotionSelectOptions() {
     const select = document.getElementById('batch-potion-select');
     if (select) {
-        select.innerHTML = Object.values(potions).map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+        select.innerHTML = Object.values(potions)
+            .sort((a,b) => (a.name || '').localeCompare(b.name || ''))
+            .map(p => `<option value="${p.id}">${p.name}</option>`).join('');
     }
 }
 
-window.calculateBatch = () => {
-    const potionId = document.getElementById('batch-potion-select').value;
-    const qty = parseInt(document.getElementById('batch-qty').value) || 1;
-    const resultsDiv = document.getElementById('batch-results');
-    const p = potions[potionId];
+window.addPotionToBatch = () => {
+    const select = document.getElementById('batch-potion-select');
+    const qtyInput = document.getElementById('batch-qty');
+    if (!select || !select.value) return;
 
-    if (!p || !p.recipe || p.recipe.length === 0) {
-        resultsDiv.innerText = "No recipe defined for this potion.";
+    const potionId = select.value;
+    const qty = parseInt(qtyInput.value) || 1;
+    const p = potions[potionId];
+    if (!p) return;
+
+    const existing = batchQueue.find(item => item.potionId === potionId);
+    if (existing) {
+        existing.qty += qty;
+    } else {
+        batchQueue.push({ potionId, name: p.name, qty });
+    }
+
+    renderBatchQueue();
+};
+
+window.removeBatchItem = (index) => {
+    batchQueue.splice(index, 1);
+    renderBatchQueue();
+};
+
+function renderBatchQueue() {
+    const container = document.getElementById('batch-queue-container');
+    if (!container) return;
+
+    if (batchQueue.length === 0) {
+        container.innerHTML = `<div style="font-size: 0.8rem; color: var(--text-dim); padding: 0.2rem 0;">No potions in current batch queue.</div>`;
+        return;
+    }
+
+    container.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:0.35rem;">
+            ${batchQueue.map((item, idx) => `
+                <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg); border:1px solid var(--border); padding:0.35rem 0.65rem; border-radius:4px; font-size:0.825rem;">
+                    <span><strong>${item.qty}x</strong>${item.name}</span>
+                    <button class="btn-danger" style="padding:0.1rem 0.35rem; font-size:0.75rem;" onclick="window.removeBatchItem(${idx})">✕</button>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+// --- EVALUATE MULTI-POTION BATCH COSTS ---
+window.calculateBatch = () => {
+    const resultsDiv = document.getElementById('batch-results');
+    if (batchQueue.length === 0) {
+        resultsDiv.innerText = "Please add at least one potion to the batch queue.";
         return;
     }
 
     let totalCraftCost = 0;
-    let report = `Batch Run: ${qty}x ${p.name}\n==============================\n`;
+    const aggregatedIngredients = {};
 
-    p.recipe.forEach(r => {
-        const ing = ingredients[r.ingredientId];
-        const needed = r.qty * qty;
+    batchQueue.forEach(batchItem => {
+        const p = potions[batchItem.potionId];
+        if (p && p.recipe && Array.isArray(p.recipe)) {
+            p.recipe.forEach(r => {
+                const needed = (r.qty || 1) * batchItem.qty;
+                if (!aggregatedIngredients[r.ingredientId]) {
+                    aggregatedIngredients[r.ingredientId] = {
+                        name: r.name,
+                        needed: 0
+                    };
+                }
+                aggregatedIngredients[r.ingredientId].needed += needed;
+            });
+        }
+    });
+
+    let report = `BATCH RUN EVALUATION (${batchQueue.length} Potion Type(s))\n==============================\n`;
+    
+    Object.keys(aggregatedIngredients).forEach(ingId => {
+        const item = aggregatedIngredients[ingId];
+        const ing = ingredients[ingId];
         const unitPrice = ing ? (ing.price || 0) : 0;
-        const lineCost = needed * unitPrice;
+        const lineCost = item.needed * unitPrice;
         totalCraftCost += lineCost;
 
-        report += `• ${r.name}: ${needed} required (${unitPrice}g/unit) = ${lineCost.toFixed(2)}g\n`;
-        if (!ing || !ing.price) report += `   [!] WARNING: Unregistered price for ${r.name}!\n`;
-        if (ing && (ing.stockQty || 0) < needed) report += `   [!] WARNING: Low Stock! Needed: ${needed}, In Stock: ${ing.stockQty || 0}\n`;
+        report += `• ${item.name}: ${item.needed} required (${unitPrice}g/unit) = ${lineCost.toFixed(2)}g\n`;
+        if (!ing || !ing.price) report += `   [!] WARNING: Unregistered price for ${item.name}!\n`;
+        if (ing && (ing.stockQty || 0) < item.needed) {
+            report += `   [!] WARNING: Insufficient Stock! Needed: ${item.needed}, Available: ${ing.stockQty || 0}\n`;
+        }
     });
 
     report += `==============================\nTotal Material Cost: ${totalCraftCost.toFixed(2)} Gold`;
     resultsDiv.innerText = report;
+};
+
+// --- CRAFT & DEDUCT STOCK DIRECTLY FROM FIREBASE ---
+window.craftAndDeductStock = async () => {
+    if (batchQueue.length === 0) {
+        return alert("Please add at least one potion to the batch queue before crafting.");
+    }
+
+    const aggregatedIngredients = {};
+    batchQueue.forEach(batchItem => {
+        const p = potions[batchItem.potionId];
+        if (p && p.recipe && Array.isArray(p.recipe)) {
+            p.recipe.forEach(r => {
+                const needed = (r.qty || 1) * batchItem.qty;
+                if (!aggregatedIngredients[r.ingredientId]) {
+                    aggregatedIngredients[r.ingredientId] = {
+                        name: r.name,
+                        needed: 0
+                    };
+                }
+                aggregatedIngredients[r.ingredientId].needed += needed;
+            });
+        }
+    });
+
+    let stockDeficit = false;
+    Object.keys(aggregatedIngredients).forEach(ingId => {
+        const item = aggregatedIngredients[ingId];
+        const ing = ingredients[ingId];
+        const currentStock = ing ? (ing.stockQty || 0) : 0;
+        if (currentStock < item.needed) {
+            stockDeficit = true;
+        }
+    });
+
+    if (stockDeficit) {
+        if (!confirm("Some ingredients have insufficient stock for this batch. Proceed anyway and deduct stock into negative values?")) {
+            return;
+        }
+    } else {
+        if (!confirm(`Confirm crafting this batch and deducting ingredients from cellar stock?`)) {
+            return;
+        }
+    }
+
+    const updatePromises = [];
+    Object.keys(aggregatedIngredients).forEach(ingId => {
+        const item = aggregatedIngredients[ingId];
+        const ing = ingredients[ingId];
+        const currentStock = ing ? (ing.stockQty || 0) : 0;
+        const newStock = currentStock - item.needed;
+
+        updatePromises.push(update(ref(db, `ingredients/${ingId}`), { stockQty: newStock }));
+    });
+
+    try {
+        await Promise.all(updatePromises);
+        alert("Batch successfully crafted! Material stock has been deducted.");
+        batchQueue = [];
+        renderBatchQueue();
+        document.getElementById('batch-results').innerText = "Crafting completed. Cellar stock updated in database.";
+    } catch (err) {
+        alert("Error deducting stock: " + err.message);
+    }
 };
 
 // --- RECIPE SELECT OPTIONS ---
@@ -255,7 +385,7 @@ function renderRecipeSelectOptions() {
     if (editSelect) editSelect.innerHTML = optionsHtml;
 }
 
-// --- CREATE POTION RECIPE (VIA POP-UP MODAL) ---
+// --- CREATE POTION RECIPE ---
 window.addIngredientToRecipe = () => {
     const ingId = document.getElementById('recipe-ing-select').value;
     const qty = parseInt(document.getElementById('recipe-ing-qty').value) || 1;

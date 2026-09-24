@@ -42,7 +42,6 @@ function renderCatalog() {
     const catalogDiv = document.getElementById('catalog');
     if (!catalogDiv) return;
 
-    // Filter out hidden potions
     let filtered = Object.values(potions).filter(p => !p.hidden);
 
     if (selectedCategory !== 'All') {
@@ -69,7 +68,7 @@ function renderCatalog() {
             </div>
             <h3 style="margin: 0.2rem 0;">${p.name}</h3>
             <p style="color: var(--text-dim); font-size: 0.825rem; flex-grow: 1; margin: 0 0 0.85rem 0;">${p.description || 'Custom potion formula.'}</p>
-            <button class="btn-accent" onclick="window.addToSatchel(${p.id})">Add to Satchel</button>
+            <button class="btn-accent" onclick="window.addToSatchel('${p.id}')">Add to Satchel</button>
         </div>
     `).join('');
 }
@@ -116,13 +115,14 @@ function renderSatchel() {
 
         return `
             <div class="card flex-between" style="flex-direction: row; padding: 0.4rem 0.65rem;">
-                <div>
+                <div style="flex: 1; padding-right: 0.5rem;">
                     <strong>${p.name}</strong>
                     <div style="font-size: 0.75rem; color: var(--text-dim);">${p.salePrice}g each</div>
                 </div>
                 <div style="display: flex; gap: 0.5rem; align-items: center;">
-                    <input type="number" value="${item.qty}" min="1" style="width: 50px;" onchange="window.updateSatchelQty(${index}, this.value)">
-                    <span style="font-family: var(--font-mono); font-weight: bold;">${lineTotal.toFixed(1)}g</span>
+                    <!-- EXPANDED INPUT WIDTH TO FIT UP TO 3 DIGITS COMFORTABLY -->
+                    <input type="number" value="${item.qty}" min="1" max="999" style="width: 70px; padding: 0.25rem 0.35rem; text-align: center;" onchange="window.updateSatchelQty(${index}, this.value)">
+                    <span style="font-family: var(--font-mono); font-weight: bold; min-width: 60px; text-align: right;">${lineTotal.toFixed(1)}g</span>
                     <button class="btn-danger" style="padding: 0.15rem 0.35rem; font-size: 0.75rem;" onclick="window.removeSatchelItem(${index})">✕</button>
                 </div>
             </div>
