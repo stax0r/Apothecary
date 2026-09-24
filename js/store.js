@@ -94,7 +94,7 @@ function renderCategoryChips() {
     const finalCategories = ['All', ...categories];
     
     container.innerHTML = finalCategories.map(cat => `
-        <button class="filter-chip ${selectedCategory === cat ? 'btn-accent' : ''}" onclick="window.setCategoryFilter('${cat.replace(/'/g, "\\'")}')">
+        <button class="filter-chip ${selectedCategory === cat ? 'btn-accent' : ''}" onclick="window.setCategoryFilter(${JSON.stringify(cat)})">
             ${cat}
         </button>
     `).join('');
