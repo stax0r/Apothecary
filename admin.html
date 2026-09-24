@@ -7,12 +7,87 @@
     <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
+    <!-- Floating Toast Pop-up Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Login Modal -->
     <dialog id="login-modal">
         <h2 style="margin-top:0;">Cellar Security</h2>
         <div style="display:flex; flex-direction:column; gap:0.75rem; margin-top:1rem;">
             <input type="email" id="login-email" placeholder="Email">
             <input type="password" id="login-password" placeholder="Password">
             <button class="btn-accent" onclick="window.login()">Enter Cellar</button>
+        </div>
+    </dialog>
+
+    <!-- EDIT INGREDIENT MODAL POP-UP -->
+    <dialog id="edit-ing-modal">
+        <div class="flex-between" style="margin-bottom: 1rem;">
+            <h2 style="margin: 0;">Edit Ingredient</h2>
+            <button onclick="document.getElementById('edit-ing-modal').close()">✕</button>
+        </div>
+        <input type="hidden" id="edit-ing-id">
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <div class="form-group">
+                <label style="font-size: 0.8rem; color: var(--text-dim);">Ingredient Name</label>
+                <input type="text" id="edit-ing-name">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label style="font-size: 0.8rem; color: var(--text-dim);">Price / Unit (g)</label>
+                    <input type="number" id="edit-ing-price" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label style="font-size: 0.8rem; color: var(--text-dim);">Current Stock</label>
+                    <input type="number" id="edit-ing-stock">
+                </div>
+                <div class="form-group">
+                    <label style="font-size: 0.8rem; color: var(--text-dim);">Alert Min</label>
+                    <input type="number" id="edit-ing-alert">
+                </div>
+            </div>
+            <button class="btn-accent" onclick="window.saveIngredientEdit()" style="margin-top: 0.5rem;">Save Changes</button>
+        </div>
+    </dialog>
+
+    <!-- EDIT POTION MODAL POP-UP -->
+    <dialog id="edit-potion-modal">
+        <div class="flex-between" style="margin-bottom: 1rem;">
+            <h2 style="margin: 0;">Edit Potion Recipe</h2>
+            <button onclick="document.getElementById('edit-potion-modal').close()">✕</button>
+        </div>
+        <input type="hidden" id="edit-potion-id">
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <div class="form-group">
+                <label style="font-size: 0.8rem; color: var(--text-dim);">Potion Name</label>
+                <input type="text" id="edit-potion-name">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label style="font-size: 0.8rem; color: var(--text-dim);">Category</label>
+                    <input type="text" id="edit-potion-category">
+                </div>
+                <div class="form-group">
+                    <label style="font-size: 0.8rem; color: var(--text-dim);">Sale Price (Gold)</label>
+                    <input type="number" id="edit-potion-price" step="0.01">
+                </div>
+            </div>
+            <div class="form-group">
+                <label style="font-size: 0.8rem; color: var(--text-dim);">Description</label>
+                <textarea id="edit-potion-desc" style="min-height: 50px;"></textarea>
+            </div>
+
+            <div style="border: 1px solid var(--border); padding: 0.75rem; border-radius: 6px;">
+                <span style="font-size: 0.825rem; font-weight: bold;">Recipe Ingredients</span>
+                <div style="display:flex; gap:0.5rem; margin-top:0.4rem;">
+                    <select id="edit-recipe-ing-select" style="flex:2;"></select>
+                    <input type="number" id="edit-recipe-ing-qty" value="1" min="1" style="width: 70px;">
+                    <button type="button" onclick="window.addIngredientToEditRecipe()">+ Add</button>
+                </div>
+                <ul id="edit-recipe-preview" style="font-size: 0.825rem; padding-left: 1.2rem; margin: 0.5rem 0 0 0;"></ul>
+            </div>
+
+            <button class="btn-accent" onclick="window.savePotionEdit()" style="margin-top: 0.5rem;">Update Potion</button>
         </div>
     </dialog>
 
@@ -31,10 +106,6 @@
         <div class="grid-2">
             <!-- COLUMN 1: INGREDIENTS STOCK MANAGER -->
             <div style="display: flex; flex-direction: column; gap: 1.25rem;">
-                <!-- ATTENTION WARNING TOAST CONTAINER -->
-                <div id="attention-container"></div>
-
-                <!-- REGISTER INGREDIENT PANEL -->
                 <div class="panel">
                     <h2>Register New Ingredient</h2>
                     <div class="form-row" style="margin-top: 0.85rem;">
@@ -54,7 +125,6 @@
                     <button class="btn-accent" onclick="window.addIngredient()" style="margin-top: 0.75rem; width: 100%;">+ Register Ingredient</button>
                 </div>
 
-                <!-- MASTER INGREDIENTS LIST -->
                 <div class="panel">
                     <div class="flex-between" style="margin-bottom: 0.75rem;">
                         <h2>Master Ingredients List</h2>
@@ -64,9 +134,8 @@
                 </div>
             </div>
 
-            <!-- COLUMN 2: BATCHING & RECIPES -->
+            <!-- COLUMN 2: BATCHING & POTIONS -->
             <div style="display: flex; flex-direction: column; gap: 1.25rem;">
-                <!-- BULK BATCH CALCULATOR -->
                 <div class="panel">
                     <h2>Bulk Batch Calculator</h2>
                     <div style="display:flex; gap:0.5rem; margin: 0.85rem 0;">
@@ -77,9 +146,8 @@
                     <div id="batch-results" style="font-family: var(--font-mono); font-size: 0.825rem; background: var(--bg); padding: 0.85rem; border: 1px solid var(--border); border-radius: 6px; white-space: pre-wrap;">Select a potion to evaluate ingredient costs.</div>
                 </div>
 
-                <!-- RECIPE EDITOR -->
                 <div class="panel">
-                    <h2>Create / Edit Potion Recipe</h2>
+                    <h2>Create Potion Recipe</h2>
                     <div style="display:flex; flex-direction:column; gap:0.6rem; margin-top: 0.85rem;">
                         <input type="text" id="potion-name" placeholder="Potion Name">
                         <div class="form-row">
@@ -102,10 +170,9 @@
                     </div>
                 </div>
 
-                <!-- STOREFRONT VISIBILITY CONTROL -->
                 <div class="panel">
                     <div class="flex-between" style="margin-bottom: 0.75rem;">
-                        <h2>Storefront Visibility Control</h2>
+                        <h2>Storefront Potion Control</h2>
                         <input type="text" id="potion-search" placeholder="Search catalog..." style="width: 180px;" oninput="window.renderPotions()">
                     </div>
                     <div id="admin-potion-list" style="display:flex; flex-direction:column; gap:0.5rem; max-height: 280px; overflow-y:auto; padding-right: 2px;"></div>

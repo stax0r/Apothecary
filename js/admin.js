@@ -5,6 +5,8 @@ import { ref, set, onValue, update, remove } from "https://www.gstatic.com/fireb
 let ingredients = {};
 let potions = {};
 let currentRecipe = [];
+let editRecipeArray = [];
+let toastDismissed = false;
 
 onAuthStateChanged(auth, (user) => {
     const modal = document.getElementById('login-modal');
@@ -40,7 +42,7 @@ window.login = () => {
 
 window.logout = () => signOut(auth);
 
-// --- REGISTER INGREDIENT FUNCTION ---
+// --- REGISTER INGREDIENT ---
 window.addIngredient = () => {
     const nameInput = document.getElementById('ing-name');
     const priceInput = document.getElementById('ing-price');
@@ -65,12 +67,57 @@ window.addIngredient = () => {
         .catch(err => alert("Error registering ingredient: " + err.message));
 };
 
-// --- ATTENTION WARNING TOAST BANNER ---
+// --- EDIT INGREDIENT (POP-UP MODAL) ---
+window.openEditIngredientModal = (id) => {
+    const ing = ingredients[id];
+    if (!ing) return;
+
+    document.getElementById('edit-ing-id').value = ing.id;
+    document.getElementById('edit-ing-name').value = ing.name || '';
+    document.getElementById('edit-ing-price').value = ing.price || 0;
+    document.getElementById('edit-ing-stock').value = ing.stockQty || 0;
+    document.getElementById('edit-ing-alert').value = ing.threshold || 0;
+
+    document.getElementById('edit-ing-modal').showModal();
+};
+
+window.saveIngredientEdit = () => {
+    const id = document.getElementById('edit-ing-id').value;
+    const name = document.getElementById('edit-ing-name').value.trim();
+    const price = parseFloat(document.getElementById('edit-ing-price').value) || 0;
+    const stockQty = parseInt(document.getElementById('edit-ing-stock').value) || 0;
+    const threshold = parseInt(document.getElementById('edit-ing-alert').value) || 0;
+
+    if (!name) return alert("Name cannot be empty.");
+
+    update(ref(db, `ingredients/${id}`), { name, price, stockQty, threshold })
+        .then(() => {
+            document.getElementById('edit-ing-modal').close();
+        })
+        .catch(err => alert("Error updating ingredient: " + err.message));
+};
+
+// --- DELETE INGREDIENT ---
+window.deleteIngredient = (id) => {
+    const ing = ingredients[id];
+    if (!ing) return;
+    if (confirm(`Are you sure you want to delete "${ing.name}"?`)) {
+        remove(ref(db, `ingredients/${id}`));
+    }
+};
+
+// --- FLOATING CLOSEABLE WARNING TOAST ---
+window.dismissWarningToast = () => {
+    toastDismissed = true;
+    const container = document.getElementById('toast-container');
+    if (container) container.innerHTML = '';
+};
+
 function checkIngredientsAttention() {
-    const container = document.getElementById('attention-container');
+    if (toastDismissed) return;
+    const container = document.getElementById('toast-container');
     if (!container) return;
 
-    // Identify which ingredient IDs are currently used in active recipes
     const usedIngredientIds = new Set();
     Object.values(potions).forEach(p => {
         if (p.recipe && Array.isArray(p.recipe)) {
@@ -87,7 +134,7 @@ function checkIngredientsAttention() {
 
             if (noPrice || lowStock) {
                 const reasons = [];
-                if (noPrice) reasons.push("no registered price");
+                if (noPrice) reasons.push("no price");
                 if (lowStock) reasons.push(`low stock [${i.stockQty || 0} remaining]`);
                 issues.push(`<strong>${i.name}</strong> (${reasons.join(', ')})`);
             }
@@ -96,8 +143,11 @@ function checkIngredientsAttention() {
 
     if (issues.length > 0) {
         container.innerHTML = `
-            <div class="attention-banner">
-                <div style="font-weight: bold; color: var(--warning); margin-bottom: 0.25rem;">⚠️ Attention Required (${issues.length} Active Ingredients)</div>
+            <div class="warning-toast">
+                <div class="warning-toast-header">
+                    <span>⚠️ Attention Required (${issues.length})</span>
+                    <button class="toast-close-btn" onclick="window.dismissWarningToast()">✕</button>
+                </div>
                 ${issues.map(item => `<div class="attention-item">• ${item}</div>`).join('')}
             </div>
         `;
@@ -106,7 +156,7 @@ function checkIngredientsAttention() {
     }
 }
 
-// --- RENDER ALL INGREDIENTS ALPHABETICALLY WITH SEARCH ---
+// --- RENDER ALL INGREDIENTS ALPHABETICALLY ---
 window.renderIngredients = () => {
     const listDiv = document.getElementById('ingredient-list');
     const searchInput = document.getElementById('ing-search');
@@ -140,15 +190,14 @@ window.renderIngredients = () => {
                 <div style="flex: 1; min-width: 140px;">
                     <strong>${i.name}</strong>
                     <div style="display: flex; gap: 0.4rem; align-items: center; margin-top: 0.15rem;">
-                        <input type="number" step="0.01" value="${i.price || 0}" style="width: 70px; padding: 0.2rem 0.4rem;" onchange="update(ref(db, 'ingredients/${i.id}'), { price: parseFloat(this.value) || 0 })">
-                        <span style="font-size: 0.75rem; color: var(--text-dim);">g/unit</span>
+                        <span style="font-size: 0.8rem; color: var(--text-dim);">${i.price || 0}g / unit</span>
                         ${warningBadges}
                     </div>
                 </div>
                 <div style="display: flex; gap: 0.4rem; align-items: center;">
-                    <span style="font-size: 0.75rem; color: var(--text-dim);">Stock:</span>
-                    <input type="number" value="${i.stockQty || 0}" style="width: 55px; padding: 0.2rem 0.4rem;" onchange="update(ref(db, 'ingredients/${i.id}'), { stockQty: parseInt(this.value) || 0 })">
-                    <button class="btn-danger" style="padding: 0.2rem 0.4rem; font-size: 0.75rem;" onclick="remove(ref(db, 'ingredients/${i.id}'))">✕</button>
+                    <span style="font-size: 0.75rem; color: var(--text-dim);">Stock: ${i.stockQty || 0}</span>
+                    <button class="btn-edit" style="padding: 0.2rem 0.45rem; font-size: 0.75rem;" onclick="window.openEditIngredientModal('${i.id}')">✏️ Edit</button>
+                    <button class="btn-danger" style="padding: 0.2rem 0.45rem; font-size: 0.75rem;" onclick="window.deleteIngredient('${i.id}')">✕</button>
                 </div>
             </div>
         `;
@@ -193,14 +242,16 @@ window.calculateBatch = () => {
     resultsDiv.innerText = report;
 };
 
-// --- RECIPE & VISIBILITY MANAGEMENT ---
+// --- RECIPE SELECT OPTIONS ---
 function renderRecipeSelectOptions() {
     const select = document.getElementById('recipe-ing-select');
-    if (select) {
-        select.innerHTML = Object.values(ingredients)
-            .sort((a,b) => (a.name || '').localeCompare(b.name || ''))
-            .map(i => `<option value="${i.id}">${i.name} (${i.price || 0}g)</option>`).join('');
-    }
+    const editSelect = document.getElementById('edit-recipe-ing-select');
+    const optionsHtml = Object.values(ingredients)
+        .sort((a,b) => (a.name || '').localeCompare(b.name || ''))
+        .map(i => `<option value="${i.id}">${i.name} (${i.price || 0}g)</option>`).join('');
+
+    if (select) select.innerHTML = optionsHtml;
+    if (editSelect) editSelect.innerHTML = optionsHtml;
 }
 
 window.addIngredientToRecipe = () => {
@@ -255,7 +306,77 @@ window.savePotion = () => {
     renderRecipePreview();
 };
 
-// --- VISIBILITY TOGGLE (PRESERVES DATA WITHOUT DELETING) ---
+// --- EDIT POTION (POP-UP MODAL) ---
+window.openEditPotionModal = (id) => {
+    const p = potions[id];
+    if (!p) return;
+
+    document.getElementById('edit-potion-id').value = p.id;
+    document.getElementById('edit-potion-name').value = p.name || '';
+    document.getElementById('edit-potion-category').value = p.category || '';
+    document.getElementById('edit-potion-price').value = p.salePrice || 0;
+    document.getElementById('edit-potion-desc').value = p.description || '';
+
+    editRecipeArray = p.recipe ? [...p.recipe] : [];
+    renderEditRecipePreview();
+
+    document.getElementById('edit-potion-modal').showModal();
+};
+
+window.addIngredientToEditRecipe = () => {
+    const ingId = document.getElementById('edit-recipe-ing-select').value;
+    const qty = parseInt(document.getElementById('edit-recipe-ing-qty').value) || 1;
+    const ing = ingredients[ingId];
+
+    if (ing) {
+        editRecipeArray.push({ ingredientId: ing.id, name: ing.name, qty });
+        renderEditRecipePreview();
+    }
+};
+
+function renderEditRecipePreview() {
+    const previewUl = document.getElementById('edit-recipe-preview');
+    if (previewUl) {
+        previewUl.innerHTML = editRecipeArray.map((item, index) => `
+            <li>${item.qty}x ${item.name} <button class="btn-danger" style="padding: 0 0.3rem; font-size:0.7rem;" onclick="window.removeEditRecipeItem(${index})">✕</button></li>
+        `).join('');
+    }
+}
+
+window.removeEditRecipeItem = (index) => {
+    editRecipeArray.splice(index, 1);
+    renderEditRecipePreview();
+};
+
+window.savePotionEdit = () => {
+    const id = document.getElementById('edit-potion-id').value;
+    const name = document.getElementById('edit-potion-name').value.trim();
+    const category = document.getElementById('edit-potion-category').value.trim() || 'General';
+    const price = parseFloat(document.getElementById('edit-potion-price').value) || 0;
+    const desc = document.getElementById('edit-potion-desc').value.trim();
+
+    if (!name) return alert("Potion name required.");
+
+    update(ref(db, `potions/${id}`), {
+        name,
+        category,
+        salePrice: price,
+        description: desc,
+        recipe: editRecipeArray
+    }).then(() => {
+        document.getElementById('edit-potion-modal').close();
+    }).catch(err => alert("Error updating potion: " + err.message));
+};
+
+// --- DELETE POTION ---
+window.deletePotion = (id) => {
+    const p = potions[id];
+    if (!p) return;
+    if (confirm(`Are you sure you want to delete "${p.name}"?`)) {
+        remove(ref(db, `potions/${id}`));
+    }
+};
+
 window.togglePotionVisibility = (id) => {
     if (!potions[id]) return;
     const currentStatus = !!potions[id].hidden;
@@ -289,10 +410,11 @@ window.renderPotions = () => {
                     <div style="font-size: 0.725rem; color: var(--text-dim);">${p.category || 'General'}</div>
                 </div>
                 <div style="display: flex; gap: 0.4rem; align-items: center;">
-                    <button class="${isHidden ? 'btn-toggle-off' : 'btn-toggle-on'}" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;" onclick="window.togglePotionVisibility(${p.id})">
+                    <button class="${isHidden ? 'btn-toggle-off' : 'btn-toggle-on'}" style="font-size: 0.75rem; padding: 0.2rem 0.45rem;" onclick="window.togglePotionVisibility('${p.id}')">
                         ${isHidden ? '🙈 Hidden' : '👁️ Visible'}
                     </button>
-                    <button class="btn-danger" style="padding: 0.2rem 0.4rem; font-size: 0.75rem;" onclick="remove(ref(db, 'potions/${p.id}'))">✕</button>
+                    <button class="btn-edit" style="padding: 0.2rem 0.45rem; font-size: 0.75rem;" onclick="window.openEditPotionModal('${p.id}')">✏️ Edit</button>
+                    <button class="btn-danger" style="padding: 0.2rem 0.45rem; font-size: 0.75rem;" onclick="window.deletePotion('${p.id}')">✕</button>
                 </div>
             </div>
         `;

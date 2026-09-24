@@ -99,24 +99,54 @@ button:hover { border-color: var(--border-hover); }
 .btn-accent { background: var(--accent); color: #000; border-color: var(--accent); }
 .btn-accent:hover { background: var(--accent-hover); }
 .btn-danger { color: var(--danger); border-color: rgba(239, 68, 68, 0.4); background: transparent; }
-.btn-danger:hover { background: rgba(239, 68, 68, 0.12); }
+.btn-danger:hover { background: rgba(239, 68, 68, 0.15); }
+.btn-edit { color: var(--accent); border-color: rgba(212, 175, 55, 0.4); background: transparent; }
+.btn-edit:hover { background: rgba(212, 175, 55, 0.15); }
 .btn-toggle-on { background: rgba(16, 185, 129, 0.15); color: var(--success); border: 1px solid var(--success); }
 .btn-toggle-off { background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid var(--danger); }
 
-/* Attention Toast / Alert Banner */
-.attention-banner {
-    background: rgba(245, 158, 11, 0.08);
-    border: 1px solid var(--warning);
-    border-radius: 6px;
-    padding: 0.85rem 1rem;
-    margin-bottom: 1rem;
-    animation: fadeInToast 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+/* FLOATING CLOSEABLE WARNING TOAST POP-UP */
+.toast-container {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 9999;
+    max-width: 420px;
+    width: calc(100% - 3rem);
 }
 
-@keyframes fadeInToast {
-    from { opacity: 0; transform: translateY(-8px); }
+.warning-toast {
+    background: var(--surface);
+    border: 1px solid var(--warning);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+    animation: slideToast 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideToast {
+    from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+.warning-toast-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+    color: var(--warning);
+    margin-bottom: 0.5rem;
+}
+
+.toast-close-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-size: 1.1rem;
+    padding: 0;
+    cursor: pointer;
+}
+.toast-close-btn:hover { color: var(--text); }
 
 .attention-item {
     font-size: 0.825rem;
