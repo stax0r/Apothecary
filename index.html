@@ -8,45 +8,47 @@
 </head>
 <body>
     <div class="container">
-        <nav class="flex-between">
+        <nav class="flex-between" style="margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
             <div>
-                <h1>Silas' Brews</h1>
-                <p class="text-dim">Apothecary Storefront</p>
+                <h1 style="margin: 0;">Silas' Brews</h1>
+                <span style="color: var(--text-dim); font-size: 0.9rem;">Apothecary & Custom Potion Order</span>
             </div>
-            <div style="display: flex; gap: 1rem;">
-                <button onclick="document.getElementById('satchel-modal').showModal()">🎒 Satchel (<span id="satchel-count">0</span>)</button>
-                <button onclick="document.getElementById('custom-modal').showModal()">📜 Custom Order (<span id="custom-count">0</span>)</button>
-                <a href="admin.html"><button>Admin Access</button></a>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <button class="btn-accent" onclick="document.getElementById('satchel-modal').showModal()">
+                    🎒 Satchel (<span id="satchel-count">0</span>)
+                </button>
+                <a href="admin.html"><button>Cellar Login</button></a>
             </div>
         </nav>
 
-        <div id="catalog" class="grid-catalog">
-            <!-- Potions injected here -->
-        </div>
+        <div id="catalog" class="grid-catalog"></div>
     </div>
 
-    <!-- Satchel Modal -->
+    <!-- Unified Satchel & Order Submission Modal -->
     <dialog id="satchel-modal">
-        <div class="flex-between">
-            <h2>Your Satchel</h2>
-            <button onclick="this.closest('dialog').close()">Close</button>
+        <div class="flex-between" style="margin-bottom: 1rem;">
+            <h2 style="margin: 0;">Your Satchel</h2>
+            <button onclick="this.closest('dialog').close()">✕</button>
         </div>
-        <div id="cart-items" style="margin: 1.5rem 0; display:flex; flex-direction:column; gap:0.5rem;"></div>
-        <div id="cart-summary" class="text-dim"></div>
-    </dialog>
 
-    <!-- Custom Order Modal -->
-    <dialog id="custom-modal">
-        <div class="flex-between">
-            <h2>Custom Order Request</h2>
-            <button onclick="this.closest('dialog').close()">Close</button>
-        </div>
-        <div id="custom-items" style="margin: 1.5rem 0; display:flex; flex-direction:column; gap:0.5rem;"></div>
+        <div id="satchel-items" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 250px; overflow-y: auto; margin-bottom: 1rem;"></div>
         
-        <div class="panel" style="margin-top: 1rem;">
-            <input type="text" id="client-name" placeholder="Character Name (Required)" style="width: 100%; margin-bottom: 0.5rem;">
-            <textarea id="client-message" placeholder="Delivery notes..." style="width: 100%; margin-bottom: 0.5rem;"></textarea>
-            <button class="btn-webhook" onclick="window.sendWebhookOrder()">Send Order via Raven (Webhook)</button>
+        <div id="satchel-total" style="font-family: var(--font-mono); text-align: right; margin-bottom: 1.5rem; font-weight: bold; color: var(--accent);"></div>
+
+        <div class="panel" style="background: var(--bg); border: 1px solid var(--border);">
+            <h3 style="margin-top: 0; font-size: 1rem;">Dispatch Order</h3>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <input type="text" id="order-client-name" placeholder="Character Name (Required)">
+                <input type="text" id="order-client-discord" placeholder="Discord Tag (Optional)">
+                <textarea id="order-notes" placeholder="Delivery location or special instructions..." style="min-height: 60px;"></textarea>
+                
+                <label style="font-size: 0.85rem; display: flex; gap: 0.5rem; align-items: center; cursor: pointer;">
+                    <input type="checkbox" id="order-location-confirm">
+                    <span>I confirm I am currently at the designated delivery spot.</span>
+                </label>
+
+                <button class="btn-accent" onclick="window.submitSatchelOrder()" style="margin-top: 0.5rem;">Send Order via Raven (Discord)</button>
+            </div>
         </div>
     </dialog>
 
