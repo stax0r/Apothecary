@@ -1,3 +1,4 @@
+/* =================================================================ators */
 :root {
     --bg-color: #171715;
     --card-bg: #24231f;
@@ -15,6 +16,10 @@
     --custom-order: #b395d6;
     --custom-order-hover: #9272b9;
 }
+
+/* =================================================================
+   Global & Layout Styles
+   ================================================================= */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background:
@@ -29,7 +34,7 @@ body {
 }
 
 .container {
-    max-width: 1000px;
+    max-width: 1200px;
     margin: 0 auto;
     flex: 1;
     width: 100%;
@@ -62,6 +67,44 @@ h1, h2, h3, h4 {
     color: #fff;
 }
 
+footer {
+    margin-top: 40px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+}
+
+/* =================================================================
+   Admin 2x2 Grid Architecture & Cards
+   ================================================================= */
+.admin-grid-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    align-items: start;
+}
+
+@media (max-width: 950px) {
+    .admin-grid-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+.admin-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+/* =================================================================
+   Buttons & Controls
+   ================================================================= */
 button {
     background-color: var(--accent);
     color: #171715;
@@ -92,30 +135,44 @@ button:hover {
     color: #171715;
 }
 
-.admin-panel, .login-modal, .cart-panel, .custom-panel, .potion-creator-panel {
-    background-color: var(--card-bg);
-    border: 1px solid var(--border);
-    padding: 20px;
-    border-radius: 8px;
-    margin-bottom: 30px;
+.delete-btn {
+    background: var(--danger);
+    padding: 3px 8px;
+    font-size: 0.75rem;
+    border-radius: 4px;
+    color: #fff;
 }
 
-.custom-panel {
-    border-color: rgba(179, 149, 214, 0.4);
+.edit-btn {
+    background: var(--custom-order);
+    padding: 3px 8px;
+    font-size: 0.75rem;
+    border-radius: 4px;
+    color: #fff;
 }
 
-.potion-creator-panel {
-    border-color: rgba(210, 164, 95, 0.4);
-    background-color: rgba(0, 0, 0, 0.15);
-    margin-top: 20px;
-    margin-bottom: 15px;
-    padding: 15px;
+.execute-batch-btn {
+    background: var(--success);
+    width: 100%;
+    padding: 12px;
+    font-size: 1.05rem;
+    margin-top: 15px;
+    color: #fff;
 }
 
-.hidden {
-    display: none !important;
+.execute-batch-btn:hover {
+    background: var(--success-hover);
 }
 
+.btn-disabled {
+    background: var(--border);
+    color: var(--text-dim);
+    cursor: not-allowed;
+}
+
+/* =================================================================
+   Forms, Inputs & Collapsibles
+   ================================================================= */
 .form-group {
     display: flex;
     gap: 10px;
@@ -159,6 +216,9 @@ textarea {
     font-size: 0.8rem;
 }
 
+/* =================================================================
+   Catalog & Storefront Display Grids
+   ================================================================= */
 .filter-bar {
     display: flex;
     gap: 8px;
@@ -254,16 +314,9 @@ textarea {
     padding: 3px 0;
 }
 
-.profit-text {
-    color: var(--success);
-    font-weight: bold;
-}
-
-.loss-text {
-    color: var(--danger);
-    font-weight: bold;
-}
-
+/* =================================================================
+   Item Rows & Lists
+   ================================================================= */
 .item-row {
     display: flex;
     justify-content: space-between;
@@ -275,44 +328,6 @@ textarea {
     margin-bottom: 8px;
     flex-wrap: wrap;
     gap: 10px;
-}
-
-.item-row.low-stock {
-    border-color: var(--danger);
-    border-left-width: 4px;
-}
-
-.item-row.unpriced {
-    border-color: var(--warning);
-    border-left-width: 4px;
-}
-
-.item-row.unused {
-    opacity: 0.6;
-}
-
-.delete-btn {
-    background: var(--danger);
-    padding: 3px 8px;
-    font-size: 0.75rem;
-    border-radius: 4px;
-    color: #fff;
-}
-
-.edit-btn {
-    background: var(--custom-order);
-    padding: 3px 8px;
-    font-size: 0.75rem;
-    border-radius: 4px;
-    color: #fff;
-}
-
-.save-btn {
-    background: var(--success);
-    padding: 3px 8px;
-    font-size: 0.75rem;
-    border-radius: 4px;
-    color: #fff;
 }
 
 .action-btn-group {
@@ -347,17 +362,17 @@ textarea {
     background: var(--custom-order-hover);
 }
 
-.execute-batch-btn {
-    background: var(--success);
-    width: 100%;
-    padding: 12px;
-    font-size: 1.05rem;
-    margin-top: 15px;
-    color: #fff;
+/* =================================================================
+   Badges, Metrics & Summaries
+   ================================================================= */
+.profit-text {
+    color: var(--success);
+    font-weight: bold;
 }
 
-.execute-batch-btn:hover {
-    background: var(--success-hover);
+.loss-text {
+    color: var(--danger);
+    font-weight: bold;
 }
 
 .badge-out {
@@ -370,12 +385,6 @@ textarea {
     font-weight: bold;
     display: inline-block;
     margin-bottom: 5px;
-}
-
-.btn-disabled {
-    background: var(--border);
-    color: var(--text-dim);
-    cursor: not-allowed;
 }
 
 .batch-summary {
@@ -445,6 +454,9 @@ textarea {
     font-family: monospace;
 }
 
+/* =================================================================
+   Autocomplete Elements
+   ================================================================= */
 .autocomplete-wrapper {
     position: relative;
     flex: 2;
@@ -475,15 +487,9 @@ textarea {
     color: #171715;
 }
 
-footer {
-    margin-top: 40px;
-    padding-top: 15px;
-    border-top: 1px solid var(--border);
-    text-align: center;
-    font-size: 0.85rem;
-    color: var(--text-dim);
-}
-
+/* =================================================================
+   Modals & Floating Triggers
+   ================================================================= */
 #status-banner {
     position: fixed;
     top: 20px;
@@ -640,24 +646,4 @@ footer {
     padding: 28px;
     position: relative;
     width: 100%;
-}
-
-/* Two-Column Grid Layout for Admin Panel */
-.admin-grid-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    align-items: start;
-}
-
-@media (max-width: 900px) {
-    .admin-grid-container {
-        grid-template-columns: 1fr;
-    }
-}
-
-.admin-column {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
 }
