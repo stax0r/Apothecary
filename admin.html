@@ -28,6 +28,26 @@
         </div>
     </dialog>
 
+    <!-- STORE SETTINGS MODAL -->
+    <dialog id="settings-modal">
+        <div class="dialog-header">
+            <h2>⚙️ Store Settings</h2>
+            <button class="btn-sm" onclick="document.getElementById('settings-modal').close()">✕</button>
+        </div>
+        <div class="dialog-body">
+            <div class="form-group">
+                <label>Pickup Location Confirmation Text</label>
+                <input type="text" id="setting-location" placeholder="e.g. The Bannered Mare, Whiterun">
+            </div>
+            <div class="form-group">
+                <label>Category Sort Order (Comma-separated)</label>
+                <input type="text" id="setting-categories" placeholder="e.g. Health, Stamina, Magicka, Fortify">
+                <span style="font-size: 0.75rem; color: var(--text-dim);">Categories not listed here will appear at the end.</span>
+            </div>
+            <button class="btn-accent" onclick="window.saveSettings()">Save Settings</button>
+        </div>
+    </dialog>
+
     <!-- CREATE INGREDIENT MODAL -->
     <dialog id="create-ing-modal">
         <div class="dialog-header">
@@ -173,9 +193,10 @@
         <nav class="panel-header" style="margin-bottom: 1.25rem;">
             <div>
                 <h1>Apothecary's Ledger</h1>
-                <span style="color: var(--text-dim); font-size: 0.825rem;">Raw Materials & Catalog Management</span>
+                <span style="color: var(--text-dim); font-size: 0.825rem;">Raw Materials &amp; Catalog Management</span>
             </div>
             <div class="flex-between gap-sm">
+                <button class="btn-edit" onclick="window.openSettingsModal()">⚙️ Settings</button>
                 <a href="index.html"><button>← Storefront</button></a>
                 <button onclick="window.logout()">Logout</button>
             </div>
@@ -227,13 +248,11 @@
             <div id="batch-queue-container" style="margin-bottom: 0.85rem;"></div>
 
             <!-- Calculation Output Box -->
-            <div id="batch-results" class="code-box" style="margin-bottom: 0.85rem;">Add potions to the batch list above
-                to evaluate costs and required ingredients.</div>
+            <div id="batch-results" class="code-box" style="margin-bottom: 0.85rem;">Add potions to the batch list above to evaluate costs and required ingredients.</div>
 
             <!-- Craft Button Placed at the Bottom Below Output -->
             <div class="flex-end">
-                <button class="btn-accent" onclick="window.craftAndDeductStock()">Craft Batch &amp; Deduct
-                    Stock</button>
+                <button class="btn-accent" onclick="window.craftAndDeductStock()">Craft Batch &amp; Deduct Stock</button>
             </div>
         </div>
     </div>

@@ -3,6 +3,7 @@ import { ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase
 
 let potions = {};
 let satchel = [];
+let settings = { location: '', categoryOrder: '' };
 let selectedCategory = 'All';
 let searchQuery = '';
 
@@ -27,6 +28,17 @@ window.showToast = (message, type = 'info') => {
     }, 3000);
 };
 
+// Fetch dynamic settings
+onValue(ref(db, 'settings'), (snapshot) => {
+    settings = snapshot.val() || { location: 'the specified location', categoryOrder: '' };
+    
+    const locLabel = document.getElementById('location-label-text');
+    if (locLabel) locLabel.innerText = settings.location || 'the specified location';
+
+    renderCategoryChips();
+    renderCatalog();
+});
+
 onValue(ref(db, 'potions'), (snapshot) => {
     potions = snapshot.val() || {};
     renderCategoryChips();
@@ -48,9 +60,25 @@ function renderCategoryChips() {
     const container = document.getElementById('category-chips-container');
     if (!container) return;
 
-    const categories = ['All', ...new Set(Object.values(potions).map(p => p.category || 'General'))];
+    let categories = [...new Set(Object.values(potions).map(p => p.category || 'General'))];
     
-    container.innerHTML = categories.map(cat => `
+    if (settings.categoryOrder) {
+        const customOrder = settings.categoryOrder.split(',').map(s => s.trim().toLowerCase());
+        categories.sort((a, b) => {
+            const idxA = customOrder.indexOf(a.toLowerCase());
+            const idxB = customOrder.indexOf(b.toLowerCase());
+            if (idxA === -1 && idxB === -1) return a.localeCompare(b);
+            if (idxA === -1) return 1;
+            if (idxB === -1) return -1;
+            return idxA - idxB;
+        });
+    } else {
+        categories.sort();
+    }
+
+    const finalCategories = ['All', ...categories];
+    
+    container.innerHTML = finalCategories.map(cat => `
         <button class="filter-chip ${selectedCategory === cat ? 'btn-accent' : ''}" onclick="window.setCategoryFilter('${cat.replace(/'/g, "\\'")}')">
             ${cat}
         </button>
@@ -73,6 +101,9 @@ function renderCatalog() {
             (p.description || '').toLowerCase().includes(searchQuery)
         );
     }
+
+    // Sort by price: cheapest to most expensive
+    filtered.sort((a, b) => (a.salePrice || 0) - (b.salePrice || 0));
 
     if (filtered.length === 0) {
         catalogDiv.innerHTML = `<p style="color: var(--text-dim); grid-column: 1/-1;">No potions match your search.</p>`;
@@ -205,7 +236,8 @@ window.submitSatchelOrder = async () => {
                 { name: "Discord", value: clientDiscord || "N/A", inline: true },
                 { name: "Order Details", value: orderLines.join('\n') },
                 { name: "Total Cost", value: `${totalCost.toFixed(1)} Gold`, inline: true },
-                { name: "Notes / Location", value: notes || "None" }
+                { name: "Location", value: settings.location || "Not specified", inline: true },
+                { name: "Notes", value: notes || "None" }
             ],
             timestamp: new Date().toISOString()
         }]

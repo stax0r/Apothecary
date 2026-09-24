@@ -4,6 +4,7 @@ import { ref, set, onValue, update, remove } from "https://www.gstatic.com/fireb
 
 let ingredients = {};
 let potions = {};
+let settings = { location: '', categoryOrder: '' };
 let currentRecipe = [];
 let editRecipeArray = [];
 let batchQueue = [];
@@ -40,6 +41,11 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
+// Fetch settings
+onValue(ref(db, 'settings'), (snapshot) => {
+    settings = snapshot.val() || { location: '', categoryOrder: '' };
+});
+
 onValue(ref(db, 'ingredients'), (snapshot) => {
     ingredients = snapshot.val() || {};
     window.renderIngredients();
@@ -63,6 +69,25 @@ window.login = () => {
 };
 
 window.logout = () => signOut(auth);
+
+// --- SETTINGS MANAGEMENT ---
+window.openSettingsModal = () => {
+    document.getElementById('setting-location').value = settings.location || '';
+    document.getElementById('setting-categories').value = settings.categoryOrder || '';
+    document.getElementById('settings-modal').showModal();
+};
+
+window.saveSettings = () => {
+    const location = document.getElementById('setting-location').value.trim();
+    const categoryOrder = document.getElementById('setting-categories').value.trim();
+    
+    update(ref(db, 'settings'), { location, categoryOrder })
+        .then(() => {
+            window.showToast("Settings saved successfully!", "success");
+            document.getElementById('settings-modal').close();
+        })
+        .catch(err => window.showToast("Error saving settings: " + err.message, "error"));
+};
 
 // --- REGISTER INGREDIENT ---
 window.addIngredient = () => {
