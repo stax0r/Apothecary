@@ -14,10 +14,7 @@
                 <h1 style="font-size: 1.5rem; font-weight: bold; color: var(--accent);">Silas' Brews</h1>
                 <span style="color: var(--text-dim); font-size: 0.85rem;">Fine Alchemy &amp; Custom Orders</span>
             </div>
-            <div class="flex-between gap-sm">
-                <button class="btn-accent" onclick="document.getElementById('satchel-modal').showModal()">
-                    💼 Satchel (<span id="satchel-count">0</span>)
-                </button>
+            <div>
                 <a href="admin.html"><button class="btn-edit">Cellar Admin</button></a>
             </div>
         </nav>
@@ -33,6 +30,11 @@
         <!-- 4-COLUMN CATALOG GRID -->
         <div id="catalog" class="catalog-grid"></div>
     </div>
+
+    <!-- FLOATING SATCHEL BUTTON (Visible when items > 0) -->
+    <button id="floating-satchel" class="floating-satchel-btn hidden" onclick="document.getElementById('satchel-modal').showModal()">
+        💼 Satchel (<span id="satchel-count">0</span>)
+    </button>
 
     <!-- SATCHEL / ORDER MODAL -->
     <dialog id="satchel-modal" style="max-width: 520px;">

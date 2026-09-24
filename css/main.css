@@ -238,6 +238,47 @@ button:hover, .btn:hover {
     background: transparent;
 }
 
+/* FLOATING SATCHEL TOAST BUTTON */
+.floating-satchel-btn {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 999;
+    background: var(--accent);
+    border: 1px solid var(--accent-hover);
+    color: #ffffff;
+    padding: 0.75rem 1.25rem;
+    border-radius: 9999px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 15px rgba(168, 85, 247, 0.4);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.floating-satchel-btn:hover {
+    background: var(--accent-hover);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.7), 0 0 22px rgba(168, 85, 247, 0.6);
+}
+
+.floating-satchel-btn.hidden {
+    display: none !important;
+}
+
+@keyframes satchelPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.12); }
+    100% { transform: scale(1); }
+}
+
+.satchel-bump {
+    animation: satchelPop 0.25s ease-in-out;
+}
+
 /* BADGES */
 .badge {
     font-size: 0.675rem;

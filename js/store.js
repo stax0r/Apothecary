@@ -32,7 +32,7 @@ function renderCategoryChips() {
     const categories = ['All', ...new Set(Object.values(potions).map(p => p.category || 'General'))];
     
     container.innerHTML = categories.map(cat => `
-        <button class="filter-chip ${selectedCategory === cat ? 'active' : ''}" onclick="window.setCategoryFilter('${cat.replace(/'/g, "\\'")}')">
+        <button class="filter-chip ${selectedCategory === cat ? 'btn-accent' : ''}" onclick="window.setCategoryFilter('${cat.replace(/'/g, "\\'")}')">
             ${cat}
         </button>
     `).join('');
@@ -62,13 +62,15 @@ function renderCatalog() {
 
     catalogDiv.innerHTML = filtered.map(p => `
         <div class="card">
-            <div class="flex-between">
-                <span style="font-size: 0.725rem; color: var(--accent); font-weight: bold; text-transform: uppercase;">${p.category || 'General'}</span>
-                <span style="font-family: var(--font-mono); font-weight: bold; color: var(--accent);">${Math.round(p.salePrice || 0)} Gold</span>
+            <div>
+                <div class="flex-between" style="margin-bottom: 0.35rem;">
+                    <span style="font-size: 0.7rem; color: var(--accent); font-weight: bold; text-transform: uppercase;">${p.category || 'General'}</span>
+                    <span style="font-family: var(--font-mono); font-weight: bold; color: var(--accent);">${Math.round(p.salePrice || 0)} Gold</span>
+                </div>
+                <h3 style="margin: 0.2rem 0; font-size: 0.95rem;">${p.name}</h3>
+                <p style="color: var(--text-dim); font-size: 0.8rem; margin-bottom: 0.85rem;">${p.description || 'Custom potion formula.'}</p>
             </div>
-            <h3 style="margin: 0.2rem 0;">${p.name}</h3>
-            <p style="color: var(--text-dim); font-size: 0.825rem; flex-grow: 1; margin: 0 0 0.85rem 0;">${p.description || 'Custom potion formula.'}</p>
-            <button class="btn-accent" onclick="window.addToSatchel('${p.id}')">Add to Satchel</button>
+            <button class="btn-accent" style="width: 100%; margin-top: auto;" onclick="window.addToSatchel('${p.id}')">+ Add to Satchel</button>
         </div>
     `).join('');
 }
@@ -77,7 +79,16 @@ window.addToSatchel = (potionId) => {
     const existing = satchel.find(item => item.potionId === potionId);
     if (existing) existing.qty += 1;
     else satchel.push({ potionId, qty: 1 });
+
     renderSatchel();
+
+    // Trigger bump animation on floating toast button
+    const floatBtn = document.getElementById('floating-satchel');
+    if (floatBtn) {
+        floatBtn.classList.remove('satchel-bump');
+        void floatBtn.offsetWidth; // Force reflow to restart animation
+        floatBtn.classList.add('satchel-bump');
+    }
 };
 
 window.updateSatchelQty = (index, qty) => {
@@ -96,40 +107,51 @@ function renderSatchel() {
     const countSpan = document.getElementById('satchel-count');
     const itemsDiv = document.getElementById('satchel-items');
     const totalDiv = document.getElementById('satchel-total');
+    const floatBtn = document.getElementById('floating-satchel');
 
     const totalItems = satchel.reduce((sum, i) => sum + i.qty, 0);
     if (countSpan) countSpan.innerText = totalItems;
 
+    // Toggle Floating Button Visibility
+    if (floatBtn) {
+        if (totalItems > 0) {
+            floatBtn.classList.remove('hidden');
+        } else {
+            floatBtn.classList.add('hidden');
+        }
+    }
+
     if (satchel.length === 0) {
-        itemsDiv.innerHTML = `<p style="color: var(--text-dim); font-size: 0.825rem;">Satchel is empty.</p>`;
-        totalDiv.innerText = '';
+        if (itemsDiv) itemsDiv.innerHTML = `<p style="color: var(--text-dim); font-size: 0.825rem;">Satchel is empty.</p>`;
+        if (totalDiv) totalDiv.innerText = '';
         return;
     }
 
     let totalPrice = 0;
-    itemsDiv.innerHTML = satchel.map((item, index) => {
-        const p = potions[item.potionId];
-        if (!p) return '';
-        const lineTotal = (p.salePrice || 0) * item.qty;
-        totalPrice += lineTotal;
+    if (itemsDiv) {
+        itemsDiv.innerHTML = satchel.map((item, index) => {
+            const p = potions[item.potionId];
+            if (!p) return '';
+            const lineTotal = (p.salePrice || 0) * item.qty;
+            totalPrice += lineTotal;
 
-        return `
-            <div class="card flex-between" style="flex-direction: row; padding: 0.4rem 0.65rem;">
-                <div style="flex: 1; padding-right: 0.5rem;">
-                    <strong>${p.name}</strong>
-                    <div style="font-size: 0.75rem; color: var(--text-dim);">${p.salePrice}g each</div>
+            return `
+                <div class="card flex-between" style="flex-direction: row; padding: 0.4rem 0.65rem;">
+                    <div style="flex: 1; padding-right: 0.5rem;">
+                        <strong>${p.name}</strong>
+                        <div style="font-size: 0.75rem; color: var(--text-dim);">${p.salePrice}g each</div>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <input type="number" value="${item.qty}" min="1" max="999" style="width: 70px; padding: 0.25rem 0.35rem; text-align: center;" onchange="window.updateSatchelQty(${index}, this.value)">
+                        <span style="font-family: var(--font-mono); font-weight: bold; min-width: 60px; text-align: right;">${lineTotal.toFixed(1)}g</span>
+                        <button class="btn-danger" style="padding: 0.15rem 0.35rem; font-size: 0.75rem;" onclick="window.removeSatchelItem(${index})">✕</button>
+                    </div>
                 </div>
-                <div style="display: flex; gap: 0.5rem; align-items: center;">
-                    <!-- EXPANDED INPUT WIDTH TO FIT UP TO 3 DIGITS COMFORTABLY -->
-                    <input type="number" value="${item.qty}" min="1" max="999" style="width: 70px; padding: 0.25rem 0.35rem; text-align: center;" onchange="window.updateSatchelQty(${index}, this.value)">
-                    <span style="font-family: var(--font-mono); font-weight: bold; min-width: 60px; text-align: right;">${lineTotal.toFixed(1)}g</span>
-                    <button class="btn-danger" style="padding: 0.15rem 0.35rem; font-size: 0.75rem;" onclick="window.removeSatchelItem(${index})">✕</button>
-                </div>
-            </div>
-        `;
-    }).join('');
+            `;
+        }).join('');
+    }
 
-    totalDiv.innerText = `Total: ${totalPrice.toFixed(1)} Gold`;
+    if (totalDiv) totalDiv.innerText = `Total: ${totalPrice.toFixed(1)} Gold`;
 }
 
 window.submitSatchelOrder = async () => {
@@ -156,7 +178,7 @@ window.submitSatchelOrder = async () => {
     const payload = {
         embeds: [{
             title: "🧪 New Satchel Custom Order",
-            color: 13938487,
+            color: 11030007,
             fields: [
                 { name: "Client Character", value: clientName, inline: true },
                 { name: "Discord Tag", value: clientDiscord || "N/A", inline: true },
