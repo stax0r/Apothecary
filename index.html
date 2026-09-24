@@ -8,12 +8,12 @@
 </head>
 <body>
     <div class="container">
-        <nav class="flex-between" style="margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
+        <nav class="flex-between" style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
             <div>
                 <h1 style="margin: 0;">Silas' Brews</h1>
-                <span style="color: var(--text-dim); font-size: 0.9rem;">Apothecary & Custom Potion Order</span>
+                <span style="color: var(--text-dim); font-size: 0.875rem;">Apothecary & Custom Potion Order</span>
             </div>
-            <div style="display: flex; gap: 1rem; align-items: center;">
+            <div style="display: flex; gap: 0.75rem; align-items: center;">
                 <button class="btn-accent" onclick="document.getElementById('satchel-modal').showModal()">
                     🎒 Satchel (<span id="satchel-count">0</span>)
                 </button>
@@ -21,10 +21,16 @@
             </div>
         </nav>
 
+        <!-- Search and Filter Bar -->
+        <div class="filter-bar">
+            <input type="text" id="store-search-input" placeholder="Search potions..." style="flex: 1; min-width: 200px;" oninput="window.handleStoreSearch(this.value)">
+            <div id="category-chips-container" style="display: flex; gap: 0.5rem; flex-wrap: wrap;"></div>
+        </div>
+
         <div id="catalog" class="grid-catalog"></div>
     </div>
 
-    <!-- Unified Satchel & Order Submission Modal -->
+    <!-- Satchel Modal -->
     <dialog id="satchel-modal">
         <div class="flex-between" style="margin-bottom: 1rem;">
             <h2 style="margin: 0;">Your Satchel</h2>
@@ -33,16 +39,16 @@
 
         <div id="satchel-items" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 250px; overflow-y: auto; margin-bottom: 1rem;"></div>
         
-        <div id="satchel-total" style="font-family: var(--font-mono); text-align: right; margin-bottom: 1.5rem; font-weight: bold; color: var(--accent);"></div>
+        <div id="satchel-total" style="font-family: var(--font-mono); text-align: right; margin-bottom: 1.25rem; font-weight: bold; color: var(--accent);"></div>
 
         <div class="panel" style="background: var(--bg); border: 1px solid var(--border);">
-            <h3 style="margin-top: 0; font-size: 1rem;">Dispatch Order</h3>
-            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <h3 style="margin-top: 0; font-size: 0.95rem;">Dispatch Order</h3>
+            <div style="display: flex; flex-direction: column; gap: 0.65rem;">
                 <input type="text" id="order-client-name" placeholder="Character Name (Required)">
                 <input type="text" id="order-client-discord" placeholder="Discord Tag (Optional)">
                 <textarea id="order-notes" placeholder="Delivery location or special instructions..." style="min-height: 60px;"></textarea>
                 
-                <label style="font-size: 0.85rem; display: flex; gap: 0.5rem; align-items: center; cursor: pointer;">
+                <label style="font-size: 0.825rem; display: flex; gap: 0.5rem; align-items: center; cursor: pointer;">
                     <input type="checkbox" id="order-location-confirm">
                     <span>I confirm I am currently at the designated delivery spot.</span>
                 </label>

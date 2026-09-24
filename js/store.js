@@ -2,32 +2,88 @@ import { db } from "./firebase-config.js";
 import { ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
 let potions = {};
-let satchel = []; // Local cart holding selected potions
+let satchel = [];
+let selectedCategory = 'All';
+let searchQuery = '';
 
 const DISCORD_WEBHOOK_URL = "YOUR_DISCORD_WEBHOOK_URL_HERE";
 
 onValue(ref(db, 'potions'), (snapshot) => {
     potions = snapshot.val() || {};
+    renderCategoryChips();
     renderCatalog();
 });
 
+window.handleStoreSearch = (query) => {
+    searchQuery = query.trim().toLowerCase();
+    renderCatalog();
+};
+
+window.setCategoryFilter = (cat) => {
+    selectedCategory = cat;
+    renderCategoryChips();
+    renderCatalog();
+};
+
+function renderCategoryChips() {
+    const container = document.getElementById('category-chips-container');
+    if (!container) return;
+
+    const categories = ['All', ...new Set(Object.values(potions).map(p => p.category || 'General'))];
+    
+    container.innerHTML = categories.map(cat => `
+        <button class="filter-chip ${selectedCategory === cat ? 'active' : ''}" onclick="window.setCategoryFilter('${cat.replace(/'/g, "\\'")}')">
+            ${cat}
+        </button>
+    `).join('');
+}
+
+function renderCatalog() {
+    const catalogDiv = document.getElementById('catalog');
+    if (!catalogDiv) return;
+
+    let filtered = Object.values(potions).filter(p => !p.hidden);
+
+    if (selectedCategory !== 'All') {
+        filtered = filtered.filter(p => (p.category || 'General') === selectedCategory);
+    }
+
+    if (searchQuery) {
+        filtered = filtered.filter(p => 
+            (p.name || '').toLowerCase().includes(searchQuery) || 
+            (p.description || '').toLowerCase().includes(searchQuery)
+        );
+    }
+
+    if (filtered.length === 0) {
+        catalogDiv.innerHTML = `<p style="color: var(--text-dim); grid-column: 1/-1;">No potions match your query.</p>`;
+        return;
+    }
+
+    catalogDiv.innerHTML = filtered.map(p => `
+        <div class="card">
+            <div class="flex-between">
+                <span style="font-size: 0.725rem; color: var(--accent); font-weight: bold; text-transform: uppercase;">${p.category || 'General'}</span>
+                <span style="font-family: var(--font-mono); font-weight: bold; color: var(--accent);">${Math.round(p.salePrice || 0)} Gold</span>
+            </div>
+            <h3 style="margin: 0.2rem 0;">${p.name}</h3>
+            <p style="color: var(--text-dim); font-size: 0.825rem; flex-grow: 1; margin: 0 0 0.85rem 0;">${p.description || 'Custom potion formula.'}</p>
+            <button class="btn-accent" onclick="window.addToSatchel(${p.id})">Add to Satchel</button>
+        </div>
+    `).join('');
+}
+
 window.addToSatchel = (potionId) => {
     const existing = satchel.find(item => item.potionId === potionId);
-    if (existing) {
-        existing.qty += 1;
-    } else {
-        satchel.push({ potionId, qty: 1 });
-    }
+    if (existing) existing.qty += 1;
+    else satchel.push({ potionId, qty: 1 });
     renderSatchel();
 };
 
 window.updateSatchelQty = (index, qty) => {
     const parsedQty = parseInt(qty) || 0;
-    if (parsedQty <= 0) {
-        satchel.splice(index, 1);
-    } else {
-        satchel[index].qty = parsedQty;
-    }
+    if (parsedQty <= 0) satchel.splice(index, 1);
+    else satchel[index].qty = parsedQty;
     renderSatchel();
 };
 
@@ -35,23 +91,6 @@ window.removeSatchelItem = (index) => {
     satchel.splice(index, 1);
     renderSatchel();
 };
-
-function renderCatalog() {
-    const catalogDiv = document.getElementById('catalog');
-    if (!catalogDiv) return;
-
-    catalogDiv.innerHTML = Object.values(potions).map(p => `
-        <div class="card">
-            <div class="flex-between">
-                <span style="font-size: 0.75rem; color: var(--accent); font-weight: bold; text-transform: uppercase;">${p.category || 'General'}</span>
-                <span style="font-family: var(--font-mono); font-weight: bold; color: var(--accent);">${Math.round(p.salePrice || 0)} Gold</span>
-            </div>
-            <h3 style="margin: 0.25rem 0;">${p.name}</h3>
-            <p style="color: var(--text-dim); font-size: 0.85rem; flex-grow: 1; margin: 0 0 1rem 0;">${p.description || 'Custom brew.'}</p>
-            <button class="btn-accent" onclick="window.addToSatchel(${p.id})">Add to Satchel</button>
-        </div>
-    `).join('');
-}
 
 function renderSatchel() {
     const countSpan = document.getElementById('satchel-count');
@@ -62,7 +101,7 @@ function renderSatchel() {
     if (countSpan) countSpan.innerText = totalItems;
 
     if (satchel.length === 0) {
-        itemsDiv.innerHTML = `<p style="color: var(--text-dim); font-size: 0.85rem;">Satchel is empty.</p>`;
+        itemsDiv.innerHTML = `<p style="color: var(--text-dim); font-size: 0.825rem;">Satchel is empty.</p>`;
         totalDiv.innerText = '';
         return;
     }
@@ -75,7 +114,7 @@ function renderSatchel() {
         totalPrice += lineTotal;
 
         return `
-            <div class="card flex-between" style="flex-direction: row; padding: 0.5rem 0.75rem;">
+            <div class="card flex-between" style="flex-direction: row; padding: 0.4rem 0.65rem;">
                 <div>
                     <strong>${p.name}</strong>
                     <div style="font-size: 0.75rem; color: var(--text-dim);">${p.salePrice}g each</div>
@@ -83,7 +122,7 @@ function renderSatchel() {
                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                     <input type="number" value="${item.qty}" min="1" style="width: 50px;" onchange="window.updateSatchelQty(${index}, this.value)">
                     <span style="font-family: var(--font-mono); font-weight: bold;">${lineTotal.toFixed(1)}g</span>
-                    <button class="btn-danger" style="padding: 0.2rem 0.4rem; font-size: 0.75rem;" onclick="window.removeSatchelItem(${index})">✕</button>
+                    <button class="btn-danger" style="padding: 0.15rem 0.35rem; font-size: 0.75rem;" onclick="window.removeSatchelItem(${index})">✕</button>
                 </div>
             </div>
         `;
@@ -98,9 +137,9 @@ window.submitSatchelOrder = async () => {
     const notes = document.getElementById('order-notes').value.trim();
     const confirmed = document.getElementById('order-location-confirm').checked;
 
-    if (!clientName) return alert("Please specify your character name.");
-    if (!confirmed) return alert("Please confirm that you are currently at the delivery location.");
-    if (satchel.length === 0) return alert("Your satchel is empty.");
+    if (!clientName) return alert("Character name required.");
+    if (!confirmed) return alert("Confirm you are currently at the location.");
+    if (satchel.length === 0) return alert("Satchel is empty.");
 
     let totalCost = 0;
     let orderLines = [];
@@ -120,9 +159,9 @@ window.submitSatchelOrder = async () => {
             fields: [
                 { name: "Client Character", value: clientName, inline: true },
                 { name: "Discord Tag", value: clientDiscord || "N/A", inline: true },
-                { name: "Order Items", value: orderLines.join('\n') },
-                { name: "Total Estimated Cost", value: `${totalCost.toFixed(1)} Gold`, inline: true },
-                { name: "Location / Notes", value: notes || "None" }
+                { name: "Order Details", value: orderLines.join('\n') },
+                { name: "Total Cost", value: `${totalCost.toFixed(1)} Gold`, inline: true },
+                { name: "Notes / Location", value: notes || "None" }
             ],
             timestamp: new Date().toISOString()
         }]
@@ -145,7 +184,7 @@ window.submitSatchelOrder = async () => {
             renderSatchel();
             document.getElementById('satchel-modal').close();
         } else {
-            alert("Failed to send order to webhook.");
+            alert("Error sending order.");
         }
     } catch (e) {
         alert("Error sending order: " + e.message);
