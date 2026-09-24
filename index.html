@@ -3,82 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Silas' Brews - Apothecary Storefront</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Silas' Brews - Apothecary</title>
+    <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
-
-<div id="status-banner"></div>
-
-<div class="container">
-    <header>
-<header>
-    <div class="titles">
-        <h1>Silas' Brews</h1>
-        <span class="subtitle">Alchemist Storefront & Potion Ledger</span>
-    </div>
-    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-        <a href="admin-inventory.html" class="admin-toggle">Inventory Manager</a>
-        <a href="admin-catalog.html" class="admin-toggle">Catalog & Batch Control</a>
-    </div>
-</header>
-
-    <!-- Floating Action Buttons (Hidden by default until items are added) -->
-    <div id="floating-triggers" class="floating-triggers">
-        <button id="satchel-trigger-btn" class="floating-btn satchel-trigger hidden" onclick="toggleModal('cart-modal')">
-            🎒 Satchel (<span id="satchel-count">0</span>)
-        </button>
-        <button id="custom-trigger-btn" class="floating-btn custom-trigger hidden" onclick="toggleModal('custom-modal')">
-            📜 Custom Order (<span id="custom-count">0</span>)
-        </button>
-    </div>
-
-    <!-- Satchel Pop-up Modal -->
-    <div id="cart-modal" class="shop-modal hidden">
-        <div class="shop-modal-dialog">
-            <button class="modal-close-btn" type="button" onclick="toggleModal('cart-modal')">×</button>
-            <div id="cart-panel" class="cart-panel" style="margin-bottom: 0; border: none; background: transparent !important; padding: 0;">
-                <h2>Satchel</h2>
-                <div style="margin-top: 15px;">
-                    <div id="cart-items-list"></div>
-                    <div id="cart-summary-area"></div>
-                    <div style="display: flex; gap: 10px; margin-top: 15px;">
-                        <button onclick="clearCart()" style="background: var(--border); flex: 1; font-size: 0.85rem;">Empty Satchel</button>
-                        <button onclick="toggleModal('cart-modal')" style="background: var(--accent); flex: 1; font-size: 0.85rem;">Continue Browsing</button>
-                    </div>
-                </div>
+    <div class="container">
+        <nav class="flex-between">
+            <div>
+                <h1>Silas' Brews</h1>
+                <p class="text-dim">Apothecary Storefront</p>
             </div>
+            <div style="display: flex; gap: 1rem;">
+                <button onclick="document.getElementById('satchel-modal').showModal()">🎒 Satchel (<span id="satchel-count">0</span>)</button>
+                <button onclick="document.getElementById('custom-modal').showModal()">📜 Custom Order (<span id="custom-count">0</span>)</button>
+                <a href="admin.html"><button>Admin Access</button></a>
+            </div>
+        </nav>
+
+        <div id="catalog" class="grid-catalog">
+            <!-- Potions injected here -->
         </div>
     </div>
 
-    <!-- Custom Order Pop-up Modal -->
-    <div id="custom-modal" class="shop-modal hidden">
-        <div class="shop-modal-dialog">
-            <button class="modal-close-btn" type="button" onclick="toggleModal('custom-modal')">×</button>
-            <div id="custom-panel" class="custom-panel" style="margin-bottom: 0; border: none; background: transparent !important; padding: 0;">
-                <h2 style="color: var(--custom-order);">Custom Order</h2>
-                <div style="margin-top: 15px;">
-                    <div id="custom-items-list"></div>
-                    <div id="custom-summary-area"></div>
-                    <div style="display: flex; gap: 10px; margin-top: 15px;">
-                        <button onclick="clearCustomOrders()" style="background: var(--border); flex: 1; font-size: 0.85rem;">Empty Custom Orders</button>
-                        <button onclick="toggleModal('custom-modal')" style="background: var(--accent); flex: 1; font-size: 0.85rem;">Continue Browsing</button>
-                    </div>
-                </div>
-            </div>
+    <!-- Satchel Modal -->
+    <dialog id="satchel-modal">
+        <div class="flex-between">
+            <h2>Your Satchel</h2>
+            <button onclick="this.closest('dialog').close()">Close</button>
         </div>
-    </div>
+        <div id="cart-items" style="margin: 1.5rem 0; display:flex; flex-direction:column; gap:0.5rem;"></div>
+        <div id="cart-summary" class="text-dim"></div>
+    </dialog>
 
-    <h2>Apothecary Stock</h2>
-    <div id="filter-bar" class="filter-bar" style="margin-top: 15px;"></div>
-    <div id="catalog" class="catalog-grid"></div>
-</div>
+    <!-- Custom Order Modal -->
+    <dialog id="custom-modal">
+        <div class="flex-between">
+            <h2>Custom Order Request</h2>
+            <button onclick="this.closest('dialog').close()">Close</button>
+        </div>
+        <div id="custom-items" style="margin: 1.5rem 0; display:flex; flex-direction:column; gap:0.5rem;"></div>
+        
+        <div class="panel" style="margin-top: 1rem;">
+            <input type="text" id="client-name" placeholder="Character Name (Required)" style="width: 100%; margin-bottom: 0.5rem;">
+            <textarea id="client-message" placeholder="Delivery notes..." style="width: 100%; margin-bottom: 0.5rem;"></textarea>
+            <button class="btn-webhook" onclick="window.sendWebhookOrder()">Send Order via Raven (Webhook)</button>
+        </div>
+    </dialog>
 
-<footer>
-    <span><strong>OOC:</strong> Whether you have questions, feedback, or just need to get in touch, please feel free to drop me a message on Discord at <code class="copyable-name" title="Click to copy">stax0r</code>. Always happy to help![cite: 1]</span>
-</footer>
-
-<script type="module" src="store.js"></script>
-
+    <script type="module" src="js/store.js"></script>
 </body>
 </html>

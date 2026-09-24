@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Silas' Brews - Backroom Control</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <dialog id="login-modal">
+        <h2>Authentication Required</h2>
+        <input type="email" id="login-email" placeholder="Email" style="width:100%; margin:1rem 0 0.5rem;">
+        <input type="password" id="login-password" placeholder="Password" style="width:100%; margin-bottom:1rem;">
+        <button class="btn-primary" onclick="window.login()" style="width:100%;">Access Secure Database</button>
+    </dialog>
+
+    <div class="container" id="admin-dashboard" style="display:none;">
+        <nav class="flex-between">
+            <div>
+                <h1>Backroom Control</h1>
+                <p class="text-dim">Inventory, Recipes, and Batch Calculation</p>
+            </div>
+            <div>
+                <a href="index.html"><button>← Back to Storefront</button></a>
+                <button onclick="window.logout()">Logout</button>
+            </div>
+        </nav>
+
+        <div class="grid-2">
+            <!-- COLUMN 1: INVENTORY -->
+            <div class="panel">
+                <h2>Ingredient Stock Manager</h2>
+                <div style="display:flex; gap:0.5rem; margin-bottom: 1rem;">
+                    <input type="text" id="new-ing-name" placeholder="Ingredient Name" style="flex:2;">
+                    <input type="number" id="new-ing-price" placeholder="Cost/Unit" style="flex:1;">
+                    <input type="number" id="new-ing-stock" placeholder="Stock" style="flex:1;">
+                    <input type="number" id="new-ing-alert" placeholder="Alert at" style="flex:1;">
+                    <button class="btn-primary" onclick="window.addIngredient()">Add</button>
+                </div>
+                <div id="admin-inventory-list" style="display:flex; flex-direction:column; gap:0.5rem; max-height: 500px; overflow-y:auto;"></div>
+            </div>
+
+            <!-- COLUMN 2: BATCHING & CATALOG -->
+            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <div class="panel">
+                    <h2>Bulk Batch Calculator</h2>
+                    <p class="text-dim" style="margin-bottom: 1rem;">Calculates total ingredient costs against current prices.</p>
+                    <div style="display:flex; gap:0.5rem; margin-bottom: 1rem;">
+                        <select id="batch-select" style="flex:2;"></select>
+                        <input type="number" id="batch-qty" value="1" min="1" style="flex:1;">
+                        <button class="btn-primary" onclick="window.calculateBatch()">Calculate Run</button>
+                    </div>
+                    <div id="batch-results" style="font-family: var(--font-mono); font-size: 0.9rem;"></div>
+                </div>
+
+                <div class="panel">
+                    <h2>Potion Catalog</h2>
+                    <div id="admin-potion-list" style="display:flex; flex-direction:column; gap:0.5rem; max-height: 300px; overflow-y:auto;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/admin.js"></script>
+</body>
+</html>
