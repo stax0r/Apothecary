@@ -42,6 +42,7 @@ function renderCatalog() {
     const catalogDiv = document.getElementById('catalog');
     if (!catalogDiv) return;
 
+    // Filter out hidden potions
     let filtered = Object.values(potions).filter(p => !p.hidden);
 
     if (selectedCategory !== 'All') {
@@ -56,7 +57,7 @@ function renderCatalog() {
     }
 
     if (filtered.length === 0) {
-        catalogDiv.innerHTML = `<p style="color: var(--text-dim); grid-column: 1/-1;">No potions match your query.</p>`;
+        catalogDiv.innerHTML = `<p style="color: var(--text-dim); grid-column: 1/-1;">No potions match your search.</p>`;
         return;
     }
 

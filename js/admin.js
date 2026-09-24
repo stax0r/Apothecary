@@ -40,7 +40,7 @@ window.login = () => {
 
 window.logout = () => signOut(auth);
 
-// --- REGISTER INGREDIENT FIX ---
+// --- REGISTER INGREDIENT FUNCTION ---
 window.addIngredient = () => {
     const nameInput = document.getElementById('ing-name');
     const priceInput = document.getElementById('ing-price');
@@ -70,6 +70,7 @@ function checkIngredientsAttention() {
     const container = document.getElementById('attention-container');
     if (!container) return;
 
+    // Identify which ingredient IDs are currently used in active recipes
     const usedIngredientIds = new Set();
     Object.values(potions).forEach(p => {
         if (p.recipe && Array.isArray(p.recipe)) {
@@ -86,8 +87,8 @@ function checkIngredientsAttention() {
 
             if (noPrice || lowStock) {
                 const reasons = [];
-                if (noPrice) reasons.push("missing price");
-                if (lowStock) reasons.push(`low stock (${i.stockQty || 0} remaining)`);
+                if (noPrice) reasons.push("no registered price");
+                if (lowStock) reasons.push(`low stock [${i.stockQty || 0} remaining]`);
                 issues.push(`<strong>${i.name}</strong> (${reasons.join(', ')})`);
             }
         }
@@ -105,7 +106,7 @@ function checkIngredientsAttention() {
     }
 }
 
-// --- RENDER ALL INGREDIENTS ALPHABETICALLY ---
+// --- RENDER ALL INGREDIENTS ALPHABETICALLY WITH SEARCH ---
 window.renderIngredients = () => {
     const listDiv = document.getElementById('ingredient-list');
     const searchInput = document.getElementById('ing-search');
@@ -254,6 +255,7 @@ window.savePotion = () => {
     renderRecipePreview();
 };
 
+// --- VISIBILITY TOGGLE (PRESERVES DATA WITHOUT DELETING) ---
 window.togglePotionVisibility = (id) => {
     if (!potions[id]) return;
     const currentStatus = !!potions[id].hidden;
