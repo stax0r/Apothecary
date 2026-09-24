@@ -7,16 +7,45 @@
     <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
-    <!-- Floating Toast Pop-up Container -->
+    <!-- Floating Toast Warning Container -->
     <div id="toast-container" class="toast-container"></div>
 
-    <!-- Login Modal -->
+    <!-- LOGIN MODAL -->
     <dialog id="login-modal">
         <h2 style="margin-top:0;">Cellar Security</h2>
         <div style="display:flex; flex-direction:column; gap:0.75rem; margin-top:1rem;">
             <input type="email" id="login-email" placeholder="Email">
             <input type="password" id="login-password" placeholder="Password">
             <button class="btn-accent" onclick="window.login()">Enter Cellar</button>
+        </div>
+    </dialog>
+
+    <!-- CREATE INGREDIENT MODAL POP-UP -->
+    <dialog id="create-ing-modal">
+        <div class="flex-between" style="margin-bottom: 1rem;">
+            <h2 style="margin: 0;">Register New Ingredient</h2>
+            <button onclick="document.getElementById('create-ing-modal').close()">✕</button>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <div class="form-group">
+                <label style="font-size: 0.8rem; color: var(--text-dim);">Ingredient Name</label>
+                <input type="text" id="ing-name" placeholder="e.g. Blue Mountain Flower">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label style="font-size: 0.8rem; color: var(--text-dim);">Price / Unit (g)</label>
+                    <input type="number" id="ing-price" step="0.01" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label style="font-size: 0.8rem; color: var(--text-dim);">Initial Stock</label>
+                    <input type="number" id="ing-stock" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label style="font-size: 0.8rem; color: var(--text-dim);">Alert Min</label>
+                    <input type="number" id="ing-alert" placeholder="0">
+                </div>
+            </div>
+            <button class="btn-accent" onclick="window.addIngredient()" style="margin-top: 0.5rem;">+ Register Ingredient</button>
         </div>
     </dialog>
 
@@ -47,6 +76,46 @@
                 </div>
             </div>
             <button class="btn-accent" onclick="window.saveIngredientEdit()" style="margin-top: 0.5rem;">Save Changes</button>
+        </div>
+    </dialog>
+
+    <!-- CREATE POTION MODAL POP-UP -->
+    <dialog id="create-potion-modal">
+        <div class="flex-between" style="margin-bottom: 1rem;">
+            <h2 style="margin: 0;">Create Potion Recipe</h2>
+            <button onclick="document.getElementById('create-potion-modal').close()">✕</button>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <div class="form-group">
+                <label style="font-size: 0.8rem; color: var(--text-dim);">Potion Name</label>
+                <input type="text" id="potion-name" placeholder="e.g. Potion of Extreme Healing">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label style="font-size: 0.8rem; color: var(--text-dim);">Category</label>
+                    <input type="text" id="potion-category" placeholder="e.g. Health">
+                </div>
+                <div class="form-group">
+                    <label style="font-size: 0.8rem; color: var(--text-dim);">Sale Price (Gold)</label>
+                    <input type="number" id="potion-price" step="0.01" placeholder="0">
+                </div>
+            </div>
+            <div class="form-group">
+                <label style="font-size: 0.8rem; color: var(--text-dim);">Description</label>
+                <textarea id="potion-desc" placeholder="Potion description or effects..." style="min-height: 50px;"></textarea>
+            </div>
+
+            <div style="border: 1px solid var(--border); padding: 0.75rem; border-radius: 6px;">
+                <span style="font-size: 0.825rem; font-weight: bold;">Recipe Ingredients</span>
+                <div style="display:flex; gap:0.5rem; margin-top:0.4rem;">
+                    <select id="recipe-ing-select" style="flex:2;"></select>
+                    <input type="number" id="recipe-ing-qty" value="1" min="1" style="width: 70px;">
+                    <button type="button" onclick="window.addIngredientToRecipe()">+ Add</button>
+                </div>
+                <ul id="recipe-preview" style="font-size: 0.825rem; padding-left: 1.2rem; margin: 0.5rem 0 0 0;"></ul>
+            </div>
+
+            <button class="btn-accent" onclick="window.savePotion()" style="margin-top: 0.5rem;">Save Potion to Catalog</button>
         </div>
     </dialog>
 
@@ -107,30 +176,14 @@
             <!-- COLUMN 1: INGREDIENTS STOCK MANAGER -->
             <div style="display: flex; flex-direction: column; gap: 1.25rem;">
                 <div class="panel">
-                    <h2>Register New Ingredient</h2>
-                    <div class="form-row" style="margin-top: 0.85rem;">
-                        <div class="form-group" style="flex: 2;">
-                            <input type="text" id="ing-name" placeholder="Ingredient Name">
-                        </div>
-                        <div class="form-group">
-                            <input type="number" id="ing-price" step="0.01" placeholder="Price/Unit (g)">
-                        </div>
-                        <div class="form-group">
-                            <input type="number" id="ing-stock" placeholder="Initial Stock">
-                        </div>
-                        <div class="form-group">
-                            <input type="number" id="ing-alert" placeholder="Alert Threshold">
-                        </div>
-                    </div>
-                    <button class="btn-accent" onclick="window.addIngredient()" style="margin-top: 0.75rem; width: 100%;">+ Register Ingredient</button>
-                </div>
-
-                <div class="panel">
                     <div class="flex-between" style="margin-bottom: 0.75rem;">
-                        <h2>Master Ingredients List</h2>
-                        <input type="text" id="ing-search" placeholder="Search ingredients..." style="width: 180px;" oninput="window.renderIngredients()">
+                        <h2 style="margin: 0;">Master Ingredients List</h2>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <input type="text" id="ing-search" placeholder="Search..." style="width: 140px;" oninput="window.renderIngredients()">
+                            <button class="btn-accent" onclick="document.getElementById('create-ing-modal').showModal()">+ New Ingredient</button>
+                        </div>
                     </div>
-                    <div id="ingredient-list" style="display:flex; flex-direction:column; gap:0.5rem; max-height: 480px; overflow-y:auto; padding-right: 2px;"></div>
+                    <div id="ingredient-list" style="display:flex; flex-direction:column; gap:0.5rem; max-height: 520px; overflow-y:auto; padding-right: 2px;"></div>
                 </div>
             </div>
 
@@ -147,35 +200,14 @@
                 </div>
 
                 <div class="panel">
-                    <h2>Create Potion Recipe</h2>
-                    <div style="display:flex; flex-direction:column; gap:0.6rem; margin-top: 0.85rem;">
-                        <input type="text" id="potion-name" placeholder="Potion Name">
-                        <div class="form-row">
-                            <input type="text" id="potion-category" placeholder="Category (e.g. Health)" style="flex:1;">
-                            <input type="number" id="potion-price" step="0.01" placeholder="Sale Price (g)" style="flex:1;">
-                        </div>
-                        <textarea id="potion-desc" placeholder="Potion description or effects..." style="min-height: 50px;"></textarea>
-
-                        <div style="border: 1px solid var(--border); padding: 0.75rem; border-radius: 6px;">
-                            <span style="font-size: 0.825rem; font-weight: bold;">Recipe Ingredients</span>
-                            <div style="display:flex; gap:0.5rem; margin-top:0.4rem;">
-                                <select id="recipe-ing-select" style="flex:2;"></select>
-                                <input type="number" id="recipe-ing-qty" value="1" min="1" style="width: 70px;">
-                                <button onclick="window.addIngredientToRecipe()">+ Add</button>
-                            </div>
-                            <ul id="recipe-preview" style="font-size: 0.825rem; padding-left: 1.2rem; margin: 0.5rem 0 0 0;"></ul>
-                        </div>
-
-                        <button class="btn-accent" onclick="window.savePotion()">Save Potion to Catalog</button>
-                    </div>
-                </div>
-
-                <div class="panel">
                     <div class="flex-between" style="margin-bottom: 0.75rem;">
-                        <h2>Storefront Potion Control</h2>
-                        <input type="text" id="potion-search" placeholder="Search catalog..." style="width: 180px;" oninput="window.renderPotions()">
+                        <h2 style="margin: 0;">Storefront Potion Control</h2>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <input type="text" id="potion-search" placeholder="Search catalog..." style="width: 140px;" oninput="window.renderPotions()">
+                            <button class="btn-accent" onclick="document.getElementById('create-potion-modal').showModal()">+ New Potion</button>
+                        </div>
                     </div>
-                    <div id="admin-potion-list" style="display:flex; flex-direction:column; gap:0.5rem; max-height: 280px; overflow-y:auto; padding-right: 2px;"></div>
+                    <div id="admin-potion-list" style="display:flex; flex-direction:column; gap:0.5rem; max-height: 320px; overflow-y:auto; padding-right: 2px;"></div>
                 </div>
             </div>
         </div>

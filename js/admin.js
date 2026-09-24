@@ -42,7 +42,7 @@ window.login = () => {
 
 window.logout = () => signOut(auth);
 
-// --- REGISTER INGREDIENT ---
+// --- REGISTER NEW INGREDIENT (VIA POP-UP MODAL) ---
 window.addIngredient = () => {
     const nameInput = document.getElementById('ing-name');
     const priceInput = document.getElementById('ing-price');
@@ -63,11 +63,12 @@ window.addIngredient = () => {
             priceInput.value = '';
             stockInput.value = '';
             alertInput.value = '';
+            document.getElementById('create-ing-modal').close();
         })
         .catch(err => alert("Error registering ingredient: " + err.message));
 };
 
-// --- EDIT INGREDIENT (POP-UP MODAL) ---
+// --- EDIT INGREDIENT MODAL ---
 window.openEditIngredientModal = (id) => {
     const ing = ingredients[id];
     if (!ing) return;
@@ -106,7 +107,7 @@ window.deleteIngredient = (id) => {
     }
 };
 
-// --- FLOATING CLOSEABLE WARNING TOAST ---
+// --- FLOATING WARNING TOAST ---
 window.dismissWarningToast = () => {
     toastDismissed = true;
     const container = document.getElementById('toast-container');
@@ -156,7 +157,7 @@ function checkIngredientsAttention() {
     }
 }
 
-// --- RENDER ALL INGREDIENTS ALPHABETICALLY ---
+// --- RENDER INGREDIENTS LIST ---
 window.renderIngredients = () => {
     const listDiv = document.getElementById('ingredient-list');
     const searchInput = document.getElementById('ing-search');
@@ -254,6 +255,7 @@ function renderRecipeSelectOptions() {
     if (editSelect) editSelect.innerHTML = optionsHtml;
 }
 
+// --- CREATE POTION RECIPE (VIA POP-UP MODAL) ---
 window.addIngredientToRecipe = () => {
     const ingId = document.getElementById('recipe-ing-select').value;
     const qty = parseInt(document.getElementById('recipe-ing-qty').value) || 1;
@@ -296,17 +298,18 @@ window.savePotion = () => {
         description: desc,
         hidden: false,
         recipe: currentRecipe
-    });
-
-    document.getElementById('potion-name').value = '';
-    document.getElementById('potion-category').value = '';
-    document.getElementById('potion-price').value = '';
-    document.getElementById('potion-desc').value = '';
-    currentRecipe = [];
-    renderRecipePreview();
+    }).then(() => {
+        document.getElementById('potion-name').value = '';
+        document.getElementById('potion-category').value = '';
+        document.getElementById('potion-price').value = '';
+        document.getElementById('potion-desc').value = '';
+        currentRecipe = [];
+        renderRecipePreview();
+        document.getElementById('create-potion-modal').close();
+    }).catch(err => alert("Error saving potion: " + err.message));
 };
 
-// --- EDIT POTION (POP-UP MODAL) ---
+// --- EDIT POTION MODAL ---
 window.openEditPotionModal = (id) => {
     const p = potions[id];
     if (!p) return;
