@@ -364,11 +364,23 @@ dialog::backdrop {
 }
 
 /* TOAST WARNINGS */
-.toast-container {
+.toast-container,
+#toast-container[popover] {
     position: fixed;
     bottom: 1rem;
     right: 1rem;
-    z-index: 1000;
+    top: auto;
+    left: auto;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    overflow: visible;
+    z-index: 2147483647;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    pointer-events: none;
 }
 
 .warning-toast {
@@ -394,13 +406,13 @@ dialog::backdrop {
 }
 
 .general-toast {
+    pointer-events: auto;
     background: var(--panel-bg);
     border-left: 4px solid var(--accent);
     color: var(--text);
     padding: 0.85rem 1.25rem;
     border-radius: var(--radius-sm);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
-    margin-top: 0.6rem;
     animation: slideInRight 0.3s ease forwards;
     font-size: 0.9rem;
     max-width: 350px;

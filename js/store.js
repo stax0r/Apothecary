@@ -7,7 +7,7 @@ let settings = { location: '', categoryOrder: '' };
 let selectedCategory = 'All';
 let searchQuery = '';
 
-const DISCORD_WEBHOOK_URL = "__DISCORD_WEBHOOK_URL__";
+const DISCORD_WEBHOOK_URL = "__DISCORD_WEBHOOK_URL__"; // Remember to replace this with your actual URL
 
 window.showToast = (message, type = 'info') => {
     let container = document.getElementById('toast-container');
@@ -15,16 +15,31 @@ window.showToast = (message, type = 'info') => {
         container = document.createElement('div');
         container.id = 'toast-container';
         container.className = 'toast-container';
+        container.setAttribute('popover', 'manual');
         document.body.appendChild(container);
+    } else if (!container.hasAttribute('popover')) {
+        container.setAttribute('popover', 'manual');
     }
+
+    try {
+        container.showPopover();
+    } catch (e) {
+        // Popover already active or unsupported
+    }
+
     const toast = document.createElement('div');
     toast.className = `general-toast ${type}`;
     toast.innerText = message;
     container.appendChild(toast);
-    
+
     setTimeout(() => {
         toast.style.animation = 'fadeOut 0.3s ease forwards';
-        setTimeout(() => toast.remove(), 300);
+        setTimeout(() => {
+            toast.remove();
+            if (container.children.length === 0) {
+                try { container.hidePopover(); } catch (e) {}
+            }
+        }, 300);
     }, 3000);
 };
 

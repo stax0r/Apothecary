@@ -16,16 +16,31 @@ window.showToast = (message, type = 'info') => {
         container = document.createElement('div');
         container.id = 'toast-container';
         container.className = 'toast-container';
+        container.setAttribute('popover', 'manual');
         document.body.appendChild(container);
+    } else if (!container.hasAttribute('popover')) {
+        container.setAttribute('popover', 'manual');
     }
+
+    try {
+        container.showPopover();
+    } catch (e) {
+        // Popover already active or unsupported
+    }
+
     const toast = document.createElement('div');
     toast.className = `general-toast ${type}`;
     toast.innerText = message;
     container.appendChild(toast);
-    
+
     setTimeout(() => {
         toast.style.animation = 'fadeOut 0.3s ease forwards';
-        setTimeout(() => toast.remove(), 300);
+        setTimeout(() => {
+            toast.remove();
+            if (container.children.length === 0) {
+                try { container.hidePopover(); } catch (e) {}
+            }
+        }, 300);
     }, 3000);
 };
 
@@ -158,12 +173,17 @@ window.deleteIngredient = (id) => {
 window.dismissWarningToast = () => {
     toastDismissed = true;
     const container = document.getElementById('toast-container');
-    if (container) container.innerHTML = '';
+    if (container) {
+        container.innerHTML = '';
+        if (container.children.length === 0) {
+            try { container.hidePopover(); } catch(e) {}
+        }
+    }
 };
 
 function checkIngredientsAttention() {
     if (toastDismissed) return;
-    const container = document.getElementById('toast-container');
+    let container = document.getElementById('toast-container');
     if (!container) return;
 
     const usedIngredientIds = new Set();
@@ -190,6 +210,9 @@ function checkIngredientsAttention() {
     });
 
     if (issues.length > 0) {
+        if (!container.hasAttribute('popover')) container.setAttribute('popover', 'manual');
+        try { container.showPopover(); } catch (e) {}
+
         container.innerHTML = `
             <div class="warning-toast">
                 <div class="warning-toast-header">
