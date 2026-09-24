@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Silas' Brews - Cellar Control</title>
+    <title>Silas' Brews - Apothecary's Ledger</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="stylesheet" href="css/main.css">
 </head>
+
 <body>
     <div id="toast-container" class="toast-container"></div>
 
@@ -169,7 +172,7 @@
     <div class="container" id="admin-dashboard" style="display:none;">
         <nav class="panel-header" style="margin-bottom: 1.25rem;">
             <div>
-                <h1>Cellar Management</h1>
+                <h1>Apothecary's Ledger</h1>
                 <span style="color: var(--text-dim); font-size: 0.825rem;">Raw Materials & Catalog Management</span>
             </div>
             <div class="flex-between gap-sm">
@@ -185,8 +188,10 @@
                 <div class="panel-header">
                     <h2>Master Ingredients List</h2>
                     <div class="flex-between gap-sm">
-                        <input type="text" id="ing-search" class="input-search input-sm" placeholder="Search..." oninput="window.renderIngredients()">
-                        <button class="btn-accent btn-sm" onclick="document.getElementById('create-ing-modal').showModal()">+ New Ingredient</button>
+                        <input type="text" id="ing-search" class="input-search input-sm" placeholder="Search..."
+                            oninput="window.renderIngredients()">
+                        <button class="btn-accent btn-sm"
+                            onclick="document.getElementById('create-ing-modal').showModal()">+ New Ingredient</button>
                     </div>
                 </div>
                 <div id="ingredient-list" class="scroll-list"></div>
@@ -197,8 +202,10 @@
                 <div class="panel-header">
                     <h2>Storefront Potion Control</h2>
                     <div class="flex-between gap-sm">
-                        <input type="text" id="potion-search" class="input-search input-sm" placeholder="Search catalog..." oninput="window.renderPotions()">
-                        <button class="btn-accent btn-sm" onclick="document.getElementById('create-potion-modal').showModal()">+ New Potion</button>
+                        <input type="text" id="potion-search" class="input-search input-sm"
+                            placeholder="Search catalog..." oninput="window.renderPotions()">
+                        <button class="btn-accent btn-sm"
+                            onclick="document.getElementById('create-potion-modal').showModal()">+ New Potion</button>
                     </div>
                 </div>
                 <div id="admin-potion-list" class="scroll-list"></div>
@@ -220,15 +227,18 @@
             <div id="batch-queue-container" style="margin-bottom: 0.85rem;"></div>
 
             <!-- Calculation Output Box -->
-            <div id="batch-results" class="code-box" style="margin-bottom: 0.85rem;">Add potions to the batch list above to evaluate costs and required ingredients.</div>
+            <div id="batch-results" class="code-box" style="margin-bottom: 0.85rem;">Add potions to the batch list above
+                to evaluate costs and required ingredients.</div>
 
             <!-- Craft Button Placed at the Bottom Below Output -->
             <div class="flex-end">
-                <button class="btn-accent" onclick="window.craftAndDeductStock()">Craft Batch &amp; Deduct Stock</button>
+                <button class="btn-accent" onclick="window.craftAndDeductStock()">Craft Batch &amp; Deduct
+                    Stock</button>
             </div>
         </div>
     </div>
 
     <script type="module" src="js/admin.js"></script>
 </body>
+
 </html>
