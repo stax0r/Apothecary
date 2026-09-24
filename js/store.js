@@ -181,11 +181,11 @@ window.submitSatchelOrder = async () => {
 
     const payload = {
         embeds: [{
-            title: "🧪 New Satchel Custom Order",
+            title: "🧪 New Order",
             color: 11030007,
             fields: [
-                { name: "Client Character", value: clientName, inline: true },
-                { name: "Discord Tag", value: clientDiscord || "N/A", inline: true },
+                { name: "Client", value: clientName, inline: true },
+                { name: "Discord", value: clientDiscord || "N/A", inline: true },
                 { name: "Order Details", value: orderLines.join('\n') },
                 { name: "Total Cost", value: `${totalCost.toFixed(1)} Gold`, inline: true },
                 { name: "Notes / Location", value: notes || "None" }
