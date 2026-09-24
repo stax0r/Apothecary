@@ -171,52 +171,50 @@
             </div>
         </nav>
 
-        <div class="grid-2">
-            <!-- COLUMN 1: INGREDIENTS STOCK MANAGER -->
-            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
-                <div class="panel">
-                    <div class="flex-between" style="margin-bottom: 0.75rem;">
-                        <h2 style="margin: 0;">Master Ingredients List</h2>
-                        <div style="display: flex; gap: 0.5rem; align-items: center;">
-                            <input type="text" id="ing-search" placeholder="Search..." style="width: 140px;" oninput="window.renderIngredients()">
-                            <button class="btn-accent" onclick="document.getElementById('create-ing-modal').showModal()">+ New Ingredient</button>
-                        </div>
+        <!-- TOP ROW: INGREDIENTS (LEFT) & POTIONS (RIGHT) -->
+        <div class="grid-2" style="margin-bottom: 1.25rem;">
+            <!-- INGREDIENTS STOCK MANAGER -->
+            <div class="panel">
+                <div class="flex-between" style="margin-bottom: 0.75rem;">
+                    <h2 style="margin: 0;">Master Ingredients List</h2>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <input type="text" id="ing-search" placeholder="Search..." style="width: 140px;" oninput="window.renderIngredients()">
+                        <button class="btn-accent" onclick="document.getElementById('create-ing-modal').showModal()">+ New Ingredient</button>
                     </div>
-                    <div id="ingredient-list" style="display:flex; flex-direction:column; gap:0.5rem; max-height: 520px; overflow-y:auto; padding-right: 2px;"></div>
                 </div>
+                <div id="ingredient-list" style="display:flex; flex-direction:column; gap:0.5rem; max-height: 380px; overflow-y:auto; padding-right: 2px;"></div>
             </div>
 
-            <!-- COLUMN 2: MULTI-POTION BATCH & CRAFTING -->
-            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
-                <div class="panel">
-                    <h2>Bulk Batch Crafting</h2>
-                    <div style="display:flex; gap:0.5rem; margin: 0.85rem 0 0.5rem 0;">
-                        <select id="batch-potion-select" style="flex:2;"></select>
-                        <input type="number" id="batch-qty" value="1" min="1" max="999" style="width: 75px;">
-                        <button onclick="window.addPotionToBatch()">+ Add to Batch</button>
+            <!-- STOREFRONT POTION CONTROL -->
+            <div class="panel">
+                <div class="flex-between" style="margin-bottom: 0.75rem;">
+                    <h2 style="margin: 0;">Storefront Potion Control</h2>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <input type="text" id="potion-search" placeholder="Search catalog..." style="width: 140px;" oninput="window.renderPotions()">
+                        <button class="btn-accent" onclick="document.getElementById('create-potion-modal').showModal()">+ New Potion</button>
                     </div>
-
-                    <!-- Batch Queue List -->
-                    <div id="batch-queue-container" style="margin-bottom: 0.85rem;"></div>
-
-                    <div style="display: flex; justify-content: flex-end; margin-bottom: 0.85rem;">
-                        <button style="font-size: 0.825rem; padding: 0.4rem 0.85rem;" onclick="window.craftAndDeductStock()">Craft Batch &amp; Deduct Stock</button>
-                    </div>
-
-                    <div id="batch-results" style="font-family: var(--font-mono); font-size: 0.825rem; background: var(--bg); padding: 0.85rem; border: 1px solid var(--border); border-radius: 6px; white-space: pre-wrap; user-select: all;">Add potions to the batch list above to evaluate costs and required ingredients.</div>
                 </div>
-
-                <div class="panel">
-                    <div class="flex-between" style="margin-bottom: 0.75rem;">
-                        <h2 style="margin: 0;">Storefront Potion Control</h2>
-                        <div style="display: flex; gap: 0.5rem; align-items: center;">
-                            <input type="text" id="potion-search" placeholder="Search catalog..." style="width: 140px;" oninput="window.renderPotions()">
-                            <button class="btn-accent" onclick="document.getElementById('create-potion-modal').showModal()">+ New Potion</button>
-                        </div>
-                    </div>
-                    <div id="admin-potion-list" style="display:flex; flex-direction:column; gap:0.5rem; max-height: 280px; overflow-y:auto; padding-right: 2px;"></div>
-                </div>
+                <div id="admin-potion-list" style="display:flex; flex-direction:column; gap:0.5rem; max-height: 380px; overflow-y:auto; padding-right: 2px;"></div>
             </div>
+        </div>
+
+        <!-- BOTTOM SECTION: BULK BATCH CRAFTING -->
+        <div class="panel">
+            <h2>Bulk Batch Crafting</h2>
+            <div style="display:flex; gap:0.5rem; margin: 0.85rem 0 0.5rem 0;">
+                <select id="batch-potion-select" style="flex:2;"></select>
+                <input type="number" id="batch-qty" value="1" min="1" max="999" style="width: 75px;">
+                <button onclick="window.addPotionToBatch()">+ Add to Batch</button>
+            </div>
+
+            <!-- Batch Queue List -->
+            <div id="batch-queue-container" style="margin-bottom: 0.85rem;"></div>
+
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 0.85rem;">
+                <button style="font-size: 0.825rem; padding: 0.4rem 0.85rem;" onclick="window.craftAndDeductStock()">Craft Batch &amp; Deduct Stock</button>
+            </div>
+
+            <div id="batch-results" style="font-family: var(--font-mono); font-size: 0.825rem; background: var(--bg); padding: 0.85rem; border: 1px solid var(--border); border-radius: 6px; white-space: pre-wrap; user-select: all;">Add potions to the batch list above to evaluate costs and required ingredients.</div>
         </div>
     </div>
 
