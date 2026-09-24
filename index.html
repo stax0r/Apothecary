@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Silas' Brews - Storefront</title>
+    <title>Silas' Brews</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="stylesheet" href="css/main.css">
 </head>
@@ -15,7 +15,8 @@
             <!-- HEADER / NAVIGATION -->
             <nav class="panel-header" style="margin-bottom: 1.5rem;">
                 <div>
-                    <h1 style="font-size: 1.5rem; font-weight: bold; color: var(--accent);">Silas' Brews</h1>
+                    <!-- Removed inline font-size to match Admin page header size -->
+                    <h1 style="color: var(--accent);">Silas' Brews</h1>
                     <span style="color: var(--text-dim); font-size: 0.85rem;">Fine Alchemy &amp; Custom Orders</span>
                 </div>
                 <div>
@@ -81,7 +82,8 @@
                 </label>
             </div>
 
-            <button class="btn-accent" style="margin-top: 0.75rem;" onclick="window.submitSatchelOrder()">Dispatch Order via Discord</button>
+            <!-- BUTTON TEXT UPDATED HERE -->
+            <button class="btn-accent" style="margin-top: 0.75rem;" onclick="window.submitSatchelOrder()">Leave a letter with your order</button>
         </div>
     </dialog>
 
