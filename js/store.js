@@ -175,6 +175,10 @@ window.submitSatchelOrder = async () => {
         orderLines.push(`• **${item.qty}x ${p.name}** (${cost.toFixed(1)}g)`);
     });
 
+    if (orderLines.length === 0) {
+        return alert("Could not construct order details from satchel items.");
+    }
+
     const payload = {
         embeds: [{
             title: "🧪 New Satchel Custom Order",
@@ -207,9 +211,10 @@ window.submitSatchelOrder = async () => {
             renderSatchel();
             document.getElementById('satchel-modal').close();
         } else {
-            alert("Error sending order.");
+            const errorDetails = await res.text();
+            alert(`Discord API Error (${res.status}): ${errorDetails || 'Invalid Webhook URL or Payload'}`);
         }
     } catch (e) {
-        alert("Error sending order: " + e.message);
+        alert("Network Error: " + e.message);
     }
 };
