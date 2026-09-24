@@ -29,8 +29,16 @@ jobs:
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
-          sed -i "s|__DISCORD_WEBHOOK_URL__|${DISCORD_WEBHOOK_URL}|g" js/store.js
-
+          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
+            echo "❌ ERROR: DISCORD_WEBHOOK_URL secret is missing or empty in GitHub Repository Settings!"
+            exit 1
+          fi
+          node -e '
+            const fs = require("fs");
+            let file = fs.readFileSync("js/store.js", "utf8");
+            file = file.replace("__DISCORD_WEBHOOK_URL__", process.env.DISCORD_WEBHOOK_URL);
+            fs.writeFileSync("js/store.js", file);
+          '
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
