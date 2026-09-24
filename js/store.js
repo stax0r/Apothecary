@@ -37,7 +37,7 @@ window.showToast = (message, type = 'info') => {
         setTimeout(() => {
             toast.remove();
             if (container.children.length === 0) {
-                try { container.hidePopover(); } catch (e) {}
+                try { container.hidePopover(); } catch (e) { }
             }
         }, 300);
     }, 3000);
@@ -46,7 +46,7 @@ window.showToast = (message, type = 'info') => {
 // Fetch dynamic settings
 onValue(ref(db, 'settings'), (snapshot) => {
     settings = snapshot.val() || { location: 'the specified location', categoryOrder: '' };
-    
+
     const locLabel = document.getElementById('location-label-text');
     if (locLabel) locLabel.innerText = settings.location || 'the specified location';
 
@@ -76,7 +76,7 @@ function renderCategoryChips() {
     if (!container) return;
 
     let categories = [...new Set(Object.values(potions).map(p => p.category || 'General'))];
-    
+
     if (settings.categoryOrder) {
         const customOrder = settings.categoryOrder.split(',').map(s => s.trim().toLowerCase());
         categories.sort((a, b) => {
@@ -92,9 +92,9 @@ function renderCategoryChips() {
     }
 
     const finalCategories = ['All', ...categories];
-    
+
     container.innerHTML = finalCategories.map(cat => `
-        <button class="filter-chip ${selectedCategory === cat ? 'btn-accent' : ''}" onclick="window.setCategoryFilter(${JSON.stringify(cat)})">
+        <button class="filter-chip ${selectedCategory === cat ? 'btn-accent' : ''}" onclick='window.setCategoryFilter(${JSON.stringify(cat)})'>
             ${cat}
         </button>
     `).join('');
@@ -111,8 +111,8 @@ function renderCatalog() {
     }
 
     if (searchQuery) {
-        filtered = filtered.filter(p => 
-            (p.name || '').toLowerCase().includes(searchQuery) || 
+        filtered = filtered.filter(p =>
+            (p.name || '').toLowerCase().includes(searchQuery) ||
             (p.description || '').toLowerCase().includes(searchQuery)
         );
     }
@@ -150,7 +150,7 @@ window.addToSatchel = (potionId) => {
     const floatBtn = document.getElementById('floating-satchel');
     if (floatBtn) {
         floatBtn.classList.remove('satchel-bump');
-        void floatBtn.offsetWidth; 
+        void floatBtn.offsetWidth;
         floatBtn.classList.add('satchel-bump');
     }
 };
