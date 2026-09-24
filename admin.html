@@ -11,161 +11,168 @@
 
     <!-- LOGIN MODAL -->
     <dialog id="login-modal">
-        <h2 style="margin-top:0;">Cellar Security</h2>
-        <div style="display:flex; flex-direction:column; gap:0.75rem; margin-top:1rem;">
-            <input type="email" id="login-email" placeholder="Email">
-            <input type="password" id="login-password" placeholder="Password">
+        <div class="dialog-header">
+            <h2>Cellar Security</h2>
+        </div>
+        <div class="dialog-body">
+            <div class="form-group">
+                <input type="email" id="login-email" placeholder="Email">
+            </div>
+            <div class="form-group">
+                <input type="password" id="login-password" placeholder="Password">
+            </div>
             <button class="btn-accent" onclick="window.login()">Enter Cellar</button>
         </div>
     </dialog>
 
     <!-- CREATE INGREDIENT MODAL -->
     <dialog id="create-ing-modal">
-        <div class="flex-between" style="margin-bottom: 1rem;">
-            <h2 style="margin: 0;">Register New Ingredient</h2>
-            <button onclick="document.getElementById('create-ing-modal').close()">✕</button>
+        <div class="dialog-header">
+            <h2>Register New Ingredient</h2>
+            <button class="btn-sm" onclick="document.getElementById('create-ing-modal').close()">✕</button>
         </div>
-        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <div class="dialog-body">
             <div class="form-group">
-                <label style="font-size: 0.8rem; color: var(--text-dim);">Ingredient Name</label>
+                <label>Ingredient Name</label>
                 <input type="text" id="ing-name" placeholder="e.g. Blue Mountain Flower">
             </div>
             <div class="form-row">
                 <div class="form-group">
-                    <label style="font-size: 0.8rem; color: var(--text-dim);">Price / Unit (g)</label>
+                    <label>Price / Unit (g)</label>
                     <input type="number" id="ing-price" step="0.01" placeholder="0">
                 </div>
                 <div class="form-group">
-                    <label style="font-size: 0.8rem; color: var(--text-dim);">Initial Stock</label>
+                    <label>Initial Stock</label>
                     <input type="number" id="ing-stock" placeholder="0">
                 </div>
                 <div class="form-group">
-                    <label style="font-size: 0.8rem; color: var(--text-dim);">Alert Min</label>
+                    <label>Alert Min</label>
                     <input type="number" id="ing-alert" placeholder="0">
                 </div>
             </div>
-            <button class="btn-accent" onclick="window.addIngredient()" style="margin-top: 0.5rem;">+ Register Ingredient</button>
+            <button class="btn-accent" onclick="window.addIngredient()">+ Register Ingredient</button>
         </div>
     </dialog>
 
     <!-- EDIT INGREDIENT MODAL -->
     <dialog id="edit-ing-modal">
-        <div class="flex-between" style="margin-bottom: 1rem;">
-            <h2 style="margin: 0;">Edit Ingredient</h2>
-            <button onclick="document.getElementById('edit-ing-modal').close()">✕</button>
+        <div class="dialog-header">
+            <h2>Edit Ingredient</h2>
+            <button class="btn-sm" onclick="document.getElementById('edit-ing-modal').close()">✕</button>
         </div>
         <input type="hidden" id="edit-ing-id">
-        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <div class="dialog-body">
             <div class="form-group">
-                <label style="font-size: 0.8rem; color: var(--text-dim);">Ingredient Name</label>
+                <label>Ingredient Name</label>
                 <input type="text" id="edit-ing-name">
             </div>
             <div class="form-row">
                 <div class="form-group">
-                    <label style="font-size: 0.8rem; color: var(--text-dim);">Price / Unit (g)</label>
+                    <label>Price / Unit (g)</label>
                     <input type="number" id="edit-ing-price" step="0.01">
                 </div>
                 <div class="form-group">
-                    <label style="font-size: 0.8rem; color: var(--text-dim);">Current Stock</label>
+                    <label>Current Stock</label>
                     <input type="number" id="edit-ing-stock">
                 </div>
                 <div class="form-group">
-                    <label style="font-size: 0.8rem; color: var(--text-dim);">Alert Min</label>
+                    <label>Alert Min</label>
                     <input type="number" id="edit-ing-alert">
                 </div>
             </div>
-            <button class="btn-accent" onclick="window.saveIngredientEdit()" style="margin-top: 0.5rem;">Save Changes</button>
+            <button class="btn-accent" onclick="window.saveIngredientEdit()">Save Changes</button>
         </div>
     </dialog>
 
     <!-- CREATE POTION MODAL -->
     <dialog id="create-potion-modal">
-        <div class="flex-between" style="margin-bottom: 1rem;">
-            <h2 style="margin: 0;">Create Potion Recipe</h2>
-            <button onclick="document.getElementById('create-potion-modal').close()">✕</button>
+        <div class="dialog-header">
+            <h2>Create Potion Recipe</h2>
+            <button class="btn-sm" onclick="document.getElementById('create-potion-modal').close()">✕</button>
         </div>
-        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <div class="dialog-body">
             <div class="form-group">
-                <label style="font-size: 0.8rem; color: var(--text-dim);">Potion Name</label>
+                <label>Potion Name</label>
                 <input type="text" id="potion-name" placeholder="e.g. Potion of Extreme Healing">
             </div>
             <div class="form-row">
                 <div class="form-group">
-                    <label style="font-size: 0.8rem; color: var(--text-dim);">Category</label>
+                    <label>Category</label>
                     <input type="text" id="potion-category" placeholder="e.g. Health">
                 </div>
                 <div class="form-group">
-                    <label style="font-size: 0.8rem; color: var(--text-dim);">Sale Price (Gold)</label>
+                    <label>Sale Price (Gold)</label>
                     <input type="number" id="potion-price" step="0.01" placeholder="0">
                 </div>
             </div>
             <div class="form-group">
-                <label style="font-size: 0.8rem; color: var(--text-dim);">Description</label>
-                <textarea id="potion-desc" placeholder="Potion description or effects..." style="min-height: 50px;"></textarea>
+                <label>Description</label>
+                <textarea id="potion-desc" placeholder="Potion description or effects..." rows="2"></textarea>
             </div>
 
-            <div style="border: 1px solid var(--border); padding: 0.75rem; border-radius: 6px;">
-                <span style="font-size: 0.825rem; font-weight: bold;">Recipe Ingredients</span>
-                <div style="display:flex; gap:0.5rem; margin-top:0.4rem;">
-                    <select id="recipe-ing-select" style="flex:2;"></select>
+            <div class="card">
+                <label style="font-weight: bold; margin-bottom: 0.35rem; display: block;">Recipe Ingredients</label>
+                <div class="flex-between gap-sm">
+                    <select id="recipe-ing-select" style="flex: 1;"></select>
                     <input type="number" id="recipe-ing-qty" value="1" min="1" style="width: 70px;">
                     <button type="button" onclick="window.addIngredientToRecipe()">+ Add</button>
                 </div>
-                <ul id="recipe-preview" style="font-size: 0.825rem; padding-left: 1.2rem; margin: 0.5rem 0 0 0;"></ul>
+                <ul id="recipe-preview" style="font-size: 0.8rem; padding-left: 1.2rem; margin-top: 0.5rem;"></ul>
             </div>
 
-            <button class="btn-accent" onclick="window.savePotion()" style="margin-top: 0.5rem;">Save Potion to Catalog</button>
+            <button class="btn-accent" onclick="window.savePotion()">Save Potion to Catalog</button>
         </div>
     </dialog>
 
     <!-- EDIT POTION MODAL -->
     <dialog id="edit-potion-modal">
-        <div class="flex-between" style="margin-bottom: 1rem;">
-            <h2 style="margin: 0;">Edit Potion Recipe</h2>
-            <button onclick="document.getElementById('edit-potion-modal').close()">✕</button>
+        <div class="dialog-header">
+            <h2>Edit Potion Recipe</h2>
+            <button class="btn-sm" onclick="document.getElementById('edit-potion-modal').close()">✕</button>
         </div>
         <input type="hidden" id="edit-potion-id">
-        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <div class="dialog-body">
             <div class="form-group">
-                <label style="font-size: 0.8rem; color: var(--text-dim);">Potion Name</label>
+                <label>Potion Name</label>
                 <input type="text" id="edit-potion-name">
             </div>
             <div class="form-row">
                 <div class="form-group">
-                    <label style="font-size: 0.8rem; color: var(--text-dim);">Category</label>
+                    <label>Category</label>
                     <input type="text" id="edit-potion-category">
                 </div>
                 <div class="form-group">
-                    <label style="font-size: 0.8rem; color: var(--text-dim);">Sale Price (Gold)</label>
+                    <label>Sale Price (Gold)</label>
                     <input type="number" id="edit-potion-price" step="0.01">
                 </div>
             </div>
             <div class="form-group">
-                <label style="font-size: 0.8rem; color: var(--text-dim);">Description</label>
-                <textarea id="edit-potion-desc" style="min-height: 50px;"></textarea>
+                <label>Description</label>
+                <textarea id="edit-potion-desc" rows="2"></textarea>
             </div>
 
-            <div style="border: 1px solid var(--border); padding: 0.75rem; border-radius: 6px;">
-                <span style="font-size: 0.825rem; font-weight: bold;">Recipe Ingredients</span>
-                <div style="display:flex; gap:0.5rem; margin-top:0.4rem;">
-                    <select id="edit-recipe-ing-select" style="flex:2;"></select>
+            <div class="card">
+                <label style="font-weight: bold; margin-bottom: 0.35rem; display: block;">Recipe Ingredients</label>
+                <div class="flex-between gap-sm">
+                    <select id="edit-recipe-ing-select" style="flex: 1;"></select>
                     <input type="number" id="edit-recipe-ing-qty" value="1" min="1" style="width: 70px;">
                     <button type="button" onclick="window.addIngredientToEditRecipe()">+ Add</button>
                 </div>
-                <ul id="edit-recipe-preview" style="font-size: 0.825rem; padding-left: 1.2rem; margin: 0.5rem 0 0 0;"></ul>
+                <ul id="edit-recipe-preview" style="font-size: 0.8rem; padding-left: 1.2rem; margin-top: 0.5rem;"></ul>
             </div>
 
-            <button class="btn-accent" onclick="window.savePotionEdit()" style="margin-top: 0.5rem;">Update Potion</button>
+            <button class="btn-accent" onclick="window.savePotionEdit()">Update Potion</button>
         </div>
     </dialog>
 
+    <!-- MAIN ADMIN DASHBOARD -->
     <div class="container" id="admin-dashboard" style="display:none;">
-        <nav class="flex-between" style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
+        <nav class="panel-header" style="margin-bottom: 1.25rem;">
             <div>
-                <h1 style="margin: 0;">Cellar Management</h1>
-                <span style="color: var(--text-dim); font-size: 0.875rem;">Raw Materials & Catalog Management</span>
+                <h1>Cellar Management</h1>
+                <span style="color: var(--text-dim); font-size: 0.825rem;">Raw Materials & Catalog Management</span>
             </div>
-            <div style="display: flex; gap: 0.75rem;">
+            <div class="flex-between gap-sm">
                 <a href="index.html"><button>← Storefront</button></a>
                 <button onclick="window.logout()">Logout</button>
             </div>
@@ -175,34 +182,36 @@
         <div class="grid-2" style="margin-bottom: 1.25rem;">
             <!-- INGREDIENTS STOCK MANAGER -->
             <div class="panel">
-                <div class="flex-between" style="margin-bottom: 0.75rem;">
-                    <h2 style="margin: 0;">Master Ingredients List</h2>
-                    <div style="display: flex; gap: 0.5rem; align-items: center;">
-                        <input type="text" id="ing-search" placeholder="Search..." style="width: 140px;" oninput="window.renderIngredients()">
-                        <button class="btn-accent" onclick="document.getElementById('create-ing-modal').showModal()">+ New Ingredient</button>
+                <div class="panel-header">
+                    <h2>Master Ingredients List</h2>
+                    <div class="flex-between gap-sm">
+                        <input type="text" id="ing-search" class="input-search input-sm" placeholder="Search..." oninput="window.renderIngredients()">
+                        <button class="btn-accent btn-sm" onclick="document.getElementById('create-ing-modal').showModal()">+ New Ingredient</button>
                     </div>
                 </div>
-                <div id="ingredient-list" style="display:flex; flex-direction:column; gap:0.5rem; max-height: 380px; overflow-y:auto; padding-right: 2px;"></div>
+                <div id="ingredient-list" class="scroll-list"></div>
             </div>
 
             <!-- STOREFRONT POTION CONTROL -->
             <div class="panel">
-                <div class="flex-between" style="margin-bottom: 0.75rem;">
-                    <h2 style="margin: 0;">Storefront Potion Control</h2>
-                    <div style="display: flex; gap: 0.5rem; align-items: center;">
-                        <input type="text" id="potion-search" placeholder="Search catalog..." style="width: 140px;" oninput="window.renderPotions()">
-                        <button class="btn-accent" onclick="document.getElementById('create-potion-modal').showModal()">+ New Potion</button>
+                <div class="panel-header">
+                    <h2>Storefront Potion Control</h2>
+                    <div class="flex-between gap-sm">
+                        <input type="text" id="potion-search" class="input-search input-sm" placeholder="Search catalog..." oninput="window.renderPotions()">
+                        <button class="btn-accent btn-sm" onclick="document.getElementById('create-potion-modal').showModal()">+ New Potion</button>
                     </div>
                 </div>
-                <div id="admin-potion-list" style="display:flex; flex-direction:column; gap:0.5rem; max-height: 380px; overflow-y:auto; padding-right: 2px;"></div>
+                <div id="admin-potion-list" class="scroll-list"></div>
             </div>
         </div>
 
         <!-- BOTTOM SECTION: BULK BATCH CRAFTING -->
         <div class="panel">
-            <h2>Bulk Batch Crafting</h2>
-            <div style="display:flex; gap:0.5rem; margin: 0.85rem 0 0.5rem 0;">
-                <select id="batch-potion-select" style="flex:2;"></select>
+            <div class="panel-header">
+                <h2>Bulk Batch Crafting</h2>
+            </div>
+            <div class="flex-between gap-sm" style="margin-bottom: 0.75rem;">
+                <select id="batch-potion-select" style="flex: 1;"></select>
                 <input type="number" id="batch-qty" value="1" min="1" max="999" style="width: 75px;">
                 <button onclick="window.addPotionToBatch()">+ Add to Batch</button>
             </div>
@@ -210,11 +219,11 @@
             <!-- Batch Queue List -->
             <div id="batch-queue-container" style="margin-bottom: 0.85rem;"></div>
 
-            <div style="display: flex; justify-content: flex-end; margin-bottom: 0.85rem;">
-                <button style="font-size: 0.825rem; padding: 0.4rem 0.85rem;" onclick="window.craftAndDeductStock()">Craft Batch &amp; Deduct Stock</button>
+            <div class="flex-end" style="margin-bottom: 0.85rem;">
+                <button onclick="window.craftAndDeductStock()">Craft Batch &amp; Deduct Stock</button>
             </div>
 
-            <div id="batch-results" style="font-family: var(--font-mono); font-size: 0.825rem; background: var(--bg); padding: 0.85rem; border: 1px solid var(--border); border-radius: 6px; white-space: pre-wrap; user-select: all;">Add potions to the batch list above to evaluate costs and required ingredients.</div>
+            <div id="batch-results" class="code-box">Add potions to the batch list above to evaluate costs and required ingredients.</div>
         </div>
     </div>
 
