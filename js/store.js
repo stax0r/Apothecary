@@ -6,7 +6,7 @@ let satchel = [];
 let selectedCategory = 'All';
 let searchQuery = '';
 
-const DISCORD_WEBHOOK_URL = "YOUR_DISCORD_WEBHOOK_URL_HERE";
+const DISCORD_WEBHOOK_URL = "__DISCORD_WEBHOOK_URL__";
 
 onValue(ref(db, 'potions'), (snapshot) => {
     potions = snapshot.val() || {};
