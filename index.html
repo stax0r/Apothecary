@@ -3,58 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Silas' Brews - Apothecary</title>
+    <title>Silas' Brews - Storefront</title>
     <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
     <div class="container">
-        <nav class="flex-between" style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
+        <!-- HEADER / NAVIGATION -->
+        <nav class="panel-header" style="margin-bottom: 1.5rem;">
             <div>
-                <h1 style="margin: 0;">Silas' Brews</h1>
-                <span style="color: var(--text-dim); font-size: 0.875rem;">Apothecary & Custom Potion Order</span>
+                <h1 style="font-size: 1.5rem; font-weight: bold; color: var(--accent);">Silas' Brews</h1>
+                <span style="color: var(--text-dim); font-size: 0.85rem;">Fine Alchemy &amp; Custom Orders</span>
             </div>
-            <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <div class="flex-between gap-sm">
                 <button class="btn-accent" onclick="document.getElementById('satchel-modal').showModal()">
-                    🎒 Satchel (<span id="satchel-count">0</span>)
+                    💼 Satchel (<span id="satchel-count">0</span>)
                 </button>
-                <a href="admin.html"><button>Cellar Login</button></a>
+                <a href="admin.html"><button class="btn-edit">Cellar Admin</button></a>
             </div>
         </nav>
 
-        <!-- Search and Filter Bar -->
-        <div class="filter-bar">
-            <input type="text" id="store-search-input" placeholder="Search potions..." style="flex: 1; min-width: 200px;" oninput="window.handleStoreSearch(this.value)">
-            <div id="category-chips-container" style="display: flex; gap: 0.5rem; flex-wrap: wrap;"></div>
+        <!-- SEARCH & CATEGORY FILTERS -->
+        <div class="panel" style="margin-bottom: 1.5rem;">
+            <div class="flex-between gap-md" style="flex-wrap: wrap;">
+                <input type="text" id="store-search" placeholder="Search potions..." style="flex: 1; min-width: 220px;" oninput="window.handleStoreSearch(this.value)">
+                <div id="category-chips-container" class="flex-between gap-sm" style="flex-wrap: wrap;"></div>
+            </div>
         </div>
 
-        <div id="catalog" class="grid-catalog"></div>
+        <!-- 4-COLUMN CATALOG GRID -->
+        <div id="catalog" class="catalog-grid"></div>
     </div>
 
-    <!-- Satchel Modal -->
-    <dialog id="satchel-modal">
-        <div class="flex-between" style="margin-bottom: 1rem;">
-            <h2 style="margin: 0;">Your Satchel</h2>
-            <button onclick="this.closest('dialog').close()">✕</button>
+    <!-- SATCHEL / ORDER MODAL -->
+    <dialog id="satchel-modal" style="max-width: 520px;">
+        <div class="dialog-header">
+            <h2>Your Alchemical Satchel</h2>
+            <button class="btn-sm" onclick="document.getElementById('satchel-modal').close()">✕</button>
         </div>
+        <div class="dialog-body">
+            <!-- SATCHEL ITEMS LIST -->
+            <div id="satchel-items" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 240px; overflow-y: auto;"></div>
 
-        <div id="satchel-items" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 250px; overflow-y: auto; margin-bottom: 1rem;"></div>
-        
-        <div id="satchel-total" style="font-family: var(--font-mono); text-align: right; margin-bottom: 1.25rem; font-weight: bold; color: var(--accent);"></div>
+            <div id="satchel-total" style="font-family: var(--font-mono); font-weight: bold; font-size: 1.1rem; text-align: right; color: var(--accent); margin: 0.5rem 0;"></div>
 
-        <div class="panel" style="background: var(--bg); border: 1px solid var(--border);">
-            <h3 style="margin-top: 0; font-size: 0.95rem;">Dispatch Order</h3>
-            <div style="display: flex; flex-direction: column; gap: 0.65rem;">
-                <input type="text" id="order-client-name" placeholder="Character Name (Required)">
-                <input type="text" id="order-client-discord" placeholder="Discord Tag (Optional)">
-                <textarea id="order-notes" placeholder="Delivery location or special instructions..." style="min-height: 60px;"></textarea>
-                
-                <label style="font-size: 0.825rem; display: flex; gap: 0.5rem; align-items: center; cursor: pointer;">
-                    <input type="checkbox" id="order-location-confirm">
-                    <span>I confirm I am currently at the designated delivery spot.</span>
-                </label>
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 0.5rem 0;">
 
-                <button class="btn-accent" onclick="window.submitSatchelOrder()" style="margin-top: 0.5rem;">Send Order via Raven (Discord)</button>
+            <!-- ORDER DISPATCH FORM -->
+            <div class="form-group">
+                <label>Character Name *</label>
+                <input type="text" id="order-client-name" placeholder="e.g. Silas Montclair">
             </div>
+            <div class="form-group">
+                <label>Discord Handle</label>
+                <input type="text" id="order-client-discord" placeholder="e.g. stax0r">
+            </div>
+            <div class="form-group">
+                <label>Delivery Location / Notes</label>
+                <textarea id="order-notes" rows="2" placeholder="Where should the potions be delivered?"></textarea>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0.25rem;">
+                <input type="checkbox" id="order-location-confirm" style="width: auto;">
+                <label for="order-location-confirm" style="font-size: 0.8rem; color: var(--text-dim);">I am currently at the specified location</label>
+            </div>
+
+            <button class="btn-accent" style="margin-top: 0.75rem;" onclick="window.submitSatchelOrder()">Dispatch Order via Discord</button>
         </div>
     </dialog>
 
