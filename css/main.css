@@ -1,13 +1,13 @@
 :root {
-    --bg: #0f1115;
-    --card-bg: #161920;
-    --panel-bg: #1a1e27;
-    --border: #2a2f3d;
-    --border-hover: #3a4154;
-    --text: #e2e8f0;
-    --text-dim: #94a3b8;
-    --accent: #d97706;
-    --accent-hover: #b45309;
+    --bg: #0b0914;
+    --card-bg: #131021;
+    --panel-bg: #1a162b;
+    --border: #2d2644;
+    --border-hover: #493d6e;
+    --text: #e6e2f2;
+    --text-dim: #988eaa;
+    --accent: #a855f7;
+    --accent-hover: #9333ea;
     --danger: #ef4444;
     --danger-hover: #dc2626;
     --warning: #f59e0b;
@@ -37,7 +37,7 @@ body {
 
 /* LAYOUT UTILITIES */
 .container {
-    max-width: 1200px;
+    max-width: 1280px;
     margin: 0 auto;
 }
 
@@ -45,6 +45,25 @@ body {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
     gap: 1.25rem;
+}
+
+/* STOREFRONT CATALOG: 4 COLUMNS HORIZONTALLY */
+.catalog-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+}
+
+@media (max-width: 1024px) {
+    .catalog-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .catalog-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .flex-between {
@@ -87,12 +106,16 @@ body {
     background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    padding: 0.65rem 0.85rem;
-    transition: border-color 0.15s ease;
+    padding: 0.75rem 0.85rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .card:hover {
     border-color: var(--border-hover);
+    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.08);
 }
 
 /* LIST CONTAINERS */
@@ -246,12 +269,12 @@ dialog {
     margin: auto;
     max-width: 460px;
     width: 90vw;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
 }
 
 dialog::backdrop {
-    background: rgba(0, 0, 0, 0.75);
-    backdrop-filter: blur(2px);
+    background: rgba(5, 3, 10, 0.82);
+    backdrop-filter: blur(3px);
 }
 
 .dialog-header {
@@ -293,7 +316,7 @@ dialog::backdrop {
     border: 1px solid var(--warning);
     border-radius: var(--radius-sm);
     padding: 0.75rem 1rem;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
     max-width: 320px;
 }
 

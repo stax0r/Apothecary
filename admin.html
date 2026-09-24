@@ -219,11 +219,13 @@
             <!-- Batch Queue List -->
             <div id="batch-queue-container" style="margin-bottom: 0.85rem;"></div>
 
-            <div class="flex-end" style="margin-bottom: 0.85rem;">
-                <button onclick="window.craftAndDeductStock()">Craft Batch &amp; Deduct Stock</button>
-            </div>
+            <!-- Calculation Output Box -->
+            <div id="batch-results" class="code-box" style="margin-bottom: 0.85rem;">Add potions to the batch list above to evaluate costs and required ingredients.</div>
 
-            <div id="batch-results" class="code-box">Add potions to the batch list above to evaluate costs and required ingredients.</div>
+            <!-- Craft Button Placed at the Bottom Below Output -->
+            <div class="flex-end">
+                <button class="btn-accent" onclick="window.craftAndDeductStock()">Craft Batch &amp; Deduct Stock</button>
+            </div>
         </div>
     </div>
 
