@@ -1,17 +1,18 @@
 :root {
-    --bg: #0b0914;
-    --card-bg: #131021;
-    --panel-bg: #1a162b;
-    --border: #2d2644;
-    --border-hover: #493d6e;
-    --text: #e6e2f2;
-    --text-dim: #988eaa;
-    --accent: #a855f7;
-    --accent-hover: #9333ea;
-    --danger: #ef4444;
-    --danger-hover: #dc2626;
-    --warning: #f59e0b;
-    --success: #10b981;
+    /* Gothic Wine & Dark Purple Theme */
+    --bg: #0c070e;
+    --card-bg: #140a16;
+    --panel-bg: #1c0e1f;
+    --border: #3b1836;
+    --border-hover: #612353;
+    --text: #eadfe7;
+    --text-dim: #a68c9f;
+    --accent: #8c1c44;
+    --accent-hover: #b52559;
+    --danger: #b91c1c;
+    --danger-hover: #991b1b;
+    --warning: #b45309;
+    --success: #059669;
     --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --font-mono: "Fira Code", "Cascadia Code", Consolas, monospace;
     --radius-sm: 4px;
@@ -33,6 +34,17 @@ body {
     font-size: 14px;
     line-height: 1.5;
     padding: 1.5rem;
+}
+
+h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    line-height: 1.1;
+}
+
+.panel-header h1 {
+    margin-bottom: 0.15rem;
 }
 
 /* LAYOUT UTILITIES */
